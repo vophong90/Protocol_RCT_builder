@@ -1431,21 +1431,18 @@ Hãy đánh giá đoạn Territory trên theo các tiêu chí sau:
 Trả lời bằng tiếng Việt.
   `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+  try {
+    const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
 
     const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-    } catch (e) {
-      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
-    }
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
   } catch (error) {
-    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
+    output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + error.message;
   }
 }
 
@@ -4628,3 +4625,4 @@ window.addEventListener("DOMContentLoaded", function () {
 </footer>
 </body>
 </html>
+
