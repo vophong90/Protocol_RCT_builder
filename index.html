@@ -4068,7 +4068,7 @@ Yêu cầu: Nhận xét rõ ràng về điểm mạnh, điểm thiếu sót, và
   const output = document.getElementById("eval-analysis");
   output.innerText = "GPT đang đánh giá...";
 
-ctry {
+try {
   const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -4765,6 +4765,7 @@ window.addEventListener("DOMContentLoaded", function () {
 </footer>
 </body>
 </html>
+
 
 
 
