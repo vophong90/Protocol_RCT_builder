@@ -1,0 +1,4630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Wizard Đề cương RCT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script> pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: false });</script>
+
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    .step { display: none; }
+    .step.active { display: block; }
+    .steps-nav { display: flex; gap: 10px; margin-bottom: 20px; }
+    .steps-nav button {
+      padding: 8px 12px;
+      border: none;
+      background-color: #ddd;
+      cursor: pointer;
+    }
+    .steps-nav button.active {
+      background-color: #4CAF50;
+      color: white;
+    }
+    textarea, input[type="text"] {
+      width: 100%;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      padding: 6px;
+    }
+  .gpt-suggest, .gpt-eval {
+    white-space: pre-wrap;
+    padding: 10px;
+    border: 1px solid #ccc;
+    margin-top: 5px;
+  }
+  .gpt-suggest { background: #eef; }
+  .gpt-eval { background: #efe; }
+
+  #variable-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  .variable-group {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .variable-group h4 {
+    margin: 0;
+  }
+  .variable-group .description {
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+  .variable-lists {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .variable-list {
+    flex: 1;
+    min-width: 250px;
+    min-height: 150px;
+    border: 1px dashed #999;
+    padding: 10px;
+    border-radius: 6px;
+    background: #fafafa;
+  }
+  .variable-list li {
+  position: relative;
+  padding: 4px 8px;
+  padding-right: 40px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  cursor: grab;
+  min-height: 32px;
+  line-height: 20px;
+  overflow: visible;
+}
+
+ .variable-list li button {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  background: none;
+  border: none;
+  color: red;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 2;
+}
+
+
+  .collection-block {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+  }
+
+  .collection-block label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+  }
+
+  .collection-block input,
+  .collection-block textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+  .analysis-block {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    background-color: #f9f9f9;
+  }
+
+  .analysis-block label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+  }
+
+  .analysis-block input,
+  .analysis-block textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+  #step-11 input,
+  #step-11 textarea {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 6px;
+    box-sizing: border-box;
+  }
+
+  #step-11 label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+  }
+ input[type="text"], input[type="number"], select, textarea {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 15px;
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transition: border-color 0.2s, box-shadow 0.2s;
+ }
+
+ input[type="text"]:focus, input[type="number"]:focus,
+  select:focus, textarea:focus {
+  border-color: #4CAF50;
+  outline: none;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+ }
+
+</style>
+</head>
+<body>
+
+  <h1>Xây dựng đề cương RCT – Wizard Demo</h1>
+
+  <!-- Thanh điều hướng -->
+  <div class="steps-nav">
+    <button onclick="goToStep(0)" id="nav-0">1. PICO</button>
+    <button onclick="goToStep(1)" id="nav-1">2. Câu hỏi</button>
+    <button onclick="goToStep(2)" id="nav-2">3. Mục tiêu</button>
+    <button onclick="goToStep(3)" id="nav-3">4. Mở đầu</button>
+    <button onclick="goToStep(4)" id="nav-4">5. Tổng quan</button>
+    <button onclick="goToStep(5)" id="nav-5">6. Thiết kế</button>
+    <button onclick="goToStep(6)" id="nav-6">7. Cỡ mẫu</button>
+    <button onclick="goToStep(7)" id="nav-7">8. Tiêu chí</button>
+    <button onclick="goToStep(8)" id="nav-8">9. Ngẫu nhiên</button>
+    <button onclick="goToStep(9)" id="nav-9">10. Can thiệp</button>
+    <button onclick="goToStep(10)" id="nav-10">11. Biến số</button>
+    <button onclick="goToStep(11)" id="nav-11">12. Thu thập</button>
+    <button onclick="goToStep(12)" id="nav-12">13. Phân tích</button>
+    <button onclick="goToStep(13)" id="nav-13">14. Đạo đức</button>
+    <button onclick="goToStep(14)" id="nav-14">15. Check logic</button>
+    <button onclick="goToStep(15)" id="nav-15">16. Sơ đồ</button>
+  </div>
+
+  <!-- Bước 1: PICO -->
+  <div class="step" id="step-0">
+    <h2>Bước 1: PICO</h2>
+    <label>P - Dân số mục tiêu:</label>
+    <input type="text" id="pico-p" oninput="saveData()">
+
+    <label>I - Can thiệp:</label>
+    <input type="text" id="pico-i" oninput="saveData()">
+
+    <label>C - So sánh:</label>
+    <input type="text" id="pico-c" oninput="saveData()">
+  
+    <label>O - Kết cục:</label>
+    <input type="text" id="pico-o" oninput="saveData()">
+    <br>
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="pico-file" accept=".pdf" multiple><br><br>
+    <button onclick="generatePicoDescription()">🧠 GPT viết mô tả từ PICO</button>
+    <div id="pico-gpt-result" style="white-space: pre-wrap; background: #f4f4f4; padding: 10px; border: 1px solid #ccc;"></div>
+    <br>
+    <button disabled>⬅️</button>
+    <button onclick="goToStep(1)">Tiếp ➡️</button>
+    <br><br>
+    <button onclick="resetWizard()" style="margin-bottom:20px; background:red; color:white; padding:8px 12px; border:none; border-radius:6px; cursor:pointer;">🗑 Xóa toàn bộ dữ liệu và bắt đầu lại</button>
+  </div>
+
+  <!-- Bước 2: Câu hỏi nghiên cứu -->
+  <div class="step" id="step-1">
+    <h2>Bước 2: Câu hỏi nghiên cứu</h2>
+    <label for="question">Nhập câu hỏi:</label>
+    <textarea id="question" oninput="saveData()"></textarea><br><br>
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="question-file" accept=".pdf" multiple><br>
+    <button onclick="generateResearchQuestionFromGPT()">🧠 GPT gợi ý câu hỏi từ tài liệu</button>
+    <div id="question-gpt-suggestion" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+    <button onclick="evaluateResearchQuestion()">🧐 GPT đánh giá câu hỏi</button>
+    <div id="question-gpt-evaluation" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+    
+    <br><br>
+    <button onclick="goToStep(0)">⬅️ Quay lại</button>
+    <button onclick="goToStep(2)">Tiếp ➡️</button>
+  </div>
+
+  <!-- Bước 3: Mục tiêu nghiên cứu -->
+  <div class="step" id="step-2">
+    <h2>Bước 3: Mục tiêu nghiên cứu</h2>
+
+    <label>Mục tiêu chính:</label>
+    <input type="text" id="main-objective" oninput="saveData()">
+    
+    <label>Mục tiêu phụ:</label>
+    <div id="sub-objectives"></div>
+    <button onclick="addSubObjective()">➕ Thêm mục tiêu phụ</button>
+    <br><br>
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="objective-file" accept=".pdf" multiple><br>
+    <button onclick="generateObjectivesFromGPT()">🧠 GPT gợi ý mục tiêu từ tài liệu</button>
+    <div id="objective-gpt-suggestion" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+    <button onclick="evaluateObjectives()">🧐 GPT đánh giá mục tiêu hiện tại</button>
+    <div id="objective-gpt-evaluation" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+    <br>
+    <button onclick="goToStep(1)">⬅️ Quay lại</button>
+    <button onclick="goToStep(3)">Tiếp ➡️</button>
+  </div>
+
+<!-- Bước 4: Mở đầu - theo CaRS, tách 3 phần -->
+<div class="step" id="step-3">
+  <h2>Bước 4: Mở đầu (CaRS)</h2>
+
+  <!-- TERRITORY -->
+  <h3>1. Territory - Bối cảnh nghiên cứu</h3>
+  <label>Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-territory" accept=".pdf">
+  <br>
+  <label>Nhập nội dung Territory:</label>
+  <textarea id="intro-territory" rows="5" style="width:100%"></textarea>
+  <br>
+  <button onclick="generateGPT_Territory()">🧠 GPT gợi ý Territory</button>
+  <div id="suggest-territory" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateGPT_Territory()">🧐 GPT đánh giá Territory</button>
+  <div id="eval-territory" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+
+  <!-- NICHE -->
+  <h3>2. Niche - Khoảng trống kiến thức</h3>
+  <label>Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-niche" accept=".pdf">
+  <br>
+  <label>Nhập nội dung Niche:</label>
+  <textarea id="intro-niche" rows="5" style="width:100%"></textarea>
+  <br>
+  <button onclick="generateGPT_Niche()">🧠 GPT gợi ý Niche</button>  
+  <div id="suggest-niche" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateGPT_Niche()">🧐 GPT đánh giá Niche</button>
+  <div id="eval-niche" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+
+  <!-- OCCUPY -->
+  <h3>3. Occupy - Cách nghiên cứu chiếm lĩnh khoảng trống</h3>
+  <label>Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-occupy" accept=".pdf">
+  <br>
+  <label>Nhập nội dung Occupy:</label>
+  <textarea id="intro-occupy" rows="5" style="width:100%"></textarea>
+  <br>
+  <button onclick="generateGPT_Occupy()">🧠 GPT gợi ý Occupy</button>
+  <div id="suggest-occupy" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateGPT_Occupy()">🧐 GPT đánh giá Occupy</button>
+  <div id="eval-occupy" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+
+  <br>
+  <button onclick="goToStep(2)">⬅️ Quay lại</button>
+  <button onclick="goToStep(4)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 5: Tổng quan tài liệu -->
+<div class="step" id="step-4">
+  <h2>Bước 5: Tổng quan tài liệu</h2>
+
+  <!-- 1. Đại cương YHHĐ -->
+  <h3>1. Đại cương YHHĐ</h3>
+  <input type="file" id="file-yhhd-overview" accept=".pdf">
+  <textarea id="text-yhhd-overview" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_YHHD_Overview()">🧠 GPT gợi ý</button>
+  <div id="suggest-yhhd-overview" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_YHHD_Overview()">🧐 GPT đánh giá</button>
+  <div id="eval-yhhd-overview" class="gpt-eval"></div>
+
+  <!-- 2. Dịch tễ học và gánh nặng bệnh tật -->
+  <h3>2. Dịch tễ học và gánh nặng bệnh tật</h3>
+  <input type="file" id="file-epidemiology" accept=".pdf">
+  <textarea id="text-epidemiology" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_Epidemiology()">🧠 GPT gợi ý</button>
+  <div id="suggest-epidemiology" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Epidemiology()">🧐 GPT đánh giá</button>
+  <div id="eval-epidemiology" class="gpt-eval"></div>
+
+  <!-- 3. Chẩn đoán YHHĐ -->
+  <h3>3. Chẩn đoán YHHĐ</h3>
+  <input type="file" id="file-diagnosis" accept=".pdf">
+  <textarea id="text-diagnosis" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_Diagnosis()">🧠 GPT gợi ý</button>
+  <div id="suggest-diagnosis" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Diagnosis()">🧐 GPT đánh giá</button>
+  <div id="eval-diagnosis" class="gpt-eval"></div>
+
+  <!-- 4. Điều trị YHHĐ -->
+  <h3>4. Điều trị YHHĐ</h3>
+  <input type="file" id="file-treatment" accept=".pdf">
+  <textarea id="text-treatment" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_Treatment()">🧠 GPT gợi ý</button>
+  <div id="suggest-treatment" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Treatment()">🧐 GPT đánh giá</button>
+  <div id="eval-treatment" class="gpt-eval"></div>
+
+  <!-- 5. Hạn chế của YHHĐ -->
+  <h3>5. Hạn chế của YHHĐ trong quản lý tình trạng/bệnh</h3>
+  <input type="file" id="file-limitation" accept=".pdf">
+  <textarea id="text-limitation" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_Limitation()">🧠 GPT gợi ý</button>
+  <div id="suggest-limitation" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Limitation()">🧐 GPT đánh giá</button>
+  <div id="eval-limitation" class="gpt-eval"></div>
+
+  <!-- 6. Đại cương YHCT -->
+  <h3>6. Đại cương YHCT</h3>
+  <input type="file" id="file-yhct-overview" accept=".pdf">
+  <textarea id="text-yhct-overview" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_YHCT_Overview()">🧠 GPT gợi ý</button>
+  <div id="suggest-yhct-overview" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_YHCT_Overview()">🧐 GPT đánh giá</button>
+  <div id="eval-yhct-overview" class="gpt-eval"></div>
+
+  <!-- 7. Liệu pháp can thiệp trong nghiên cứu -->
+  <h3>7. Liệu pháp can thiệp trong nghiên cứu</h3>
+  <input type="file" id="file-intervention" accept=".pdf">
+  <textarea id="text-intervention" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_Intervention()">🧠 GPT gợi ý</button>
+  <div id="suggest-intervention" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Intervention()">🧐 GPT đánh giá</button>
+  <div id="eval-intervention" class="gpt-eval"></div>
+
+  <!-- 8. Các nghiên cứu cùng loại trong & ngoài nước -->
+  <h3>8. Các nghiên cứu cùng loại trong & ngoài nước</h3>
+  <input type="file" id="file-related-studies" accept=".pdf">
+  <textarea id="text-related-studies" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_RelatedStudies()">🧠 GPT gợi ý</button>
+  <div id="suggest-related-studies" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_RelatedStudies()">🧐 GPT đánh giá</button>
+  <div id="eval-related-studies" class="gpt-eval"></div>
+
+  <!-- 9. Các phương pháp mới phân tích/dữ liệu -->
+  <h3>9. Các phương pháp mới trong phân tích số liệu hay đánh giá số liệu</h3>
+  <input type="file" id="file-new-methods" accept=".pdf">
+  <textarea id="text-new-methods" rows="5" style="width:100%"></textarea>
+  <button onclick="generateGPT_NewMethods()">🧠 GPT gợi ý</button>
+  <div id="suggest-new-methods" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_NewMethods()">🧐 GPT đánh giá</button>
+  <div id="eval-new-methods" class="gpt-eval"></div>
+
+  <br><br>
+  <button onclick="goToStep(3)">⬅️ Quay lại</button>
+  <button onclick="goToStep(5)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 6: Thiết kế nghiên cứu -->
+<div class="step" id="step-5">
+  <h2>Bước 6: Thiết kế nghiên cứu</h2>
+
+  <label>📘 Loại RCT:</label>
+  <select id="design-type" onchange="updateDesignFields(); saveData(); renderStudyFlowDiagram()">
+    <option value="">-- chọn --</option>
+    <option value="parallel">Song song</option>
+    <option value="cross-over">Bắt chéo (cross-over)</option>
+  </select>
+
+  <label>🎲 Phân bổ ngẫu nhiên:</label>
+  <select id="randomization" onchange="saveData()">
+    <option value="">-- chọn --</option>
+    <option>Ngẫu nhiên đơn giản</option>
+    <option>Ngẫu nhiên phân tầng</option>
+    <option>Ngẫu nhiên block</option>
+  </select>
+
+  <label>🙈 Làm mù:</label>
+  <select id="blinding" onchange="saveData()">
+    <option value="">-- chọn --</option>
+    <option>Không mù</option>
+    <option>Làm mù đơn</option>
+    <option>Làm mù đôi</option>
+    <option>Làm mù ba</option>
+  </select>
+  <br><br>
+  <!-- Khối xuất hiện tùy theo loại thiết kế -->
+  <div id="design-extra-fields" style="margin-top: 15px;"></div>
+  
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-design" accept="application/pdf"><br>
+  <button onclick="generateGPT_Design()">🧠 GPT gợi ý</button>
+  <div id="suggest-design" class="gpt-suggest"></div>
+  <button onclick="evaluateGPT_Design()">🧐 GPT đánh giá</button>
+  <div id="eval-design" class="gpt-eval"></div>
+  <br><br>
+  <button onclick="goToStep(4)">⬅️ Quay lại</button>
+  <button onclick="goToStep(6)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 7: Tính cỡ mẫu -->
+<div class="step" id="step-6">
+  <h2>Bước 7: Tính cỡ mẫu</h2>
+
+  <label>Chọn loại công thức:</label>
+  <select id="sample-size-method" onchange="renderSampleSizeForm()">
+    <option value="">-- Chọn công thức --</option>
+    <option value="means">So sánh 2 trung bình</option>
+    <option value="noninferiority_means">Thử nghiệm không hơn kém (2 trung bình)</option>
+    <option value="crossover_means">So sánh trung bình (bắt chéo)</option>
+    <option value="proportions">So sánh 2 tỷ lệ</option>
+    <option value="noninferiority_prop"> Thử nghiệm không hơn kém (2 tỷ lệ)</option>
+    <option value="crossover_props">So sánh tỷ lệ (bắt chéo)</option>
+    <option value="anova">So sánh nhiều trung bình (ANOVA)</option>
+    <option value="chisq">So sánh nhiều tỷ lệ (Chi-square)</option>
+    <option value="survival">Phân tích sống còn (Log-rank)</option>
+    <option value="ancova">Repeated measures / ANCOVA</option>
+  </select>
+
+  <br><br>
+  <div id="sample-size-form"></div>
+  <div id="sample-size-formula" style="margin-top: 20px; font-style: italic;"></div>
+  <div id="sample-size-reference" style="margin-top: 10px; color: gray; font-size: 0.9em;"></div>
+  <button onclick="calculateSampleSize()">🧮 Tính cỡ mẫu</button>
+  <div id="sample-size-result" style="margin-top: 15px; font-weight: bold; color: green;"></div>
+  <div id="sample-size-adjusted" style="margin-top: 5px; font-weight: bold; color: darkorange;"></div>
+  <br><br>
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-sample-size" accept=".pdf"><br>
+  <button onclick="generateSampleSizeSuggestion()">🧠 GPT gợi ý cách tính</button>
+  <div id="suggest-sample-size" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateSampleSize()">🧐 GPT đánh giá cỡ mẫu hiện tại</button>
+  <div id="eval-sample-size" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+  <br>
+  <button onclick="goToStep(5)">⬅️ Quay lại</button>
+  <button onclick="goToStep(7)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 8: Tiêu chí chọn và loại -->
+<div class="step" id="step-7">
+  <h2>Bước 8: Tiêu chí chọn và loại</h2>
+
+  <h3>Tiêu chí chọn:</h3>
+  <div id="inclusion-criteria"></div>
+  <button onclick="addInclusionCriterion()">➕ Thêm tiêu chí chọn</button>
+
+  <h3>Tiêu chí loại:</h3>
+  <div id="exclusion-criteria"></div>
+  <button onclick="addExclusionCriterion()">➕ Thêm tiêu chí loại</button>
+  <br><br>
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-criteria" accept=".pdf"><br>
+  <button onclick="generateCriteriaFromGPT()">🧠 GPT gợi ý tiêu chí</button>
+  <div id="criteria-gpt-suggestion" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateCriteria()">🧐 GPT đánh giá tiêu chí hiện tại</button>
+  <div id="criteria-gpt-evaluation" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+
+  <br>
+  <button onclick="goToStep(6)">⬅️ Quay lại</button>
+  <button onclick="goToStep(8)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 9: Phân bổ ngẫu nhiên -->
+<div class="step" id="step-8">
+  <h2>Bước 9: Phân bổ ngẫu nhiên</h2>
+  <label>Số lượng nhánh can thiệp (tự động lấy từ bước 6):</label>
+  <input type="number" id="num-arms-step9" readonly style="background-color:#f0f0f0;"><br><br>
+
+  <label>Chọn phương pháp phân bổ:</label>
+  <select id="random-method" onchange="generateAutoRandomization(); saveData()">
+    <option value="">-- Chọn phương pháp --</option>
+    <option value="simple">Ngẫu nhiên đơn giản</option>
+    <option value="block">Ngẫu nhiên theo khối</option>
+    <option value="stratified">Ngẫu nhiên phân tầng</option>
+    <option value="minimization">Ngẫu nhiên hóa tối thiểu</option>
+  </select><br><br>
+  <div id="random-options"></div>
+
+  <label>Mô tả ngẫu nhiên hóa:</label>
+  <textarea id="randomization-method" rows="5" oninput="saveData()"></textarea><br>
+  
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-randomization" accept=".pdf"><br><br> 
+  <button onclick="generateRandomizationSuggestion()">🧠 GPT gợi ý nội dung</button>
+  <div id="randomization-gpt-suggestion" style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;"></div>
+  <button onclick="evaluateRandomization()">✅ GPT đánh giá nội dung đã nhập</button>
+  <div id="randomization-gpt-evaluation" style="white-space: pre-wrap; background: #efe; padding: 10px; border: 1px solid #9c9;"></div>
+  <br><br>
+  <button onclick="goToStep(7)">⬅️ Quay lại</button>
+  <button onclick="goToStep(9)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 10: Mô tả can thiệp -->
+<div class="step" id="step-9">
+  <h2>Bước 10: Mô tả Can thiệp</h2>
+  <div id="intervention-descriptions"></div>
+  <br><br>
+  <button onclick="goToStep(8)">⬅️ Quay lại</button>
+  <button onclick="goToStep(10)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 11: Biến số nghiên cứu -->
+  <div class="step" id="step-10">
+  <h2>Bước 11: Biến số nghiên cứu</h2>
+  <p>Tải lên file CSV chứa danh sách biến mẫu đã chuẩn hóa theo các trường cần thiết. Sau đó, kéo-thả các biến vào từng nhóm bên phải để đưa vào nghiên cứu.</p>
+  <input type="file" id="variable-file" accept=".csv">
+  <hr>
+  <h3>➕ Thêm biến mới:</h3>
+  <div id="new-variable-form">
+  <input type="text" placeholder="Tên biến" id="new-name">
+
+  <select id="new-role" style="display:block; width:100%; margin-top:5px; margin-bottom:10px; padding:6px;">
+    <option value="">-- Vai trò --</option>
+    <option value="primary">Kết cục chính</option>
+    <option value="secondary">Kết cục phụ</option>
+    <option value="baseline">Biến nền</option>
+    <option value="confounder">Biến nhiễu</option>
+    <option value="mediator">Biến trung gian</option>
+    <option value="moderator">Biến điều biến</option>
+    <option value="safety">Biến an toàn</option>
+  </select>
+
+  <select id="new-type" style="display:block; width:100%; margin-top:5px; margin-bottom:10px; padding:6px;">
+    <option value="">-- Kiểu dữ liệu --</option>
+    <option value="numeric">Số liên tục (numeric)</option>
+    <option value="ordinal">Thứ bậc (ordinal)</option>
+    <option value="categorical">Phân loại (categorical)</option>
+    <option value="binary">Nhị phân (binary: có/không)</option>
+    <option value="text">Chuỗi văn bản (text)</option>
+    <option value="date">Ngày tháng (date)</option>
+
+  </select>
+
+  <input type="text" placeholder="Đơn vị" id="new-unit">
+  <input type="text" placeholder="Thời điểm đo" id="new-time">
+  <input type="text" placeholder="Cách đo lường" id="new-measure">
+  <input type="text" placeholder="Định nghĩa" id="new-definition">
+  <input type="text" placeholder="Nguồn" id="new-source">
+
+  <select id="new-format" style="display:block; width:100%; margin-top:5px; margin-bottom:10px; padding:6px;">
+    <option value="">-- Định dạng --</option>
+    <option value="float">Số thực (float)</option>
+    <option value="integer">Số nguyên (integer)</option>
+    <option value="string">Chuỗi ký tự (string)</option>
+    <option value="percent">Phần trăm (percent)</option>
+    <option value="yes/no">Có / Không (yes / no)</option>
+    <option value="mm/dd/yyyy">Ngày (mm/dd/yyyy)</option>
+  </select>
+
+  <input type="text" placeholder="Khoảng giá trị" id="new-range">
+  <input type="text" placeholder="MCID / Ngưỡng" id="new-mcid">
+  <br>
+  <button onclick="addNewVariable()">✅ Thêm vào danh sách</button>
+  <button onclick="exportVariables()">💾 Xuất file CSV biến đã cập nhật</button>
+</div>
+
+  <div id="variable-groups"></div>
+  <br><br>
+  <button onclick="goToStep(9)">⬅️ Quay lại</button>
+  <button onclick="goToStep(11)">Tiếp ➡️</button>
+</div>
+
+<script>
+let allVariables = [];
+let selectedVariables = {};
+const variableRoles = [
+  {
+    key: "primary",
+    name: "Kết cục chính",
+    required: true,
+    description: "Biến số chính để đánh giá hiệu quả can thiệp. Bắt buộc có."
+  },
+  {
+    key: "secondary",
+    name: "Kết cục phụ",
+    required: false,
+    description: "Biến số bổ sung để đánh giá các khía cạnh khác của can thiệp. Nên có."
+  },
+  {
+    key: "baseline",
+    name: "Biến nền",
+    required: true,
+    description: "Đặc điểm ban đầu của người bệnh dùng để mô tả và phân tích. Bắt buộc có."
+  },
+  {
+    key: "confounder",
+    name: "Biến nhiễu",
+    required: false,
+    description: "Biến có thể ảnh hưởng kết quả nếu không kiểm soát. Nên có."
+  },
+  {
+    key: "mediator",
+    name: "Biến trung gian",
+    required: false,
+    description: "Biến giúp giải thích cơ chế tác động của can thiệp đến kết quả."
+  },
+  {
+    key: "moderator",
+    name: "Biến điều biến",
+    required: false,
+    description: "Biến làm thay đổi mối liên hệ giữa can thiệp và kết quả (ví dụ: tương tác)."
+  },
+  {
+    key: "safety",
+    name: "Biến an toàn",
+    required: false,
+    description: "Biến phản ánh tác dụng phụ, biến cố bất lợi hoặc vấn đề an toàn trong nghiên cứu."
+  }
+];
+
+function createVariableDragUI() {
+  const container = document.getElementById("variable-groups");
+  container.innerHTML = "";
+
+  variableRoles.forEach(role => {
+    const availableList = (allVariables || []).filter(v => v.role === role.key);
+    const selectedList = selectedVariables[role.key] || [];
+
+    const block = document.createElement("div");
+    block.className = "variable-group";
+
+    // Tiêu đề
+    const heading = document.createElement("h4");
+    heading.textContent = role.name;
+    block.appendChild(heading);
+
+    // Mô tả
+    const desc = document.createElement("div");
+    desc.className = "description";
+    desc.textContent = role.description;
+    block.appendChild(desc);
+
+    // Khối 2 danh sách
+    const wrapper = document.createElement("div");
+    wrapper.className = "variable-lists";
+
+    // Danh sách có thể kéo (chưa chọn)
+    const availableUl = document.createElement("ul");
+    availableUl.className = "variable-list variable-available";
+    availableUl.dataset.role = role.key;
+    availableUl.ondrop = drop;
+    availableUl.ondragover = allowDrop;
+
+    availableList.forEach(v => {
+      const li = document.createElement("li");
+      li.draggable = true;
+      li.ondragstart = drag;
+      li.dataset.name = v.name;
+      li.dataset.role = v.role;
+      li.textContent = `${v.name} (${v.type})`;
+      const info = `
+      Tên: ${v.name}
+      Vai trò: ${v.role}
+      Kiểu dữ liệu: ${v.type}
+      Đơn vị: ${v.unit}
+      Thời điểm đo: ${v.time}
+      Cách đo: ${v.measure}
+      Định nghĩa: ${v.definition}
+      Nguồn: ${v.source}
+      Định dạng: ${v.format}
+      Khoảng giá trị: ${v.range}
+      MCID/Ngưỡng: ${v.mcid_or_cutoff}`.trim();
+      li.title = info;        // 🆕 gắn tooltip
+
+      availableUl.appendChild(li);
+    });
+
+    // Danh sách đã chọn
+    const selectedUl = document.createElement("ul");
+    selectedUl.className = "variable-list variable-selected";
+    selectedUl.dataset.role = role.key;
+    selectedUl.ondrop = drop;
+    selectedUl.ondragover = allowDrop;
+
+    selectedList.forEach(v => {
+      const li = document.createElement("li");
+      li.draggable = true;
+      li.ondragstart = drag;
+      li.dataset.name = v.name;
+      li.dataset.role = v.role;
+      li.style.position = "relative";
+
+      // Tạo thẻ span chứa nội dung văn bản
+      const span = document.createElement("span");
+      span.textContent = `${v.name} (${v.type})`;
+      li.appendChild(span);
+
+      const btn = document.createElement("button");
+      btn.innerText = "🗑";
+      btn.style.position = "absolute";
+      btn.style.top = "4px";
+      btn.style.right = "6px";
+      btn.style.background = "none";
+      btn.style.border = "none";
+      btn.style.color = "red";
+      btn.style.cursor = "pointer";
+      btn.style.fontSize = "16px";
+      btn.onclick = (e) => removeVariable(e, v.name, v.role);
+
+      li.appendChild(btn);
+      const info = `
+      Tên: ${v.name}
+      Vai trò: ${v.role}
+      Kiểu dữ liệu: ${v.type}
+      Đơn vị: ${v.unit}
+      Thời điểm đo: ${v.time}
+      Cách đo: ${v.measure}
+      Định nghĩa: ${v.definition}
+      Nguồn: ${v.source}
+      Định dạng: ${v.format}
+      Khoảng giá trị: ${v.range}
+      MCID/Ngưỡng: ${v.mcid_or_cutoff}`.trim();
+      li.title = info;        // 🆕 gắn tooltip
+      selectedUl.appendChild(li);
+    });
+
+    wrapper.appendChild(availableUl);
+    wrapper.appendChild(selectedUl);
+    block.appendChild(wrapper);
+    container.appendChild(block);
+
+    // Khu vực GPT
+    const pdfLabel = document.createElement("label");
+    pdfLabel.innerText = "📂 Tải tài liệu PDF hỗ trợ:";
+    block.appendChild(pdfLabel);
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.id = `file-variable-${role.key}`;
+    fileInput.accept = ".pdf";
+    block.appendChild(fileInput);
+
+    block.appendChild(document.createElement("br"));
+
+    // 👉 Tạo khối chứa 2 nút
+const btnRow = document.createElement("div");
+btnRow.style.display = "flex";
+btnRow.style.flexDirection = "row";
+btnRow.style.gap = "10px"; // khoảng cách giữa 2 nút
+btnRow.style.marginTop = "8px";
+
+// 👉 Nút GPT gợi ý
+const suggestBtn = document.createElement("button");
+suggestBtn.innerText = "🧠 GPT gợi ý biến";
+suggestBtn.onclick = () => suggestVariablesForRole(role.key);
+suggestBtn.style.display = "inline-flex";
+suggestBtn.style.alignSelf = "flex-start";
+suggestBtn.style.maxWidth = "fit-content";
+suggestBtn.style.padding = "6px 12px";
+suggestBtn.style.fontSize = "14px";
+suggestBtn.style.border = "1px solid #bbb";
+suggestBtn.style.borderRadius = "6px";
+suggestBtn.style.backgroundColor = "#f0f0f0";
+suggestBtn.style.color = "#333";
+suggestBtn.style.cursor = "pointer";
+suggestBtn.onmouseover = () => suggestBtn.style.backgroundColor = "#ddd";
+suggestBtn.onmouseout = () => suggestBtn.style.backgroundColor = "#f0f0f0";
+btnRow.appendChild(suggestBtn);
+
+// 👉 Nút GPT đánh giá
+const evalBtn = document.createElement("button");
+evalBtn.innerText = "🧐 GPT đánh giá biến";
+evalBtn.onclick = () => evaluateVariablesForRole(role.key);
+evalBtn.style.display = "inline-flex";
+evalBtn.style.alignSelf = "flex-start";
+evalBtn.style.maxWidth = "fit-content";
+evalBtn.style.padding = "6px 12px";
+evalBtn.style.fontSize = "14px";
+evalBtn.style.border = "1px solid #bbb";
+evalBtn.style.borderRadius = "6px";
+evalBtn.style.backgroundColor = "#f0f0f0";
+evalBtn.style.color = "#333";
+evalBtn.style.cursor = "pointer";
+evalBtn.onmouseover = () => evalBtn.style.backgroundColor = "#ddd";
+evalBtn.onmouseout = () => evalBtn.style.backgroundColor = "#f0f0f0";
+btnRow.appendChild(evalBtn);
+
+// 👉 Thêm dãy nút vào block chính
+block.appendChild(btnRow);
+
+// Khu vực hiển thị kết quả GPT
+const suggestDiv = document.createElement("div");
+suggestDiv.id = `suggest-variable-${role.key}`;
+suggestDiv.style.cssText = "margin-top:10px; background:#eef; padding:10px; border:1px solid #99c; white-space:pre-wrap;";
+block.appendChild(suggestDiv);
+
+const evalDiv = document.createElement("div");
+evalDiv.id = `eval-variable-${role.key}`;
+evalDiv.style.cssText = "margin-top:10px; background:#efe; padding:10px; border:1px solid #9c9; white-space:pre-wrap;";
+block.appendChild(evalDiv);
+
+    // Thêm khối này vào container chính
+    container.appendChild(block);
+  });
+}
+
+function allowDrop(e) {
+  e.preventDefault();
+}
+
+function drag(e) {
+  e.dataTransfer.setData("text/plain", e.target.outerHTML);
+  e.dataTransfer.setData("fromList", e.target.parentElement.classList.contains("variable-selected") ? "selected" : "available");
+  e.dataTransfer.setData("role", e.target.dataset.role);
+  e.dataTransfer.setData("name", e.target.dataset.name);
+  e.target.classList.add("dragging");
+}
+
+function drop(e) {
+  e.preventDefault();
+
+  const from = e.dataTransfer.getData("fromList");
+  const role = e.dataTransfer.getData("role");
+  const name = e.dataTransfer.getData("name");
+
+  if (!from || !role || !name) return;
+
+  const v = (Array.isArray(allVariables) ? allVariables.find(x => x.name === name && x.role === role) : null) || {};
+  if (!v.name) return;
+
+  const targetList = e.target.closest(".variable-list");
+  if (!targetList) return;
+
+  if ([...targetList.querySelectorAll("li")].some(el => el.dataset.name === name)) return;
+
+  const li = document.createElement("li");
+  li.dataset.name = v.name;
+  li.dataset.role = v.role;
+  li.dataset.type = v.type || "";
+  li.dataset.unit = v.unit || "";
+  li.dataset.time = v.time || "";
+  li.dataset.measure = v.measure || "";
+  li.dataset.definition = v.definition || "";
+  li.dataset.source = v.source || "";
+  li.dataset.format = v.format || "";
+  li.dataset.range = v.range || "";
+  li.dataset.mcid = v.mcid_or_cutoff || "";
+
+  li.draggable = true;
+  li.ondragstart = drag;
+  li.style.position = "relative";
+
+  const span = document.createElement("span");
+  span.textContent = `${v.name} (${v.type || ""})`;
+  li.appendChild(span);
+
+  const info = (
+    `Tên: ${v.name}
+Vai trò: ${v.role}
+Kiểu dữ liệu: ${v.type}
+Đơn vị: ${v.unit}
+Thời điểm đo: ${v.time}
+Cách đo: ${v.measure}
+Định nghĩa: ${v.definition}
+Nguồn: ${v.source}
+Định dạng: ${v.format}
+Khoảng giá trị: ${v.range}
+MCID/Ngưỡng: ${v.mcid_or_cutoff}`
+  ).trim();
+  li.title = info;
+
+  const btn = document.createElement("button");
+  btn.innerText = "🗑";
+  btn.style.position = "absolute";
+  btn.style.top = "4px";
+  btn.style.right = "6px";
+  btn.style.background = "none";
+  btn.style.border = "none";
+  btn.style.color = "red";
+  btn.style.cursor = "pointer";
+  btn.style.fontSize = "16px";
+  btn.onclick = (evt) => removeVariable(evt, v.name, v.role);
+  li.appendChild(btn);
+
+  targetList.appendChild(li);
+
+  // Nếu kéo từ available, xóa khỏi danh sách nguồn
+  if (from === "available") {
+    const fromList = document.querySelector(`.variable-available[data-role="${role}"]`);
+    const itemToRemove = [...fromList.querySelectorAll("li")].find(el => el.dataset.name === name);
+    if (itemToRemove) itemToRemove.remove();
+  }
+
+  // Cập nhật selectedVariables
+  selectedVariables[role] = [...targetList.querySelectorAll("li")].map(el => ({
+    name: el.dataset.name,
+    role: el.dataset.role,
+    type: el.dataset.type || "",
+    unit: el.dataset.unit || "",
+    time: el.dataset.time || "",
+    measure: el.dataset.measure || "",
+    definition: el.dataset.definition || "",
+    source: el.dataset.source || "",
+    format: el.dataset.format || "",
+    range: el.dataset.range || "",
+    mcid_or_cutoff: el.dataset.mcid || ""
+  }));
+  saveData();
+};
+
+// Đọc file CSV biến mẫu
+document.getElementById("variable-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const text = await file.text();
+  const result = Papa.parse(text.trim(), { header: true, skipEmptyLines: true });
+
+  allVariables = result.data.map(row => ({
+    name: row.name?.trim() || "",
+    role: row.role?.trim() || "",
+    type: row.type?.trim() || "",
+    unit: row.unit || "",
+    time: row.time || "",
+    measure: row.measure || "",
+    definition: row.definition || "",
+    source: row.source || "",
+    format: row.format || "",
+    range: row.range || "",
+    mcid_or_cutoff: row.mcid_or_cutoff || ""
+  }));
+  console.log("✅ Loaded variables:", allVariables);
+  createVariableDragUI();
+});
+
+</script>
+
+<!-- Bước 12: Mô tả thu thập dữ liệu -->
+<div class="step" id="step-11">
+  <h2>Bước 12: Mô tả cách thu thập dữ liệu</h2>
+  <label>📝 Mô tả cách thu thập dữ liệu:</label><br>
+  <textarea id="collect-desc" rows="8" style="width:100%;" placeholder="Ví dụ: Dữ liệu sẽ được thu thập tại 3 thời điểm..."></textarea>
+  <div id="data-collection-list"></div>
+  <br><br>
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-collect-pdf" accept=".pdf"><br><br>
+  <button onclick="generateCollectSuggestion()">🧠 GPT gợi ý mô tả thu thập</button>
+  <div id="suggest-collect" style="margin-top:10px; background:#eef; padding:10px; border:1px solid #99c; white-space:pre-wrap;"></div>
+  <button onclick="evaluateCollectDescription()">🧐 GPT đánh giá mô tả đã nhập</button>
+  <div id="eval-collect" style="margin-top:10px; background:#efe; padding:10px; border:1px solid #9c9; white-space:pre-wrap;"></div>
+
+  <br>
+  <button onclick="goToStep(10)">⬅️ Quay lại</button>
+  <button onclick="goToStep(12)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 13: Phân tích số liệu -->
+<div class="step" id="step-12">
+  <h2>Bước 13: Phân tích số liệu</h2>
+  <label>📝 Mô tả chiến lược phân tích số liệu:</label><br>
+  <textarea id="analysis-desc" rows="10" style="width:100%;" placeholder="Ví dụ: Dữ liệu sẽ được phân tích theo nguyên tắc ITT..."></textarea>
+  <div id="analysis-list"></div>
+  <br><br>
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-analysis-pdf" accept=".pdf"><br><br>
+  <button onclick="generateAnalysisPlan()">🧠 GPT gợi ý chiến lược phân tích</button>
+  <div id="suggest-analysis" style="margin-top:10px; background:#eef; padding:10px; white-space:pre-wrap; border:1px solid #99c;"></div>
+  <button onclick="evaluateAnalysisPlan()">🧐 GPT đánh giá nội dung đã viết</button>
+  <div id="eval-analysis" style="margin-top:10px; background:#efe; padding:10px; white-space:pre-wrap; border:1px solid #9c9;"></div>
+  <br>
+  <button onclick="goToStep(11)">⬅️ Quay lại</button>
+  <button onclick="goToStep(13)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 14: Đạo đức nghiên cứu -->
+<div class="step" id="step-13">
+  <h2>Bước 14: Đạo đức nghiên cứu</h2>
+  <label>📝 Mô tả phần đạo đức nghiên cứu:</label><br>
+  <textarea id="ethics-desc" rows="10" style="width:100%;" placeholder="Ví dụ: Nghiên cứu tuân thủ Tuyên bố Helsinki..."></textarea><br><br>
+  <h3>Kết quả từ GPT:</h3>
+  <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+  <input type="file" id="file-ethics-pdf" accept=".pdf"><br><br>
+  <button onclick="generateEthicsSection()">🧠 GPT gợi ý nội dung đạo đức</button>
+  <div id="suggest-ethics" style="margin-top:10px; background:#eef; padding:10px; white-space:pre-wrap; border:1px solid #99c;"></div>
+  <button onclick="evaluateEthicsSection()">🧐 GPT đánh giá nội dung đã viết</button>
+  <div id="eval-ethics" style="margin-top:10px; background:#efe; padding:10px; white-space:pre-wrap; border:1px solid #9c9;"></div>
+  <br>
+  <button onclick="goToStep(12)">⬅️ Quay lại</button>
+  <button onclick="goToStep(14)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 15: Kiểm tra logic tổng thể -->
+<div class="step" id="step-14">
+  <h2>Bước 15: Kiểm tra logic tổng thể</h2>
+  <p>🧠 GPT sẽ kiểm tra toàn bộ đề cương bạn đã nhập, gồm PICO, mục tiêu, biến số, mô tả can thiệp, phân tích, đạo đức… để phát hiện mâu thuẫn, thiếu sót hoặc gợi ý cải tiến.</p>
+  <button onclick="checkLogic()">🧠 Kiểm tra logic toàn bộ đề cương</button>
+  <div id="logic-check-result" style="margin-top:15px; background:#ffe; padding:10px; white-space:pre-wrap; border:1px solid #cc0;"></div>
+  <br>
+  <button onclick="goToStep(13)">⬅️ Quay lại</button>
+  <button onclick="goToStep(15)">Tiếp ➡️</button>
+</div>
+
+<!-- Bước 16: Sơ đồ tiến hành nghiên cứu -->
+<div class="step" id="step-15">
+  <h2>Bước 16: Sơ đồ tiến hành nghiên cứu</h2>
+  <pre id="studyflow-mermaid" class="mermaid" style="padding: 20px; border: 1px solid #ccc;"></pre>
+  <br>
+  <button onclick="renderStudyFlowDiagram()">🔁 Vẽ lại sơ đồ</button>
+  <button onclick="downloadMermaidPNG()">📷 Tải PNG</button>
+  <br><br>
+  <button onclick="goToStep(14)">⬅️ Quay lại</button>
+  <button onclick="alert('🎉 Đã hoàn tất toàn bộ đề cương!')">Kết thúc ✅</button>
+</div>
+
+<script>
+// ====================== PHẦN 1: Hàm cho các bước ===========================
+
+//Chung cho mọi bước
+
+async function extractTextFromPDF(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let fullText = '';
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map(item => item.str);
+    fullText += strings.join(' ') + '\n';
+  }
+
+  return fullText;
+}
+
+//Bước 1
+
+async function generatePicoDescription() {
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const fileInput = document.getElementById("pico-file");
+  const files = Array.from(fileInput.files);
+
+  if (!p || !i || !c || !o) {
+    alert("Vui lòng điền đầy đủ thông tin P, I, C, O trước khi dùng GPT.");
+    return;
+  }
+
+  document.getElementById("pico-gpt-result").innerText = "Đang xử lý...";
+
+  let fileText = "";
+for (const file of files) {
+  if (file.type === "application/pdf") {
+    try {
+      const text = await extractTextFromPDF(file);
+      fileText += `--- Nội dung từ file: ${file.name} ---\n${text}\n\n`;
+    } catch (err) {
+      console.error("Lỗi đọc file:", file.name, err);
+    }
+  }
+}
+
+  const prompt = fileText
+    ? `Tài liệu sau đây được trích từ bài báo người dùng cung cấp:\n\n${fileText}\n\n---\nDựa trên nội dung tài liệu trên và thông tin PICO sau, hãy viết một đoạn mô tả nghiên cứu RCT phù hợp:\n- P: ${p}\n- I: ${i}\n- C: ${c}\n- O: ${o}`
+    : `Tôi đang xây dựng một đề cương nghiên cứu RCT với thông tin PICO sau:\n- P: ${p}\n- I: ${i}\n- C: ${c}\n- O: ${o}\nHãy viết một đoạn mô tả nghiên cứu ngắn gọn, rõ ràng.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    document.getElementById("pico-gpt-result").innerText =
+      data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (e) {
+    document.getElementById("pico-gpt-result").innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+//Bước 2
+
+async function generateResearchQuestionFromGPT() {
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const fileInput = document.getElementById("question-file");
+  const files = Array.from(fileInput.files);
+
+  if (!p || !i || !c || !o) {
+    alert("Cần điền đầy đủ thông tin PICO trước khi GPT gợi ý.");
+    return;
+  }
+
+  document.getElementById("question-gpt-suggestion").innerText = "Đang gợi ý từ GPT...";
+
+  let fileText = "";
+  for (const file of files) {
+    if (file.type === "application/pdf") {
+      try {
+        const text = await extractTextFromPDF(file);
+        fileText += `--- Nội dung từ file: ${file.name} ---\n${text}\n\n`;
+      } catch (err) {
+        console.error("Lỗi khi đọc PDF:", err);
+      }
+    }
+  }
+
+  const prompt = `${fileText ? "Dưới đây là nội dung từ tài liệu PDF:\n" + fileText : ""}
+Thông tin PICO đã có:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+Dựa vào tài liệu và PICO trên, hãy viết một câu hỏi nghiên cứu RCT rõ ràng, mạch lạc, phù hợp để đưa vào đề cương.`
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    document.getElementById("question-gpt-suggestion").innerText = result;
+  } catch (e) {
+    document.getElementById("question-gpt-suggestion").innerText = "Lỗi khi phân tích phản hồi: " + text;
+  }
+}
+
+async function evaluateResearchQuestion() {
+  const question = document.getElementById("question").value.trim();
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  if (!question) {
+    alert("Vui lòng nhập câu hỏi để đánh giá.");
+    return;
+  }
+
+  document.getElementById("question-gpt-evaluation").innerText = "GPT đang đánh giá...";
+
+  const prompt = `Đây là một câu hỏi nghiên cứu mà người dùng đã viết:\n"${question}"\n\n
+1. Hãy đánh giá câu hỏi này theo tiêu chí **FINER** (Feasible, Interesting, Novel, Ethical, Relevant).
+2. Kiểm tra xem nó có đủ yếu tố PICO không? Nếu thiếu phần nào thì ghi rõ.
+3. Đưa ra nhận xét và gợi ý cải thiện nếu cần.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    document.getElementById("question-gpt-evaluation").innerText = result;
+  } catch (e) {
+    document.getElementById("question-gpt-evaluation").innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+//Bước 3 
+
+function addSubObjective() {
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.gap = "10px";
+  container.style.marginTop = "5px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "sub-objective";
+  input.placeholder = "Nhập mục tiêu phụ...";
+  input.oninput = saveData;
+  input.style.flex = "1";
+
+  const btn = document.createElement("button");
+  btn.innerText = "❌";
+  btn.title = "Xóa mục tiêu này";
+  btn.style.background = "none";
+  btn.style.border = "1px solid #ccc";
+  btn.style.padding = "4px 10px";
+  btn.style.borderRadius = "6px";
+  btn.style.cursor = "pointer";
+  btn.style.color = "red";
+  btn.onclick = () => {
+    container.remove();
+    saveData();
+  };
+
+  container.appendChild(input);
+  container.appendChild(btn);
+
+  document.getElementById("sub-objectives").appendChild(container);
+  saveData();
+}
+
+
+async function generateObjectivesFromGPT() {
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const fileInput = document.getElementById("objective-file");
+  const files = Array.from(fileInput.files);
+
+  if (!p || !i || !c || !o) {
+    alert("Cần nhập đủ PICO trước khi GPT gợi ý mục tiêu.");
+    return;
+  }
+
+  document.getElementById("objective-gpt-suggestion").innerText = "Đang gợi ý từ GPT...";
+
+  let fileText = "";
+  for (const file of files) {
+    if (file.type === "application/pdf") {
+      try {
+        const text = await extractTextFromPDF(file);
+        fileText += `--- Nội dung từ file: ${file.name} ---\n${text}\n\n`;
+      } catch (err) {
+        console.error("Lỗi đọc file PDF:", err);
+      }
+    }
+  }
+
+  const prompt = `${fileText ? "Tài liệu người dùng cung cấp:\n" + fileText : ""}
+Thông tin từ bước PICO:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+Dựa vào tài liệu và PICO trên, hãy viết mục tiêu chính và 2–4 mục tiêu phụ phù hợp với một đề cương nghiên cứu RCT. Mục tiêu phải rõ ràng, đo lường được, đủ thành phần PICO. Dựa trên kiến thức y khoa hiện tại về vấn đề mà tôi đang nghiên cứu. Nếu có tải lên tài liệu, thì phải trích dẫn rõ ở cuối cùng là thông tin gì đã lấy từ tài liệu nào`
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
+    document.getElementById("objective-gpt-suggestion").innerText = result;
+  } catch (e) {
+    document.getElementById("objective-gpt-suggestion").innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+async function evaluateObjectives() {
+  const main = document.getElementById("main-objective").value.trim();
+  const subs = Array.from(document.querySelectorAll(".sub-objective")).map(el => el.value.trim()).filter(v => v);
+
+  if (!main) {
+    alert("Vui lòng nhập mục tiêu chính.");
+    return;
+  }
+
+  const allObjectives = `Mục tiêu chính:\n- ${main}\n\nMục tiêu phụ:\n${subs.map(s => "- " + s).join("\n")}`;
+
+  const prompt = `Dưới đây là các mục tiêu nghiên cứu mà người dùng đã viết:
+
+${allObjectives}
+
+1. Đánh giá từng mục tiêu theo tiêu chí **FINER** (Feasible, Interesting, Novel, Ethical, Relevant).
+2. Kiểm tra xem từng mục tiêu có rõ ràng và phù hợp **SMART** (Specific, Measurable, Achievable, Realistic, Time-bound).
+3. Nếu có mục tiêu nào chưa đúng hoặc quá rộng/mơ hồ, hãy nêu rõ và đề xuất cách viết lại tốt hơn.
+4. Đối với mục tiêu chính, kiểm tra xem có rõ ràng về PICO không.`
+
+  document.getElementById("objective-gpt-evaluation").innerText = "GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    document.getElementById("objective-gpt-evaluation").innerText = result;
+  } catch (e) {
+    document.getElementById("objective-gpt-evaluation").innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+
+//Bước 4
+
+async function generateGPT_Territory() {
+  const output = document.getElementById("suggest-territory");
+  const file = document.getElementById("file-territory").files[0];
+
+  const p = document.getElementById("pico-p")?.value || "";
+  const i = document.getElementById("pico-i")?.value || "";
+  const c = document.getElementById("pico-c")?.value || "";
+  const o = document.getElementById("pico-o")?.value || "";
+  const question = document.getElementById("question")?.value || "";
+  const mainObjective = document.getElementById("main-objective")?.value || "";
+
+  if (!p || !i || !c || !o || !mainObjective) {
+    alert("Vui lòng nhập đủ thông tin PICO và mục tiêu trước khi GPT gợi ý.");
+    return;
+  }
+
+  output.textContent = "Đang sinh nội dung...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `${fileText ? "Tài liệu PDF:\n" + fileText + "\n\n" : ""}
+Thông tin đề cương:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+- Câu hỏi: ${question}
+- Mục tiêu chính: ${mainObjective}
+
+Hãy viết phần mở đầu nghiên cứu (Territory) theo mô hình CaRS, thể hiện bối cảnh, tầm quan trọng của lĩnh vực đang nghiên cứu. Nên có các số liệu dịch tễ học và chỉ số về gánh nặng bệnh tật để thể hiện rõ vấn đề nghiên cứu là cấp thiết. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (err) {
+    output.textContent = "Lỗi phản hồi: " + text;
+  }
+}
+
+async function evaluateGPT_Territory() {
+  const input = document.getElementById("intro-territory").value.trim();
+  const output = document.getElementById("eval-territory");
+  const file = document.getElementById("file-territory").files[0];
+
+  output.innerText = "⏳ Đang đánh giá Territory...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `
+Đây là phần Territory (bối cảnh nghiên cứu) trong một đề cương nghiên cứu:
+
+"${input}"
+
+${fileText ? "Tài liệu PDF liên quan:\n" + fileText : ""}
+
+Hãy đánh giá đoạn Territory trên theo các tiêu chí sau:
+- Đã nêu rõ lĩnh vực nghiên cứu và bối cảnh chung chưa?
+- Có số liệu, bằng chứng hỗ trợ không?
+- Có dẫn dắt người đọc vào chủ đề nghiên cứu chính không?
+- Có logic, mạch lạc và phù hợp với mục tiêu nghiên cứu không?
+
+Trả lời bằng tiếng Việt.
+  `;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+    } catch (e) {
+      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
+    }
+  } catch (error) {
+    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
+  }
+}
+
+async function generateGPT_Niche() {
+  const output = document.getElementById("suggest-niche");
+  const file = document.getElementById("file-niche").files[0];
+
+  const territory = document.getElementById("intro-territory")?.value || "";
+
+  if (!territory.trim()) {
+    alert("Cần nhập hoặc sinh phần Territory trước khi viết Niche.");
+    return;
+  }
+
+  output.textContent = "Đang sinh nội dung...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `${fileText ? "Tài liệu PDF:\n" + fileText + "\n\n" : ""}
+Phần Territory đã viết:
+${territory}
+
+Dựa trên phần Territory và tài liệu, hãy viết phần Niche nêu rõ khoảng trống kiến thức trong lĩnh vực nghiên cứu. Nếu lĩnh vực nghiên cứu là về một can thiệp của y học cổ truyền trên một bệnh lý của y học hiện đại, thì phần này nên theo logic là: (1) Y học hiện đại đang còn những thách thức, hạn chế nào trong quản lý toàn diện bệnh lý/tình trạng đang định nghiên cứu, (2) Can thiệp y học cổ truyền dự định nghiên cứu trong RCT này đã có những bằng chứng nào trước đây gợi ý là có hiệu quả chưa, (3) nói rõ là các bằng chứng hiện tại còn yếu ra sao để khiến phải có thêm bằng chứng mạnh hơn. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (err) {
+    output.textContent = "Lỗi phản hồi: " + text;
+  }
+}
+
+async function evaluateGPT_Niche() {
+  const input = document.getElementById("intro-niche").value.trim();
+  const output = document.getElementById("eval-niche");
+  const file = document.getElementById("file-niche").files[0];
+
+  output.innerText = "⏳ Đang đánh giá Niche...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `
+Đây là phần Niche (khoảng trống kiến thức) trong một đề cương nghiên cứu:
+
+"${input}"
+
+${fileText ? "Tài liệu PDF liên quan:\n" + fileText : ""}
+
+Hãy đánh giá đoạn Niche trên theo các tiêu chí sau:
+- Đã xác định rõ vấn đề chưa được giải quyết không?
+- Có viện dẫn hoặc mô tả khoảng trống trong y văn không?
+- Có liên kết hợp lý với phần Territory không?
+- Diễn đạt có logic và phù hợp với định hướng nghiên cứu không?
+
+Trả lời bằng tiếng Việt.
+  `;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+    } catch (e) {
+      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
+    }
+  } catch (error) {
+    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
+  }
+}
+
+
+async function generateGPT_Occupy() {
+  const output = document.getElementById("suggest-occupy");
+  const file = document.getElementById("file-occupy").files[0];
+
+  const niche = document.getElementById("intro-niche")?.value || "";
+  const objective = document.getElementById("main-objective")?.value || "";
+
+  if (!niche.trim() || !objective.trim()) {
+    alert("Cần có nội dung Niche và mục tiêu chính trước khi viết Occupy.");
+    return;
+  }
+
+  output.textContent = "Đang sinh nội dung...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `${fileText ? "Tài liệu PDF:\n" + fileText + "\n\n" : ""}
+Phần Niche đã viết:
+${niche}
+
+Mục tiêu chính của nghiên cứu:
+${objective}
+
+Dựa trên khoảng trống đã nêu, hãy viết phần Occupy trình bày cách nghiên cứu này sẽ chiếm lĩnh khoảng trống, dùng phương pháp gì và lý do hợp lý. Cần làm rõ nghiên cứu này sẽ khắc phục cái Niche đã nêu bằng cách nào (phương pháp can thiệp mới, bộ dữ liệu chất lượng và số lượng cao hơn, hay phương pháp phân tích kết quả mới mạnh hơn...). Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (err) {
+    output.textContent = "Lỗi phản hồi: " + text;
+  }
+}
+
+async function evaluateGPT_Occupy() {
+  const input = document.getElementById("intro-occupy").value.trim();
+  const output = document.getElementById("eval-occupy");
+  const file = document.getElementById("file-occupy").files[0];
+
+  output.innerText = "⏳ Đang đánh giá Occupy...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `
+Đây là phần Occupy (cách nghiên cứu chiếm lĩnh khoảng trống) trong một đề cương nghiên cứu:
+
+"${input}"
+
+${fileText ? "Tài liệu PDF liên quan:\n" + fileText : ""}
+
+Hãy đánh giá đoạn Occupy trên theo các tiêu chí sau:
+- Đã nêu rõ cách nghiên cứu sẽ giải quyết khoảng trống chưa?
+- Có logic liên kết với phần Niche không?
+- Có làm rõ được vai trò và sự cần thiết của nghiên cứu không?
+- Có nêu được ý tưởng, phương pháp hoặc hướng giải quyết cụ thể không?
+
+Trả lời bằng tiếng Việt.
+  `;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+    } catch (e) {
+      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
+    }
+  } catch (error) {
+    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
+  }
+}
+
+
+//Bước 5
+
+function addLiteratureSection(title = "", content = "") {
+  const container = document.getElementById("literature-sections");
+  const div = document.createElement("div");
+  div.className = "literature-section";
+  div.innerHTML = `
+    <input type="text" class="literature-title" placeholder="Tiêu đề mục tổng quan" value="${title}" oninput="saveData()">
+    <textarea class="literature-content" placeholder="Nội dung tổng quan...">${content}</textarea>
+    <button onclick="this.parentElement.remove(); saveData()">🗑 Xóa mục này</button>
+    <hr>
+  `;
+  container.appendChild(div);
+}
+
+async function generateGPT_YHHD_Overview() {
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const question = document.getElementById("question").value.trim();
+  const objective = document.getElementById("main-objective").value.trim();
+
+  const fileInput = document.getElementById("file-yhhd-overview");
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const prompt = `Dựa trên thông tin sau:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+- Câu hỏi nghiên cứu: ${question}
+- Mục tiêu chính: ${objective}
+- Tài liệu tham khảo: ${fileText}
+
+Hãy viết phần tổng quan về đại cương y học hiện đại liên quan đến bệnh/tình trạng đang nghiên cứu chỉ tập trung vào khái niệm, định nghĩa, cần phải trình bày rõ ràng, có dẫn dắt hợp lý như trong phần tổng quan tài liệu của một đề cương RCT. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11.`;
+
+  const output = document.getElementById("suggest-yhhd-overview");
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_YHHD_Overview() {
+  const inputText = document.getElementById('text-yhhd-overview').value.trim();
+  const output = document.getElementById('eval-yhhd-overview');
+
+  const prompt = `Đánh giá đoạn văn sau về mức độ phù hợp khi viết phần *Đại cương Y học hiện đại* trong tổng quan tài liệu của một đề cương RCT. Xem xét các tiêu chí: độ rõ ràng, mức độ tổng quát, sự liên kết đến vấn đề nghiên cứu và cập nhật tài liệu.
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá bằng GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý JSON: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_Epidemiology() {
+  const fileInput = document.getElementById('file-epidemiology');
+  const output = document.getElementById('suggest-epidemiology');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Viết phần tổng quan dịch tễ học và gánh nặng bệnh tật của bệnh hoặc tình trạng nghiên cứu, phù hợp với bối cảnh đề cương RCT. Lưu ý cần minh chứng mạnh mẽ bằng cách số liệu ấn tượng, có ý nghĩa cao từ các nghiên cứu đã công bố hoặc từ tài liệu người dùng tải lên. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11. 
+Thông tin nghiên cứu:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu PDF cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_Epidemiology() {
+  const inputText = document.getElementById('text-epidemiology').value.trim();
+  const output = document.getElementById('eval-epidemiology');
+
+  const prompt = `Đánh giá đoạn văn sau về mức độ đầy đủ và hợp lý khi trình bày phần *Dịch tễ học và gánh nặng bệnh tật* trong tổng quan tài liệu của đề cương nghiên cứu. Cần nhận xét xem các số liệu đã hợp lý, ấn tượng, có trích dẫn tài liệu tham khảo rõ ràng, làm sáng tỏ được bệnh/tình trạng đang nghiên cứu là vấn đề cấp thiết không:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_Diagnosis() {
+  const fileInput = document.getElementById('file-diagnosis');
+  const output = document.getElementById('suggest-diagnosis');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên các thông tin sau, hãy viết phần tổng quan về *chẩn đoán y học hiện đại* liên quan đến bệnh hoặc tình trạng đang nghiên cứu, phù hợp với một đề cương RCT. Nếu bệnh/tình trạng có tiêu chuẩn chẩn đoán rõ ràng do hiệp hội chuyên ngành uy tín đề xuất thì nêu rõ tiêu chuẩn, kèm độ nhạy độ đặc hiệu của tiêu chuẩn (nếu có). Nếu không có tiêu chuẩn chẩn đoán rõ ràng, thì cần đánh giá xem tiêu chuẩn nào thường được dùng để tuyển chọn mẫu trong các RCT lớn liên quan đến bệnh/tình trạng này. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_Diagnosis() {
+  const inputText = document.getElementById('text-diagnosis').value.trim();
+  const output = document.getElementById('eval-diagnosis');
+
+  const prompt = `Đánh giá đoạn văn sau về độ phù hợp, đầy đủ và tính hệ thống khi trình bày phần *chẩn đoán y học hiện đại* trong đề cương nghiên cứu RCT theo các tiêu chí là chi tiết, rõ ràng, xúc tích, có minh chứng đầy đủ, có được cộng đồng y khoa hiện hành công nhận không:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_Treatment() {
+  const fileInput = document.getElementById('file-treatment');
+  const output = document.getElementById('suggest-treatment');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên thông tin sau, hãy viết phần tổng quan về *điều trị y học hiện đại* cho tình trạng đang nghiên cứu. Nếu có guideline hướng dẫn của hiệp hội chuyên ngành uy tín thì nên theo guideline đó. Cần chú ý đến tính kết hợp liên ngành và quản lý toàn diện. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_Treatment() {
+  const inputText = document.getElementById('text-treatment').value.trim();
+  const output = document.getElementById('eval-treatment');
+
+  const prompt = `Đánh giá đoạn văn sau về tính đầy đủ, chính xác và cập nhật trong phần *điều trị y học hiện đại* của một đề cương RCT. Xem xét các khía cạnh: phác đồ điều trị chính, bằng chứng hiệu quả, tính thực hành và liên quan đến PICO.
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_Limitation() {
+  const fileInput = document.getElementById('file-limitation');
+  const output = document.getElementById('suggest-limitation');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên thông tin sau, hãy viết phần tổng quan về *các hạn chế của Y học hiện đại trong quản lý tình trạng bệnh nghiên cứu*. Cần có các số liệu thực tế từ các RCT hay meta-analysis khác để chứng minh các liệu pháp điều trị hiện tại của y học hiện đại về bệnh/tình trạng trong nghiên cứu này còn hạn chế ở các khía cạnh như tỷ lệ đạt hiểu quả chưa quá cao, còn nhiều bệnh nhân kháng trị hoặc đáp ứng điều trị không đầy đủ, kém tuân thủ do tác dụng phụ, có quá nhiều biến chứng của điều trị, hoặc chi phí điều trị quá cao. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_Limitation() {
+  const inputText = document.getElementById('text-limitation').value.trim();
+  const output = document.getElementById('eval-limitation');
+
+  const prompt = `Đánh giá đoạn văn sau về tính hợp lý, cụ thể và cập nhật khi trình bày *các hạn chế của Y học hiện đại* trong quản lý tình trạng bệnh nghiên cứu. Xem xét các tiêu chí: độ đầy đủ, dẫn chứng, và mức độ liên kết với PICO.
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_YHCT_Overview() {
+  const fileInput = document.getElementById('file-yhct-overview');
+  const output = document.getElementById('suggest-yhct-overview');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên thông tin sau, hãy viết phần *tổng quan về Y học cổ truyền (YHCT)* liên quan đến tình trạng bệnh trong nghiên cứu. Tập trung vào các thông tin chính như quan niệm của y học cổ truyền về bệnh/tình trạng đang nghiên cứu được mô tả trong chứng nào của y học cổ truyền, chứng đó được định nghĩa là gì. Các cổ văn như Tố vấn. Linh khu, Kim quỹ yếu lược, Thương hàn luận, Chư bệnh nguyên hậu luận, Cảnh Nhạc toàn thư, Đan Khê tâm pháp...đã bàn luận về chứng này ra sao (nếu có). Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_YHCT_Overview() {
+  const inputText = document.getElementById('text-yhct-overview').value.trim();
+  const output = document.getElementById('eval-yhct-overview');
+
+  const prompt = `Đánh giá đoạn văn sau về tính hợp lý, đúng lý luận và đầy đủ khi trình bày phần tổng quan Y học cổ truyền (YHCT) về tình trạng bệnh nghiên cứu. Các tiêu chí cần cân nhắc: Có trích dẫn rõ ràng không? có nhắc đến cổ văn không? có nêu rõ được bệnh/tình trạng này đối với y học cổ truyền thì liên quan đến chứng trạng nào không? Nêu rõ điểm mạnh, điểm yếu nếu có:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_Intervention() {
+  const fileInput = document.getElementById('file-intervention');
+  const output = document.getElementById('suggest-intervention');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên thông tin sau, hãy mô tả chi tiết các *liệu pháp can thiệp* của y học cổ truyền đang được nghiên cứu. Cần điểm qua hầu hết các liệu pháp thường dùng trong y học cổ truyền như châm cứu, xoa bóp bấm huyệt, các hình thức tập luyện truyền thống (khí công, yoga, thái cực quyền...), thuốc thang, thuốc thành phẩm, thuốc xông, thuốc dán...Tất cả đều cần có minh chứng rõ ràng bằng các RCT hoặc các meta-analysis hoặc các guideline về y học cổ truyền. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_Intervention() {
+  const inputText = document.getElementById('text-intervention').value.trim();
+  const output = document.getElementById('eval-intervention');
+
+  const prompt = `Đánh giá đoạn văn sau về *tính đầy đủ, rõ ràng và khoa học* trong mô tả các liệu pháp can thiệp (bao gồm tên can thiệp, liều lượng, thời gian, đường dùng... nếu có). Có điểm qua hầu hết các liệu pháp thường dùng trong y học cổ truyền như châm cứu, xoa bóp bấm huyệt, các hình thức tập luyện truyền thống (khí công, yoga, thái cực quyền...), thuốc thang, thuốc thành phẩm, thuốc xông, thuốc dán hay chưa?. Tất cả đã có minh chứng rõ ràng bằng các RCT hoặc các meta-analysis hoặc các guideline về y học cổ truyền chưa?:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_RelatedStudies() {
+  const fileInput = document.getElementById('file-related-studies');
+  const output = document.getElementById('suggest-related-studies');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa trên thông tin sau, hãy viết phần tổng quan các *nghiên cứu liên quan trong và ngoài nước* đến chủ đề nghiên cứu hiện tại. Mô tả ngắn gọn từng nghiên cứu, chỉ ra ưu điểm, hạn chế và sự khác biệt so với nghiên cứu hiện tại. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_RelatedStudies() {
+  const inputText = document.getElementById('text-related-studies').value.trim();
+  const output = document.getElementById('eval-related-studies');
+
+  const prompt = `Đánh giá đoạn văn sau về *tính cập nhật, sự liên quan và phân tích hợp lý* khi trình bày các nghiên cứu liên quan trong và ngoài nước, lưu ý là cần đánh giá xem liệu đã nêu bật được những hạn chế của các nghiên cứu trước đây mà có thể khắc phục được trong nghiên cứu này chưa:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+async function generateGPT_NewMethods() {
+  const fileInput = document.getElementById('file-new-methods');
+  const output = document.getElementById('suggest-new-methods');
+  const file = fileInput.files[0];
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang trích xuất nội dung từ PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+
+  const prompt = `Dựa vào thông tin sau, hãy viết phần mô tả các *phương pháp phân tích số liệu mới hoặc cách đánh giá kết cục mới hoặc công cụ đo lường mới* có thể áp dụng cho nghiên cứu này. Giải thích tại sao nên dùng, và lợi ích so với cách cũ. Cần có trích dẫn tài liệu tham khảo và đánh số tài liệu tham khảo rõ ràng, minh bạch. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+
+${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh nội dung từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi gọi GPT API: " + error.message;
+  }
+}
+
+async function evaluateGPT_NewMethods() {
+  const inputText = document.getElementById('text-new-methods').value.trim();
+  const output = document.getElementById('eval-new-methods');
+
+  const prompt = `Hãy đánh giá đoạn văn sau về *tính sáng tạo, logic và phù hợp* khi trình bày các phương pháp phân tích mới hoặc cách đánh giá kết cục mới trong nghiên cứu:
+---
+${inputText}`;
+
+  output.textContent = "⏳ Đang đánh giá nội dung...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+      output.textContent = result;
+    } catch (e) {
+      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
+    }
+  } catch (error) {
+    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  }
+}
+
+
+//Bước 6
+function updateDesignFields() {
+  const type = document.getElementById("design-type").value;
+  const container = document.getElementById("design-extra-fields");
+  container.innerHTML = "";
+
+  if (type === "parallel") {
+    container.innerHTML = `
+      <label>⏱️ Thời gian can thiệp (tuần):</label>
+      <input type="number" id="intervention-weeks" min="1" oninput="saveData()"><br><br>
+
+      <label>🔢 Số nhóm can thiệp:</label>
+      <input type="number" id="num-arms" min="2" value="2" oninput="renderArms(); saveData()" style="width: 80px;"><br><br>
+
+      <div id="arms-container"></div>
+    `;
+    renderArms(false); // không save liền
+  }
+
+  else if (type === "cross-over") {
+    container.innerHTML = `
+      <label>⏱️ Giai đoạn 1 (tuần):</label>
+      <input type="number" id="crossover-phase1" min="1" oninput="saveData()"><br><br>
+
+      <label>💉 Can thiệp nhóm 1 – GĐ1:</label>
+      <input type="text" id="crossover-g1-phase1" oninput="saveData()"><br><br>
+
+      <label>💉 Can thiệp nhóm 2 – GĐ1:</label>
+      <input type="text" id="crossover-g2-phase1" oninput="saveData()"><br><br>
+
+      <label>🧼 Thời gian rửa trôi (washout, tuần):</label>
+      <input type="number" id="crossover-washout" min="1" oninput="saveData()"><br><br>
+      
+      <label>⏱️ Giai đoạn 1 (tuần):</label>
+      <input type="number" id="crossover-phase1" min="1" oninput="saveData()"><br><br>
+
+      <label>💉 Can thiệp nhóm 1 – GĐ2:</label>
+      <input type="text" id="crossover-g1-phase2" oninput="saveData()"><br><br>
+
+      <label>💉 Can thiệp nhóm 2 – GĐ2:</label>
+      <input type="text" id="crossover-g2-phase2" oninput="saveData()"><br><br>
+    `;
+
+    // Đảm bảo có hidden num-arms = 2
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.id = "num-arms";
+    input.value = "2";
+    container.appendChild(input);
+
+    const div = document.createElement("div");
+    div.id = "arms-container";
+    container.appendChild(div);
+  }
+
+  saveData();
+}
+
+function renderArms(save = true) {
+  const type = document.getElementById("design-type")?.value;
+  if (type !== "parallel") return;  // ❌ Không làm gì nếu không phải song song
+
+  const num = parseInt(document.getElementById("num-arms").value) || 0;
+  const container = document.getElementById("arms-container");
+  if (!container) return;
+  container.innerHTML = "";
+
+  for (let i = 0; i < num; i++) {
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <label>Nhóm ${i + 1}:</label>
+      <input type="text" class="arm-description" placeholder="Tên nhóm / mô tả ngắn" oninput="saveData()">
+    `;
+    container.appendChild(div);
+  }
+
+  if (save) saveData();
+}
+
+function updateNumArms() {
+  const n = document.getElementById("num-arms").value;
+  localStorage.setItem("num-arms", n);
+  renderArms();
+  saveData();
+}
+
+async function generateGPT_Design() {
+  const p = document.getElementById("pico-p")?.value || "";
+  const i = document.getElementById("pico-i")?.value || "";
+  const c = document.getElementById("pico-c")?.value || "";
+  const o = document.getElementById("pico-o")?.value || "";
+  const mainObjective = document.getElementById("main-objective")?.value || "";
+
+  const designType = document.getElementById("design-type").value;
+  const randomization = document.getElementById("randomization").value;
+  const blinding = document.getElementById("blinding").value;
+  const file = document.getElementById("file-design").files[0];
+
+  const phase1 = document.getElementById("crossover-phase1")?.value || "";
+  const phase2 = document.getElementById("crossover-phase2")?.value || "";
+  const washout = document.getElementById("crossover-washout")?.value || "";
+  const interventionWeeks = document.getElementById("intervention-weeks")?.value || "";
+
+  const output = document.getElementById("suggest-design");
+  output.innerText = "⏳ GPT đang sinh nội dung...";
+
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc PDF:", err);
+    }
+  }
+
+  const designLabel = (designType === "parallel") ? "thiết kế song song" :
+                      (designType === "cross-over") ? "thiết kế bắt chéo (cross-over)" :
+                      "thiết kế chưa xác định";
+
+  const prompt = `${fileText ? "Nội dung từ tài liệu PDF:\n" + fileText + "\n\n" : ""}
+Dưới đây là thông tin của đề cương nghiên cứu RCT:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+- Mục tiêu chính: ${mainObjective}
+- Thiết kế được chọn: ${designLabel}
+- Loại phân bổ ngẫu nhiên: ${randomization}
+- Làm mù: ${blinding}
+- Thời gian can thiệp: ${interventionWeeks || "chưa xác định"}
+${designType === "cross-over" ? `- Thời gian phase 1: ${phase1}
+- Thời gian washout: ${washout}
+- Thời gian phase 2: ${phase2}` : ""}
+
+Hãy gợi ý một mô tả đầy đủ và hợp lý cho phần Thiết kế nghiên cứu. Mô tả cần nêu rõ:
+1. Thiết kế có phù hợp với mục tiêu và bệnh lý không?
+2. Phân bổ ngẫu nhiên và làm mù chọn có hợp lý không?
+3. Thời gian can thiệp có đủ cho hiệu quả và washout (nếu có)?
+4. Nếu thiết kế chưa tối ưu, gợi ý thay đổi tốt hơn.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+  } catch (err) {
+    output.innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+async function evaluateGPT_Design() {
+  const desc = document.getElementById("suggest-design").innerText.trim();
+  const p = document.getElementById("pico-p")?.value || "";
+  const i = document.getElementById("pico-i")?.value || "";
+  const c = document.getElementById("pico-c")?.value || "";
+  const o = document.getElementById("pico-o")?.value || "";
+  const mainObjective = document.getElementById("main-objective")?.value || "";
+
+  const designType = document.getElementById("design-type").value;
+  const randomization = document.getElementById("randomization").value;
+  const blinding = document.getElementById("blinding").value;
+  const interventionWeeks = document.getElementById("intervention-weeks")?.value || "";
+
+  const phase1 = document.getElementById("crossover-phase1")?.value || "";
+  const phase2 = document.getElementById("crossover-phase2")?.value || "";
+  const washout = document.getElementById("crossover-washout")?.value || "";
+
+  const output = document.getElementById("eval-design");
+  output.innerText = "⏳ GPT đang đánh giá...";
+
+  if (!desc) {
+    alert("Không có nội dung để đánh giá.");
+    return;
+  }
+
+  const prompt = `Đây là phần mô tả thiết kế nghiên cứu RCT:\n"${desc}"\n\n
+Thông tin đề cương liên quan:
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+- Mục tiêu chính: ${mainObjective}
+- Loại thiết kế: ${designType}
+- Ngẫu nhiên hóa: ${randomization}
+- Làm mù: ${blinding}
+- Thời gian can thiệp: ${interventionWeeks}
+${designType === "cross-over" ? `- Phase 1: ${phase1}
+- Washout: ${washout}
+- Phase 2: ${phase2}` : ""}
+
+👉 Hãy đánh giá:
+1. Thiết kế mô tả có phù hợp với mục tiêu nghiên cứu không?
+2. Loại hình thiết kế có phù hợp với bệnh lý và kết cục nghiên cứu không?
+3. Cách làm mù, phân bổ ngẫu nhiên có hợp lý không?
+4. Thời gian can thiệp có phù hợp và đủ cho hiệu quả can thiệp không?
+5. Nếu có điểm chưa hợp lý, hãy chỉ rõ và gợi ý cách cải thiện.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+  } catch (err) {
+    output.innerText = "Lỗi phản hồi: " + text;
+  }
+}
+
+//Bước 7
+
+function renderSampleSizeForm() {
+  const method = document.getElementById("sample-size-method").value;
+  const form = document.getElementById("sample-size-form");
+  const formula = document.getElementById("sample-size-formula");
+  const reference = document.getElementById("sample-size-reference");
+
+  form.innerHTML = "";
+  formula.innerHTML = "";
+  reference.innerHTML = "";
+
+  if (!method) return;
+
+  const alphaPowerHTML = `
+    <label>Alpha:</label>
+    <select id="alpha">
+      <option value="0.05">0.05</option>
+      <option value="0.01">0.01</option>
+    </select>
+
+    <label>Power:</label>
+    <select id="power">
+      <option value="0.80">80%</option>
+      <option value="0.90">90%</option>
+    </select>
+    <br><br>
+  `;
+
+  const dropoutHTML = `
+    <label>Tỷ lệ mất mẫu dự kiến (%):</label>
+    <input type="number" id="dropout-rate" step="1" min="0" max="100" oninput="checkDropoutWarning()">
+    <span id="dropout-warning" style="color: red; font-weight: bold;"></span>
+  `;
+
+  let hasReference = false;
+
+  if (method === "means") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Độ lệch chuẩn (σ):</label>
+      <input type="number" id="sigma" step="0.01">
+      <label>Hiệu số kỳ vọng (Δ):</label>
+      <input type="number" id="delta" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = 2 × [(Z<sub>1−α/2</sub> + Z<sub>1−β</sub>) × σ / Δ]<sup>2</sup>
+    `;
+    hasReference = true;
+
+  } else if (method === "noninferiority_means") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Hiệu số kỳ vọng (μ<sub>T</sub> - μ<sub>C</sub>):</label>
+      <input type="number" id="delta-mean" step="0.01">
+      <label>Biên không kém hơn (Δ):</label>
+      <input type="number" id="delta-margin" step="0.01">
+      <label>Độ lệch chuẩn (σ):</label>
+      <input type="number" id="std-dev" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = 2 × (Z<sub>1−α</sub> + Z<sub>1−β</sub>)<sup>2</sup> × σ<sup>2</sup> / (Δ − δ)<sup>2</sup>
+    `;
+    hasReference = true;
+
+  } else if (method === "proportions") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Tỷ lệ nhóm 1 (P₁):</label>
+      <input type="number" id="p1" step="0.01" min="0" max="1">
+      <label>Tỷ lệ nhóm 2 (P₂):</label>
+      <input type="number" id="p2" step="0.01" min="0" max="1">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [(Z<sub>1−α/2</sub>√(2P(1−P)) + Z<sub>1−β</sub>√(P₁(1−P₁) + P₂(1−P₂))]<sup>2</sup> / (P₁ − P₂)<sup>2</sup><br>
+      P = (P₁ + P₂)/2
+    `;
+    hasReference = true;
+
+  } else if (method === "noninferiority_prop") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Tỷ lệ nhóm chứng (p<sub>C</sub>):</label>
+      <input type="number" id="pc" step="0.01" min="0" max="1">
+      <label>Tỷ lệ nhóm can thiệp (p<sub>T</sub>):</label>
+      <input type="number" id="pt" step="0.01" min="0" max="1">
+      <label>Biên không kém hơn (Δ):</label>
+      <input type="number" id="delta-margin" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [ (Z<sub>1−α</sub>√(2p̄(1−p̄)) + Z<sub>1−β</sub>√(p<sub>C</sub>(1−p<sub>C</sub>) + p<sub>T</sub>(1−p<sub>T</sub>)) ]<sup>2</sup> / (p<sub>T</sub> − p<sub>C</sub> − Δ)<sup>2</sup>
+    `;
+    hasReference = true;
+
+  } else if (method === "anova") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Số nhóm (k):</label>
+      <input type="number" id="k" min="2">
+      <label>Độ lệch chuẩn (σ):</label>
+      <input type="number" id="sigma" step="0.01">
+      <label>Hiệu ứng mong muốn (f):</label>
+      <input type="number" id="effect-f" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [(Z<sub>1−β</sub> + Z<sub>1−α</sub>)<sup>2</sup> × (k − 1)] / (k × f<sup>2</sup>)
+    `;
+    hasReference = true;
+
+  } else if (method === "chisq") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Số nhóm (k):</label>
+      <input type="number" id="k-chisq" min="2">
+      <label>Tỷ lệ trung bình (P):</label>
+      <input type="number" id="p-chisq" step="0.01" min="0" max="1">
+      <label>Hiệu ứng mong muốn (w):</label>
+      <input type="number" id="effect-w" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = (Z<sub>1−β</sub> + Z<sub>1−α</sub>)<sup>2</sup> / w<sup>2</sup><br>
+      w: chỉ số hiệu ứng Cohen (0.1 nhỏ, 0.3 vừa, 0.5 lớn)
+    `;
+    hasReference = true;
+
+  } else if (method === "survival") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Tỷ lệ sống nhóm chứng (S₀):</label>
+      <input type="number" id="s0" step="0.01" min="0" max="1">
+      <label>Tỷ lệ sống nhóm can thiệp (S₁):</label>
+      <input type="number" id="s1" step="0.01" min="0" max="1">
+      <label>Thời gian theo dõi (t):</label>
+      <input type="number" id="t" step="0.1" min="0">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [ (Z<sub>1−α/2</sub> + Z<sub>1−β</sub>)<sup>2</sup> × (1/S₀ + 1/S₁) ] / (log(S₁) − log(S₀))<sup>2</sup>
+    `;
+    hasReference = true;
+
+  } else if (method === "ancova") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Hiệu số trung bình (Δ):</label>
+      <input type="number" id="delta-mean" step="0.01">
+      <label>Độ lệch chuẩn (σ):</label>
+      <input type="number" id="std-dev" step="0.01">
+      <label>Hệ số R<sup>2</sup>:</label>
+      <input type="number" id="rsquared" step="0.01" min="0" max="1">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = 2 × (Z<sub>1−α</sub> + Z<sub>1−β</sub>)<sup>2</sup> × σ<sup>2</sup> × (1 − R<sup>2</sup>) / Δ<sup>2</sup>
+    `;
+    hasReference = true;
+ 
+ } else if (method === "crossover_means") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>Độ lệch chuẩn của hiệu số (σ<sub>d</sub>):</label>
+      <input type="number" id="sigma_d" step="0.01">
+      <label>Hiệu số mong muốn phát hiện (Δ):</label>
+      <input type="number" id="delta_crossover" step="0.01">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [(Z<sub>1−α/2</sub> + Z<sub>1−β</sub>) × σ<sub>d</sub> / Δ]<sup>2</sup><br>
+      (n là số người tham gia cần thiết)
+    `;
+    hasReference = true;
+
+  } else if (method === "crossover_props") {
+    form.innerHTML = `
+      ${alphaPowerHTML}
+      <label>P<sub>10</sub> (xảy ra ở A, không ở B):</label>
+      <input type="number" id="p10" step="0.01" min="0" max="1">
+      <label>P<sub>01</sub> (xảy ra ở B, không ở A):</label>
+      <input type="number" id="p01" step="0.01" min="0" max="1">
+      ${dropoutHTML}
+    `;
+    formula.innerHTML = `
+      n = [(Z<sub>1−α/2</sub> + Z<sub>1−β</sub>)<sup>2</sup> × (P<sub>10</sub>(1 − P<sub>10</sub>) + P<sub>01</sub>(1 − P<sub>01</sub>))] / (P<sub>10</sub> − P<sub>01</sub>)<sup>2</sup>
+    `;
+    hasReference = true;
+}
+  if (hasReference) {
+    reference.innerHTML = `Nguồn: Chow SC, Shao J, Wang H. <i>Sample Size Calculations in Clinical Research</i>. 3rd ed. CRC Press, 2018.`;
+  }
+}
+
+function calculateSampleSize() {
+  const method = document.getElementById("sample-size-method").value;
+  const alpha = parseFloat(document.getElementById("alpha")?.value || "0.05");
+  const power = parseFloat(document.getElementById("power")?.value || "0.8");
+  const zAlpha = alpha === 0.01 ? 2.58 : 1.96;
+  const zBeta = power === 0.9 ? 1.28 : 0.84;
+  let n = 0;
+  let resultText = "";
+
+  if (method === "means") {
+    const sigma = parseFloat(document.getElementById("sigma").value);
+    const delta = parseFloat(document.getElementById("delta").value);
+    n = 2 * Math.pow((zAlpha + zBeta) * sigma / delta, 2);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "proportions") {
+    const p1 = parseFloat(document.getElementById("p1").value);
+    const p2 = parseFloat(document.getElementById("p2").value);
+    const p = (p1 + p2) / 2;
+    const term1 = zAlpha * Math.sqrt(2 * p * (1 - p));
+    const term2 = zBeta * Math.sqrt(p1 * (1 - p1) + p2 * (1 - p2));
+    n = Math.pow(term1 + term2, 2) / Math.pow(p1 - p2, 2);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "anova") {
+    const k = parseInt(document.getElementById("k").value);
+    const f = parseFloat(document.getElementById("effect-f").value);
+    n = ((zAlpha + zBeta) ** 2 * (k - 1)) / (k * f * f);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "chisq") {
+    const w = parseFloat(document.getElementById("effect-w").value);
+    n = Math.pow(zAlpha + zBeta, 2) / Math.pow(w, 2);
+    resultText = `Tổng cỡ mẫu cần thiết ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "noninferiority_means") {
+    const deltaObs = parseFloat(document.getElementById("delta-mean").value);
+    const deltaMargin = parseFloat(document.getElementById("delta-margin").value);
+    const std = parseFloat(document.getElementById("std-dev").value);
+    const diff = deltaMargin - deltaObs;
+    n = 2 * Math.pow((zAlpha + zBeta) * std / diff, 2);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "noninferiority_prop") {
+    const pt = parseFloat(document.getElementById("pt").value);
+    const pc = parseFloat(document.getElementById("pc").value);
+    const delta = parseFloat(document.getElementById("delta-margin").value);
+    const pbar = (pt + pc) / 2;
+    const term1 = zAlpha * Math.sqrt(2 * pbar * (1 - pbar));
+    const term2 = zBeta * Math.sqrt(pc * (1 - pc) + pt * (1 - pt));
+    const diff = pt - pc - delta;
+    n = Math.pow(term1 + term2, 2) / Math.pow(diff, 2);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "ancova") {
+    const delta = parseFloat(document.getElementById("delta-mean").value);
+    const sigma = parseFloat(document.getElementById("std-dev").value);
+    const rsq = parseFloat(document.getElementById("rsquared").value);
+    n = 2 * Math.pow(zAlpha + zBeta, 2) * sigma * sigma * (1 - rsq) / (delta * delta);
+    resultText = `Cỡ mẫu mỗi nhóm ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "survival") {
+    const s0 = parseFloat(document.getElementById("s0").value);
+    const s1 = parseFloat(document.getElementById("s1").value);
+    const t = parseFloat(document.getElementById("t").value);
+    const logDiff = Math.log(s1) - Math.log(s0);
+    const term = (1 / s0 + 1 / s1);
+    n = Math.pow(zAlpha + zBeta, 2) * term / Math.pow(logDiff, 2);
+    resultText = `Tổng cỡ mẫu cần thiết ≈ <b>${Math.ceil(n)}</b>`;
+
+  } else if (method === "crossover_means") {
+    const alpha = parseFloat(document.getElementById("alpha").value);
+    const power = parseFloat(document.getElementById("power").value);
+    const zAlpha = getZ(alpha / 2);
+    const zBeta = getZ(1 - power);
+    const sigma_d = parseFloat(document.getElementById("sigma_d").value);
+    const delta = parseFloat(document.getElementById("delta_crossover").value);
+
+    n = Math.pow((zAlpha + zBeta) * sigma_d / delta, 2);
+    n = Math.ceil(n);
+
+    resultText = `📊 Thiết kế bắt chéo – So sánh trung bình:<br>
+    Cỡ mẫu mỗi nhánh cần: <b>${n}</b> người`;
+
+  } else if (method === "crossover_props") {
+    const alpha = parseFloat(document.getElementById("alpha").value);
+    const power = parseFloat(document.getElementById("power").value);
+    const zAlpha = getZ(alpha / 2);
+    const zBeta = getZ(1 - power);
+    const p10 = parseFloat(document.getElementById("p10").value);
+    const p01 = parseFloat(document.getElementById("p01").value);
+
+    const numerator = Math.pow(zAlpha + zBeta, 2) * (p10 * (1 - p10) + p01 * (1 - p01));
+    const denominator = Math.pow(p10 - p01, 2);
+
+    n = numerator / denominator;
+    n = Math.ceil(n);
+
+    resultText = `📉 Thiết kế bắt chéo – So sánh tỷ lệ:<br>
+    Cỡ mẫu mỗi nhánh cần: <b>${n}</b> người`;
+  } else {
+    resultText = "🔧 Chưa hỗ trợ tính cho loại công thức này.";
+  }
+
+  // Hiển thị kết quả gốc
+  const resultDiv = document.getElementById("sample-size-result");
+  resultDiv.innerHTML = resultText;
+
+  // Tính hiệu chỉnh nếu có dropout
+  const dropoutRate = parseFloat(document.getElementById("dropout-rate")?.value || "0");
+  const adjustedDiv = document.getElementById("sample-size-adjusted");
+  if (!isNaN(n) && dropoutRate > 0 && dropoutRate < 100) {
+    const nAdj = Math.ceil(n / (1 - dropoutRate / 100));
+    adjustedDiv.innerHTML = `🎯 Cỡ mẫu hiệu chỉnh sau khi tính mất mẫu ${dropoutRate}%: <b>${nAdj}</b>`;
+    window.calculatedSampleSize = nAdj;
+  } else {
+    adjustedDiv.innerHTML = "";
+    window.calculatedSampleSize = "";
+ }
+ saveData();
+}
+
+function checkDropoutWarning() {
+  const val = parseFloat(document.getElementById("dropout-rate")?.value || 0);
+  const warning = document.getElementById("dropout-warning");
+  if (val > 10) {
+    warning.textContent = "⚠️ Không nên mất mẫu quá 10% vì có thể ảnh hưởng đến độ tin cậy của kết quả.";
+  } else {
+    warning.textContent = "";
+  }
+}
+
+async function generateSampleSizeSuggestion() {
+  const output = document.getElementById("suggest-sample-size");
+  const fileInput = document.getElementById("file-sample-size");
+  const file = fileInput.files[0];
+  const method = document.getElementById("sample-size-method").value.trim();
+  let fileText = "";
+
+  if (file && file.type === "application/pdf") {
+    output.textContent = "📄 Đang đọc file PDF...";
+    fileText = await extractTextFromPDF(file);
+  }
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const question = document.getElementById("question").value.trim();
+  const mainObjective = document.getElementById("main-objective").value.trim();
+  const subObjectives = Array.from(document.querySelectorAll(".sub-objective")).map(el => el.value.trim()).join("; ");
+
+  const prompt = `Dựa vào các thông tin sau, hãy đề xuất cách tính cỡ mẫu phù hợp (nêu rõ giả định, công thức, thông số cần thiết). Nếu có tải tài liệu lên thì ưu tiên sử dụng số liệu cần thiết cho tính cỡ mẫu từ trong tài liệu, và phải báo cáo vào cuối cùng là sử dụng tài liệu nào đồng thời phải cho danh mục tài liệu đã tham khảo theo AMA 11:
+
+- P: ${p}
+- I: ${i}
+- C: ${c}
+- O: ${o}
+- Câu hỏi nghiên cứu: ${question}
+- Mục tiêu chính: ${mainObjective}
+- Mục tiêu phụ: ${subObjectives}
+- Phương pháp định trước (nếu có): ${method}
+${fileText ? "\nTài liệu PDF người dùng cung cấp:\n" + fileText : ""}`;
+
+  output.textContent = "⏳ Đang sinh gợi ý từ GPT...";
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
+    } catch (err) {
+      output.textContent = "❌ Lỗi phân tích kết quả GPT: " + text;
+    }
+  } catch (err) {
+    output.textContent = "❌ Lỗi gọi GPT: " + err.message;
+  }
+}
+
+async function evaluateSampleSize() {
+  const output = document.getElementById("eval-sample-size");
+  const method = document.getElementById("sample-size-method").value.trim();
+  const alpha = document.getElementById("alpha")?.value || "";
+  const power = document.getElementById("power")?.value || "";
+  const dropout = document.getElementById("dropout-rate")?.value || "";
+
+  const p = document.getElementById("pico-p").value.trim();
+  const i = document.getElementById("pico-i").value.trim();
+  const c = document.getElementById("pico-c").value.trim();
+  const o = document.getElementById("pico-o").value.trim();
+  const mainObjective = document.getElementById("main-objective").value.trim();
+
+  let methodParams = "";
+
+  // Thu thập các biến đầu vào tuỳ loại phương pháp
+  switch (method) {
+    case "means":
+      methodParams = `
+      - Độ lệch chuẩn (σ): ${document.getElementById("sigma").value}
+      - Hiệu số kỳ vọng (Δ): ${document.getElementById("delta").value}`;
+      break;
+
+    case "proportions":
+      methodParams = `
+      - Tỷ lệ nhóm 1 (P1): ${document.getElementById("p1").value}
+      - Tỷ lệ nhóm 2 (P2): ${document.getElementById("p2").value}`;
+      break;
+
+    case "anova":
+      methodParams = `
+      - Số nhóm: ${document.getElementById("k").value}
+      - Độ lệch chuẩn (σ): ${document.getElementById("sigma").value}
+      - Hiệu ứng f: ${document.getElementById("effect-f").value}`;
+      break;
+
+    case "chisq":
+      methodParams = `
+      - Số nhóm (k): ${document.getElementById("k-chisq").value}
+      - Tỷ lệ trung bình (P): ${document.getElementById("p-chisq").value}
+      - Chỉ số hiệu ứng w: ${document.getElementById("effect-w").value}`;
+      break;
+
+    case "noninferiority_means":
+      methodParams = `
+      - Hiệu số quan sát (μT − μC): ${document.getElementById("delta-mean").value}
+      - Biên không kém hơn (Δ): ${document.getElementById("delta-margin").value}
+      - Độ lệch chuẩn (σ): ${document.getElementById("std-dev").value}`;
+      break;
+
+    case "noninferiority_prop":
+      methodParams = `
+      - Tỷ lệ nhóm chứng (pC): ${document.getElementById("pc").value}
+      - Tỷ lệ nhóm can thiệp (pT): ${document.getElementById("pt").value}
+      - Biên không kém hơn (Δ): ${document.getElementById("delta-margin").value}`;
+      break;
+
+    case "ancova":
+      methodParams = `
+      - Hiệu số trung bình (Δ): ${document.getElementById("delta-mean").value}
+      - Độ lệch chuẩn (σ): ${document.getElementById("std-dev").value}
+      - R bình phương: ${document.getElementById("rsquared").value}`;
+      break;
+  }
+
+  const prompt = `
+Người dùng đang thiết kế nghiên cứu với thông tin như sau:
+- P (Population): ${p}
+- I (Intervention): ${i}
+- C (Comparison): ${c}
+- O (Outcome): ${o}
+- Mục tiêu chính: ${mainObjective}
+
+Công thức tính cỡ mẫu được chọn: ${method}
+Thông số đầu vào:
+- Alpha: ${alpha}
+- Power: ${power}
+- Drop-out rate dự kiến: ${dropout}%
+${methodParams}
+
+Yêu cầu:
+1. Đánh giá xem công thức chọn có phù hợp với kết cục chính (O), mục tiêu và loại thiết kế hay không.
+2. Phân tích từng thông số đầu vào đã hợp lý chưa (σ, Δ, p1/p2, R²...), có phù hợp với giá trị thường gặp và có dựa trên bằng chứng hay MCID không?
+3. Drop-out rate như trên có ảnh hưởng nghiêm trọng không?
+4. Nếu có sai lệch hoặc điểm cần cải thiện, hãy chỉ rõ và đề xuất điều chỉnh.`.trim();
+
+  output.textContent = "⏳ GPT đang phân tích...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const text = await response.text();
+    try {
+      const data = JSON.parse(text);
+      output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
+    } catch (err) {
+      output.textContent = "❌ Lỗi phân tích phản hồi GPT: " + text;
+    }
+  } catch (err) {
+    output.textContent = "❌ Lỗi gọi GPT: " + err.message;
+  }
+}
+
+
+//Bước 8
+
+function addInclusionCriterion(text = "") {
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <input type="text" class="inclusion-item" value="${text}" placeholder="Nhập tiêu chí chọn..." oninput="saveData()">
+    <button onclick="this.parentElement.remove(); saveData()">🗑</button>
+  `;
+  document.getElementById("inclusion-criteria").appendChild(div);
+}
+
+function addExclusionCriterion(text = "") {
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <input type="text" class="exclusion-item" value="${text}" placeholder="Nhập tiêu chí loại..." oninput="saveData()">
+    <button onclick="this.parentElement.remove(); saveData()">🗑</button>
+  `;
+  document.getElementById("exclusion-criteria").appendChild(div);
+}
+
+async function generateCriteriaFromGPT() {
+  const output = document.getElementById("criteria-gpt-suggestion");
+  output.innerText = "🔄 Đang gợi ý từ GPT...";
+
+  const file = document.getElementById("file-criteria")?.files?.[0];
+  let fileText = "";
+
+  // Đọc file PDF nếu có
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("❗ Lỗi đọc PDF:", err);
+    }
+  }
+
+  // Trích xuất thông tin từ form
+  const pico = {
+    p: document.getElementById("pico-p")?.value || "",
+    i: document.getElementById("pico-i")?.value || "",
+    c: document.getElementById("pico-c")?.value || "",
+    o: document.getElementById("pico-o")?.value || ""
+  };
+
+  const mainObjective = document.getElementById("main-objective")?.value || "";
+  const subObjectives = Array.from(document.querySelectorAll(".sub-objective")).map(el => el.value).filter(v => v).join("; ");
+
+  const interventions = Array.from(document.querySelectorAll(".arm-description")).map((el, i) => `Nhóm ${i + 1}: ${el.value}`).join("\n");
+
+  const context = `
+PICO:
+- P (Dân số): ${pico.p}
+- I (Can thiệp): ${pico.i}
+- C (So sánh): ${pico.c}
+- O (Kết cục): ${pico.o}
+
+Mục tiêu chính: ${mainObjective}
+Mục tiêu phụ: ${subObjectives}
+
+Mô tả can thiệp:
+${interventions}
+  `.trim();
+
+  // Tạo prompt gửi GPT
+  const prompt = `${fileText ? "Tài liệu PDF:\n" + fileText + "\n\n" : ""}
+Thông tin từ các bước trước:
+${context}
+
+Hãy đề xuất các tiêu chí **chọn** và **loại** phù hợp cho một nghiên cứu RCT. Trình bày rõ ràng, phân biệt rõ hai nhóm tiêu chí. Cần nêu rõ lý do tại sao có tiêu chí đó. Cân nhắc đến tính phù hợp với bệnh/tình trạng trong nghiên cứu, các tiêu chuẩn thường được sử dụng trong các nghiên cứu cùng loại, sự phù hợp với mục tiêu nghiên cứu. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+    const raw = await response.text();
+    try {
+      const data = JSON.parse(raw);
+      const reply = data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung.";
+      output.innerText = reply;
+    } catch (err) {
+      output.innerText = "❗ Lỗi xử lý phản hồi: " + raw;
+    }
+  } catch (err) {
+    output.innerText = "❗ Lỗi gọi API: " + err.message;
+  }
+}
+
+async function evaluateCriteria() {
+  const output = document.getElementById("criteria-gpt-evaluation");
+  output.innerText = "🔍 Đang đánh giá...";
+
+  const inclusion = [...document.querySelectorAll("#inclusion-criteria input")]
+    .map(e => e.value.trim()).filter(Boolean);
+  const exclusion = [...document.querySelectorAll("#exclusion-criteria input")]
+    .map(e => e.value.trim()).filter(Boolean);
+
+  const criteriaText = `Tiêu chí chọn:\n${inclusion.join("\n")}\n\nTiêu chí loại:\n${exclusion.join("\n")}`;
+
+  const prompt = `Hãy đánh giá các tiêu chí chọn và loại sau cho nghiên cứu RCT. 
+Xem xét tính phù hợp, cụ thể, khoa học và có loại trừ đủ các yếu tố gây nhiễu không. Thêm phần giải thích lý do sự phù hợp của từng tiêu chí với nghiên cứu này:
+
+${criteriaText}`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const raw = await response.text();
+    try {
+      const data = JSON.parse(raw);
+      const reply = data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung.";
+      output.innerText = reply;
+    } catch (err) {
+      output.innerText = "❗ Lỗi phản hồi từ GPT: " + raw;
+    }
+  } catch (error) {
+    output.innerText = "❗ Lỗi fetch tới GPT: " + error.message;
+  }
+}
+
+
+//Bước 9
+
+function renderRandomOptions() {
+  const method = document.getElementById("random-method").value;
+  const container = document.getElementById("random-options");
+  container.innerHTML = "";
+
+  if (method === "block") {
+    container.innerHTML = `
+      <label>Kích thước block:</label>
+      <input type="number" id="block-size" min="2" step="2" oninput="saveData()">
+    `;
+  } else if (method === "stratified") {
+    container.innerHTML = `
+      <label>Biến phân tầng (ví dụ: tuổi, giới):</label>
+      <input type="text" id="strata-variables" placeholder="Nhập tên biến phân tầng, cách nhau bằng dấu phẩy" oninput="saveData()">
+    `;
+  } else if (method === "adaptive") {
+    container.innerHTML = `
+      <label>Thuật toán thích ứng:</label>
+      <select id="adaptive-type" onchange="saveData()">
+        <option value="minimization">Minimization</option>
+        <option value="covariate">Covariate-Adaptive</option>
+      </select>
+    `;
+  }
+}
+
+function loadRandomizationInfo() {
+  // Lấy số nhánh can thiệp từ bước 6 (thiết kế nghiên cứu)
+  const n = localStorage.getItem("num-arms");
+  if (n) {
+    document.getElementById("num-arms-step9").value = n;
+  }
+}
+
+function generateAutoRandomization() {
+  const method = document.getElementById("random-method").value;
+  const arms = document.getElementById("num-arms-step9").value;
+  let description = "";
+
+  if (!method || !arms) return;
+
+  switch (method) {
+    case "simple":
+      description = `Phương pháp ngẫu nhiên đơn giản được sử dụng để phân bổ người tham gia vào ${arms} nhóm với xác suất bằng nhau. Danh sách ngẫu nhiên được tạo ra bằng máy tính thông qua phần mềm thống kê (ví dụ: R, Stata hoặc random.org) bằng cách sinh chuỗi số ngẫu nhiên không lặp. Mỗi người tham gia sau khi đủ tiêu chuẩn sẽ được gán vào một nhóm dựa trên thứ tự xuất hiện trong danh sách ngẫu nhiên này. Trình tự phân bổ được giữ kín bằng phong bì opaque, đánh số thứ tự, niêm phong, chỉ được mở khi người tham gia được đưa vào nghiên cứu để đảm bảo tính che giấu phân nhóm.`;
+      break;
+    case "block":
+      description = `Phân bổ ngẫu nhiên theo khối được sử dụng để đảm bảo số lượng người tham gia được phân bố đều giữa ${arms} nhóm trong suốt quá trình thu nhận. Các khối có kích thước cố định (ví dụ: 4, 6 hoặc 8) được tạo ra ngẫu nhiên bằng phần mềm thống kê. Trình tự phân bổ trong mỗi khối được hoán vị ngẫu nhiên để tránh dự đoán. Danh sách toàn bộ chuỗi phân bổ theo khối được tạo trước và lưu giữ bởi một người thứ ba không tham gia vào việc thu nhận. Trình tự được che giấu bằng hệ thống mã hóa hoặc phong bì mù, đảm bảo người nghiên cứu không biết trước nhóm phân bổ.`;
+      break;
+    case "stratified":
+      description = `Phương pháp ngẫu nhiên phân tầng được áp dụng nhằm đảm bảo cân bằng các yếu tố nền quan trọng (ví dụ: giới tính, độ tuổi, mức độ bệnh) giữa ${arms} nhóm. Các tầng phân loại được xác định trước khi tiến hành phân bổ. Trong mỗi tầng, người tham gia sẽ được phân bố vào các nhóm thông qua phương pháp ngẫu nhiên theo khối hoặc ngẫu nhiên đơn giản, sử dụng phần mềm chuyên dụng. Danh sách ngẫu nhiên được tạo riêng cho từng tầng và lưu giữ bởi người không tham gia thu nhận để đảm bảo che giấu phân nhóm.`;
+      break;
+    case "minimization":
+      description = `Phương pháp ngẫu nhiên hóa tối thiểu (minimization) được áp dụng để tối ưu hóa sự cân bằng giữa các nhóm nghiên cứu dựa trên các yếu tố nền (như giới tính, độ tuổi, mức độ bệnh). Tại thời điểm phân bổ mỗi người tham gia, phần mềm so sánh các đặc điểm của người đó với các nhóm hiện tại và gán vào nhóm sao cho sự mất cân đối là nhỏ nhất. Một yếu tố ngẫu nhiên (ví dụ: xác suất 0,8) được tích hợp để tránh phân bổ hoàn toàn mang tính quyết định. Trình tự phân bổ được thực hiện bởi hệ thống điện tử độc lập hoặc người thứ ba, đảm bảo che giấu phân nhóm.`;
+      break;
+  }
+
+  document.getElementById("randomization-method").value = description;
+  saveData();
+}
+
+async function generateRandomizationSuggestion() {
+  const output = document.getElementById("randomization-gpt-suggestion");
+  output.innerText = "🔄 Đang tạo gợi ý từ GPT...";
+
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const method = document.getElementById("random-method").value || saved.design?.randomMethod || "Chưa chọn";
+  const numArms = localStorage.getItem("num-arms") || "Chưa rõ";
+
+  const design = saved.design || {};
+  const designType = design.type || "Chưa khai báo";
+
+  let crossoverInfo = "";
+  if (designType === "cross-over") {
+    const cr = design.crossover || {};
+    crossoverInfo = `
+Thiết kế bắt chéo:
+- Giai đoạn 1: ${cr.phase1 || "..."} tuần
+- Rửa trôi: ${cr.washout || "..."} tuần
+- Nhóm 1: Giai đoạn 1 = ${cr.g1_phase1 || "A"}, Giai đoạn 2 = ${cr.g1_phase2 || "B"}
+- Nhóm 2: Giai đoạn 1 = ${cr.g2_phase1 || "B"}, Giai đoạn 2 = ${cr.g2_phase2 || "A"}
+`;
+  }
+
+  const context = `
+P: ${saved.pico?.p || ""}
+I: ${saved.pico?.i || ""}
+C: ${saved.pico?.c || ""}
+O: ${saved.pico?.o || ""}
+Mục tiêu chính: ${saved.mainObjective || ""}
+Thiết kế nghiên cứu: ${designType}
+${crossoverInfo}
+`;
+
+  const file = document.getElementById("file-randomization")?.files?.[0];
+  let fileText = "";
+  if (file && file.type === "application/pdf") {
+    try {
+      fileText = await extractTextFromPDF(file);
+    } catch (err) {
+      console.error("Lỗi đọc file PDF:", err);
+    }
+  }
+
+  const prompt = `
+Tôi đang xây dựng một nghiên cứu RCT với các thông tin sau:
+${context}
+Số nhóm can thiệp: ${numArms}
+Phương pháp phân bổ ngẫu nhiên đã chọn: ${method}
+${fileText ? "Tài liệu PDF liên quan:\n" + fileText : ""}
+
+Hãy mô tả chi tiết cách ngẫu nhiên hóa phù hợp với thiết kế nghiên cứu này (đảm bảo như mô tả trong các đề cương nghiên cứu RCT chuẩn mực và làm sao để mang tính tái lập được), gồm:
+- Tên và loại phương pháp
+- Quy trình thực hiện chi tiết, đúng chuẩn đề cương nghiên cứu RCT
+- Đảm bảo ẩn phân bổ (nếu có)
+- Phần mềm hoặc thuật toán nên sử dụng
+- Ưu nhược điểm (nếu có)
+`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const raw = await response.text();
+    try {
+      const data = JSON.parse(raw);
+      output.innerText = data.choices?.[0]?.message?.content || "❗ Không có phản hồi từ GPT.";
+    } catch (e) {
+      output.innerText = "❗ Lỗi xử lý phản hồi GPT: " + raw;
+    }
+  } catch (error) {
+    output.innerText = "❗ Lỗi fetch: " + error.message;
+  }
+}
+
+async function evaluateRandomization() {
+  const output = document.getElementById("randomization-gpt-evaluation");
+  output.innerText = "🔍 Đang đánh giá từ GPT...";
+
+  const method = document.getElementById("random-method")?.value || "Chưa chọn";
+  const numArms = document.getElementById("num-arms-step9")?.value || "Chưa rõ";
+  const userText = document.getElementById("randomization-method")?.value || "";
+
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const designType = saved.design?.type || "Chưa khai báo";
+  const objective = saved.mainObjective || "";
+
+  let crossoverInfo = "";
+  if (designType === "cross-over") {
+    const cr = saved.design?.crossover || {};
+    crossoverInfo = `
+Thiết kế bắt chéo:
+- Giai đoạn 1: ${cr.phase1 || "..."} tuần
+- Rửa trôi: ${cr.washout || "..."} tuần
+- Nhóm 1: Giai đoạn 1 = ${cr.g1_phase1 || "A"}, Giai đoạn 2 = ${cr.g1_phase2 || "B"}
+- Nhóm 2: Giai đoạn 1 = ${cr.g2_phase1 || "B"}, Giai đoạn 2 = ${cr.g2_phase2 || "A"}
+`;
+  }
+
+  const prompt = `
+Bạn là chuyên gia đánh giá thiết kế nghiên cứu RCT.
+
+Dưới đây là thông tin nghiên cứu:
+- Thiết kế: ${designType}
+- Mục tiêu chính: ${objective}
+- Số nhóm: ${numArms}
+- Phương pháp ngẫu nhiên đã chọn: ${method}
+${crossoverInfo}
+
+Mô tả do người dùng viết:
+${userText}
+
+Hãy đánh giá đoạn mô tả trên có đáp ứng các yêu cầu khoa học của một nghiên cứu RCT không, gồm:
+- Đủ chi tiết
+- Đúng kỹ thuật ngẫu nhiên hóa
+- Có ẩn phân bổ không
+- Phù hợp với thiết kế nghiên cứu
+- Có nguy cơ sai lệch hay thiếu sót nào cần sửa
+`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const raw = await response.text();
+    try {
+      const data = JSON.parse(raw);
+      output.innerText = data.choices?.[0]?.message?.content || "❗ Không có phản hồi từ GPT.";
+    } catch (e) {
+      output.innerText = "❗ Lỗi phản hồi GPT: " + raw;
+    }
+  } catch (error) {
+    output.innerText = "❗ Lỗi fetch: " + error.message;
+  }
+}
+
+
+//Bước 10
+
+function renderInterventionBlocks() {
+  const container = document.getElementById("intervention-descriptions");
+  container.innerHTML = "";
+
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const designType = saved.design?.type || "parallel";
+
+  if (designType === "parallel") {
+    const n = parseInt(localStorage.getItem("num-arms") || "0");
+    const names = (saved.design?.arms || []).slice(0, n);
+
+    for (let i = 0; i < n; i++) {
+      const groupName = names[i] || `Nhóm ${i + 1}`;
+      const textareaId = `intervention-desc-${i}`;
+      const fileId = `file-intervention-${i}`;
+      const suggestId = `suggest-intervention-${i}`;
+      const evalId = `eval-intervention-${i}`;
+
+      container.innerHTML += `
+        <div class="intervention-block" style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+          <h3>${groupName}</h3>
+          <textarea id="${textareaId}" rows="5" placeholder="Nhập mô tả can thiệp nhóm này..." oninput="saveData()"></textarea><br><br>
+          <label>Tải tài liệu PDF hỗ trợ:</label>
+          <input type="file" id="${fileId}" accept=".pdf"><br><br>
+          <button onclick="generateGroupIntervention(${i})">🧠 GPT gợi ý mô tả nhóm</button>
+          <button onclick="evaluateGroupIntervention(${i})">🧐 GPT đánh giá mô tả</button>
+          <div id="${suggestId}" style="margin-top:10px; background:#eef; padding:10px; white-space:pre-wrap; border:1px solid #99c;"></div>
+          <div id="${evalId}" style="margin-top:10px; background:#efe; padding:10px; white-space:pre-wrap; border:1px solid #9c9;"></div>
+        </div>
+      `;
+    }
+  } else if (designType === "cross-over") {
+    const descs = saved.design?.crossover || {};
+    const blocks = [
+      { label: "Giai đoạn 1 – Nhóm 1", id: "desc-g1-phase1", value: descs.g1_phase1 || "" },
+      { label: "Giai đoạn 1 – Nhóm 2", id: "desc-g2-phase1", value: descs.g2_phase1 || "" },
+      { label: "Giai đoạn 2 – Nhóm 1", id: "desc-g1-phase2", value: descs.g1_phase2 || "" },
+      { label: "Giai đoạn 2 – Nhóm 2", id: "desc-g2-phase2", value: descs.g2_phase2 || "" }
+    ];
+
+    blocks.forEach((block, index) => {
+      container.innerHTML += `
+        <div class="intervention-block" style="border:1px solid #ccc; padding:10px; margin-bottom:20px;">
+          <h3>${block.label}</h3>
+          <textarea id="${block.id}" rows="5" placeholder="Nhập mô tả can thiệp..." oninput="saveData()">${block.value}</textarea><br><br>
+          <label>Tải tài liệu PDF hỗ trợ:</label>
+          <input type="file" id="file-${block.id}" accept=".pdf"><br><br>
+          <button onclick="generateCrossoverIntervention('${block.id}')">🧠 GPT gợi ý mô tả</button>
+          <button onclick="evaluateCrossoverIntervention('${block.id}')">🧐 GPT đánh giá mô tả</button>
+          <div id="suggest-${block.id}" style="margin-top:10px; background:#eef; padding:10px; white-space:pre-wrap; border:1px solid #99c;"></div>
+          <div id="eval-${block.id}" style="margin-top:10px; background:#efe; padding:10px; white-space:pre-wrap; border:1px solid #9c9;"></div>
+        </div>
+      `;
+    });
+  }
+}
+
+
+async function generateGroupIntervention(index) {
+  const data = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const arms = data.design?.arms || [];
+  const pico = data.pico || {};
+  const groupName = arms[index] || `Nhóm ${index + 1}`;
+  const fileInput = document.getElementById(`file-intervention-${index}`);
+  const textareaId = `intervention-desc-${index}`;
+  const resultDiv = document.getElementById(`suggest-intervention-${index}`);
+
+  resultDiv.innerText = "Đang xử lý GPT...";
+
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    fileText = await extractTextFromPDF(fileInput.files[0]);
+  }
+
+  const prompt = `${fileText ? "Nội dung từ tài liệu:\n" + fileText + "\n\n" : ""}Hãy viết mô tả can thiệp cho nhóm: ${groupName}, phải chi tiết, rõ ràng, minh bạch đúng chuẩn một RCT chất lượng cao, tối thiểu phải có thời gian, tần suất, cách thức... trong nghiên cứu có thông tin PICO như sau:\nP: ${pico.p}\nI: ${pico.i}\nC: ${pico.c}\nO: ${pico.o}. Nếu can thiệp là châm cứu thì phải nêu rõ công thức thuyệt, cách châm, thông số kỹ thuật của kim, vị trí từng huyệt. Nếu can thiệp là dùng thuốc thang thì phải nêu rõ bài thuốc gồm những vị thuốc gì, liều lượng mỗi vị bao nhiêu, vị thuốc được cung cấp bởi đơn vị/cơ quan nào, tiêu chuẩn dược liệu đạt được là gì. Đảm bảo đủ thông tin can thiệp để có thể tái lập được. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11.`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+  const data = JSON.parse(text);
+  resultDiv.innerHTML = `
+    <div style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;">
+      ${data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung."}
+    </div>
+  `;
+} catch (e) {
+  resultDiv.innerText = "Lỗi GPT: " + text;
+}
+}
+
+async function evaluateGroupIntervention(index) {
+  const content = document.getElementById(`intervention-desc-${index}`).value.trim();
+  const evalDiv = document.getElementById(`eval-intervention-${index}`);
+  if (!content) {
+    evalDiv.innerText = "Vui lòng nhập mô tả để đánh giá.";
+    return;
+  }
+
+  const prompt = `Đây là mô tả can thiệp nhóm ${index + 1}. Hãy đánh giá chất lượng mô tả này (đủ rõ ràng, chi tiết, minh mạch chưa để có thể tái lập được) trong nghiên cứu RCT:\n\n${content}`;
+
+  evalDiv.innerText = "GPT đang đánh giá...";
+
+ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    evalDiv.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (e) {
+    evalDiv.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+async function generateCrossoverIntervention(id) {
+  const textarea = document.getElementById(`crossover-desc-${id}`);
+  const fileInput = document.getElementById(`file-crossover-${id}`);
+  const suggestDiv = document.getElementById(`suggest-crossover-${id}`);
+
+  suggestDiv.innerText = "🧠 Đang sinh mô tả từ GPT...";
+
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    const fileLoaded = new Promise(resolve => {
+      reader.onload = () => resolve(reader.result);
+    });
+    reader.readAsText(file);
+    fileText = await fileLoaded;
+  }
+
+  const data = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = data.pico || {};
+
+  const prompt = `
+Bạn đang viết mô tả can thiệp cho một nghiên cứu RCT thiết kế bắt chéo.
+
+📌 PICO:
+- Dân số (P): ${pico.p || "chưa có"}
+- Can thiệp (I): ${pico.i || "chưa có"}
+- So sánh (C): ${pico.c || "chưa có"}
+- Kết cục (O): ${pico.o || "chưa có"}
+
+📌 Đây là mô tả cần cho ô số ${id} (${["Giai đoạn 1 – Nhóm 1", "Giai đoạn 1 – Nhóm 2", "Giai đoạn 2 – Nhóm 1", "Giai đoạn 2 – Nhóm 2"][id]})
+${fileText ? "📄 Tài liệu hỗ trợ:\n" + fileText.slice(0, 1000) : "❌ Không có tài liệu hỗ trợ"}
+
+👉 Viết mô tả ngắn gọn, chi tiết về nội dung can thiệp nhóm tương ứng.
+`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const result = await res.json();
+    const content = result.choices?.[0]?.message?.content || "Không có nội dung.";
+    textarea.value = content;
+    suggestDiv.innerText = content;
+    saveData();
+  } catch (err) {
+    suggestDiv.innerText = "❌ Lỗi GPT: " + err.message;
+  }
+}
+
+async function evaluateCrossoverIntervention(id) {
+  const textarea = document.getElementById(`crossover-desc-${id}`);
+  const evalDiv = document.getElementById(`eval-crossover-${id}`);
+  const content = textarea.value.trim();
+
+  if (!content) {
+    evalDiv.innerText = "⚠️ Chưa có nội dung để đánh giá.";
+    return;
+  }
+
+  const prompt = `
+Đây là mô tả can thiệp trong nghiên cứu RCT bắt chéo – ô số ${id} (${["Giai đoạn 1 – Nhóm 1", "Giai đoạn 1 – Nhóm 2", "Giai đoạn 2 – Nhóm 1", "Giai đoạn 2 – Nhóm 2"][id]}):
+
+"${content}"
+
+👉 Đánh giá theo các tiêu chí:
+1. Mục tiêu rõ ràng không?
+2. Quy trình thực hiện đủ chưa?
+3. Tần suất, thời lượng, hình thức can thiệp có nêu không?
+4. Có gì cần bổ sung?
+
+Viết phản hồi theo từng tiêu chí.
+`;
+
+  evalDiv.innerText = "🧐 GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+    const result = await res.json();
+    evalDiv.innerText = result.choices?.[0]?.message?.content || "Không có phản hồi.";
+  } catch (err) {
+    evalDiv.innerText = "❌ Lỗi GPT: " + err.message;
+  }
+}
+
+//Bước 11
+
+function removeVariable(event, name, role) {
+  event.stopPropagation(); // tránh gây drag
+  const list = document.querySelector(`.variable-selected[data-role="${role}"]`);
+  const item = [...list.querySelectorAll("li")].find(li => li.dataset.name === name);
+  if (item) item.remove();
+  selectedVariables[role] = [...list.querySelectorAll("li")].map(li => ({
+    name: li.dataset.name,
+    role: li.dataset.role,
+    type: li.textContent.match(/\(([^)]+)\)/)?.[1] || ""
+  }));
+}
+
+
+function addNewVariable() {
+  const newVar = {
+    name: document.getElementById("new-name").value.trim(),
+    role: document.getElementById("new-role").value.trim(),
+    type: document.getElementById("new-type").value.trim(),
+    unit: document.getElementById("new-unit").value.trim(),
+    time: document.getElementById("new-time").value.trim(),
+    measure: document.getElementById("new-measure").value.trim(),
+    definition: document.getElementById("new-definition").value.trim(),
+    source: document.getElementById("new-source").value.trim(),
+    format: document.getElementById("new-format").value.trim(),
+    range: document.getElementById("new-range").value.trim(),
+    mcid_or_cutoff: document.getElementById("new-mcid").value.trim()
+  };
+
+  if (!newVar.name || !newVar.role || !newVar.type) {
+    alert("Phải có ít nhất tên, vai trò và kiểu dữ liệu.");
+    return;
+  }
+
+  allVariables.push(newVar);
+  createVariableDragUI();
+}
+
+function exportVariables() {
+  const csv = Papa.unparse(allVariables);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "updated_variables.csv";
+  link.click();
+}
+
+async function suggestVariablesForRole(role) {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const fileInput = document.getElementById(`file-variable-${role}`);
+  const output = document.getElementById(`suggest-variable-${role}`);
+  output.innerText = "GPT đang gợi ý...";
+
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    fileText = await extractTextFromPDF(fileInput.files[0]);
+  }
+
+  const prompt = `
+Thông tin nghiên cứu RCT:
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu: ${objective}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+
+Yêu cầu: Hãy gợi ý một số biến phù hợp cho nhóm biến "${role}" (theo chức năng nghiên cứu). Đưa tên biến và ngắn gọn lý do nên đưa vào.
+${fileText ? `\nTài liệu tham khảo:\n${fileText}` : ""}
+`;
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "Không có phản hồi từ GPT.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+async function evaluateVariablesForRole(role) {
+  const list = document.querySelector(`.variable-list.variable-selected[data-role="${role}"]`);
+  const items = [...list.querySelectorAll("li")];
+  const output = document.getElementById(`eval-variable-${role}`);
+
+  if (items.length === 0) {
+    output.innerText = "⚠️ Chưa có biến nào được chọn.";
+    return;
+  }
+
+  const selected = items.map(li => li.textContent).join(", ");
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+
+  const prompt = `
+Thông tin nghiên cứu RCT:
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu: ${objective}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+
+Các biến được chọn cho nhóm "${role}": ${selected}
+
+Hãy đánh giá xem nhóm biến này có phù hợp với mục tiêu nghiên cứu không? Có thiếu hoặc thừa không? Gợi ý cải thiện nếu có.
+`;
+
+  output.innerText = "GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+
+//Bước 12
+async function generateCollectSuggestion() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const designType = saved.design?.type || "";
+  const followupWeeks = saved.design?.followup || "";
+  const crossover = saved.design?.crossover || {};
+
+  // Biến đã chọn từ bước 11
+  const selected = selectedVariables || {};
+  const variableList = Object.entries(selected).flatMap(([role, vars]) =>
+    vars.map(v => `${v.name} (${role})`)
+  ).join(", ");
+
+  // Trích văn bản từ PDF nếu có
+  const fileInput = document.getElementById("file-collect-pdf");
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    fileText = await extractTextFromPDF(fileInput.files[0]);
+  }
+
+  // Prompt khác nhau theo thiết kế
+  let designInfo = "";
+  if (designType === "cross-over") {
+    designInfo = `
+Thiết kế: Nghiên cứu bắt chéo (cross-over)
+- Giai đoạn 1: ${crossover.phase1 || "?"} tuần
+- Rửa trôi: ${crossover.washout || "?"} tuần
+- Giai đoạn 2: ${crossover.phase2 || "?"} tuần
+    `.trim();
+  } else {
+    designInfo = `Thiết kế: Song song; Thời gian theo dõi: ${followupWeeks || "?"} tuần`;
+  }
+
+  const prompt = `
+Thông tin nghiên cứu:
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu: ${objective}
+- Thiết kế nghiên cứu: ${designInfo}
+- Can thiệp: ${interventions.join("\n\n")}
+- Biến đã chọn: ${variableList}
+
+Hãy gợi ý kế hoạch thu thập dữ liệu, gồm:
+- Thời điểm thu
+- Ai thu thập
+- Dụng cụ đo
+- Phân loại biến theo nhóm (nền, kết cục chính, phụ, an toàn, trung gian...)
+
+${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
+  `.trim();
+
+  const output = document.getElementById("suggest-collect");
+  output.innerText = "GPT đang gợi ý...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+async function evaluateCollectDescription() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const designType = saved.design?.type || "";
+  const followupWeeks = saved.design?.followup || "";
+  const crossover = saved.design?.crossover || {};
+
+  const desc = document.getElementById("collect-desc").value;
+
+  const selected = selectedVariables || {};
+  const variableList = Object.entries(selected).flatMap(([role, vars]) =>
+    vars.map(v => `${v.name} (${role})`)
+  ).join(", ");
+
+  let designInfo = "";
+  if (designType === "cross-over") {
+    designInfo = `
+Thiết kế: Nghiên cứu bắt chéo (cross-over)
+- Giai đoạn 1: ${crossover.phase1 || "?"} tuần
+- Rửa trôi: ${crossover.washout || "?"} tuần
+- Giai đoạn 2: ${crossover.phase2 || "?"} tuần
+    `.trim();
+  } else {
+    designInfo = `Thiết kế: Song song; Thời gian theo dõi: ${followupWeeks || "?"} tuần`;
+  }
+
+  const prompt = `
+Thông tin nghiên cứu:
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu: ${objective}
+- Thiết kế nghiên cứu: ${designInfo}
+- Can thiệp: ${interventions.join("\n\n")}
+- Biến đã chọn: ${variableList}
+
+Người dùng đã mô tả kế hoạch thu thập dữ liệu như sau:
+"${desc}"
+
+Hãy đánh giá nội dung này về mức độ hợp lý, đầy đủ, khả thi và gợi ý cải thiện nếu cần.
+  `.trim();
+
+  const output = document.getElementById("eval-collect");
+  output.innerText = "GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+
+//Bước 13
+
+async function generateAnalysisPlan() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const numArms = parseInt(localStorage.getItem("num-arms") || "0");
+  const designType = saved.design?.type || "Song song";
+
+  const selected = selectedVariables || {};
+  const variableList = Object.entries(selected).flatMap(([role, vars]) =>
+    vars.map(v => `${v.name} (${role})`)
+  ).join(", ");
+
+  const fileInput = document.getElementById("file-analysis-pdf");
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    fileText = await extractTextFromPDF(fileInput.files[0]);
+  }
+
+  let designExplain = "";
+  switch (designType) {
+    case "Bắt chéo (cross-over)":
+      designExplain = "Thiết kế nghiên cứu là bắt chéo (cross-over), do đó cần phân tích theo từng cá thể với kiểm tra carry-over effect.";
+      break;
+    case "RCT cụm":
+      designExplain = "Thiết kế nghiên cứu là cụm (cluster RCT), cần sử dụng mô hình hồi quy đa mức hoặc GEE.";
+      break;
+    case "Factorial":
+      designExplain = "Thiết kế nghiên cứu là factorial, cần phân tích hiệu ứng chính và tương tác giữa các yếu tố.";
+      break;
+    default:
+      designExplain = "Thiết kế nghiên cứu là song song (parallel RCT).";
+  }
+
+  const prompt = `
+Bạn là chuyên gia phân tích số liệu lâm sàng. Hãy viết kế hoạch phân tích số liệu (SAP) cho nghiên cứu sau:
+
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu nghiên cứu: ${objective}
+- Thiết kế nghiên cứu: ${designType}
+- ${designExplain}
+- Số nhóm can thiệp: ${numArms}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+- Các biến số đã chọn: ${variableList}
+
+Yêu cầu: Viết kế hoạch phân tích chuẩn mực, bao gồm:
+1. Phân tích mô tả ban đầu
+2. Phân tích kết cục chính
+3. Phân tích kết cục phụ
+4. Phân tích biến nền và yếu tố gây nhiễu
+5. Phân tích an toàn
+6. Phân tích nhạy cảm (nếu cần)
+7. Kiểm định thống kê tương ứng
+8. Phương pháp xử lý missing data
+9. Phần mềm và tiêu chí thống kê
+
+${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
+`;
+
+  const output = document.getElementById("suggest-analysis");
+  output.innerText = "GPT đang gợi ý...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+async function evaluateAnalysisPlan() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const numArms = parseInt(localStorage.getItem("num-arms") || "0");
+  const designType = saved.design?.type || "Song song";
+
+  const desc = document.getElementById("analysis-desc").value;
+  const selected = selectedVariables || {};
+  const variableList = Object.entries(selected).flatMap(([role, vars]) =>
+    vars.map(v => `${v.name} (${role})`)
+  ).join(", ");
+
+  const prompt = `
+Bạn là chuyên gia đánh giá đề cương nghiên cứu. Hãy đọc nội dung sau và cho nhận xét xem chiến lược phân tích có hợp lý không, có cần bổ sung hay cải thiện không.
+
+Thông tin nghiên cứu:
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu nghiên cứu: ${objective}
+- Thiết kế nghiên cứu: ${designType}
+- Số nhóm can thiệp: ${numArms}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+- Các biến số đã chọn: ${variableList}
+
+Chiến lược phân tích người dùng đã viết:
+"${desc}"
+
+Yêu cầu: Nhận xét rõ ràng về điểm mạnh, điểm thiếu sót, và đề xuất điều chỉnh nếu có.
+`;
+
+  const output = document.getElementById("eval-analysis");
+  output.innerText = "GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+//Bước 14
+
+async function generateEthicsSection() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const numArms = parseInt(localStorage.getItem("num-arms") || "0");
+
+  // Nếu có file PDF
+  const fileInput = document.getElementById("file-ethics-pdf");
+  let fileText = "";
+  if (fileInput?.files?.[0]) {
+    fileText = await extractTextFromPDF(fileInput.files[0]);
+  }
+
+  const prompt = `
+Bạn là chuyên gia đạo đức nghiên cứu. Hãy viết phần "Đạo đức nghiên cứu" cho một đề cương RCT với các thông tin sau:
+
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu nghiên cứu: ${objective}
+- Số nhóm can thiệp: ${numArms}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+
+Nội dung đạo đức cần trình bày:
+1. Tuân thủ các chuẩn mực đạo đức (Tuyên bố Helsinki, GCP, quy định địa phương…)
+2. Trình quy trình xin ý kiến Hội đồng Đạo đức
+3. Mô tả lấy đồng thuận người tham gia
+4. Bảo mật và quyền riêng tư
+5. Quyền rút lui, theo dõi an toàn
+6. Quản lý dữ liệu và bảo lưu hồ sơ
+
+${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
+`;
+
+  const output = document.getElementById("suggest-ethics");
+  output.innerText = "GPT đang gợi ý...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+async function evaluateEthicsSection() {
+  const desc = document.getElementById("ethics-desc").value;
+
+  const prompt = `
+Bạn là thành viên Hội đồng Đạo đức nghiên cứu. Hãy đánh giá nội dung sau có đầy đủ và đúng nguyên tắc đạo đức nghiên cứu không. Nếu thiếu, hãy góp ý cụ thể:
+
+"${desc}"
+`;
+
+  const output = document.getElementById("eval-ethics");
+  output.innerText = "GPT đang đánh giá...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+//Bước 15
+
+async function checkLogic() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+  const pico = saved.pico || {};
+  const objective = saved.mainObjective || "";
+  const interventions = saved.interventions || [];
+  const numArms = localStorage.getItem("num-arms") || "Không xác định";
+
+  const selected = selectedVariables || {};
+  const variableList = Object.entries(selected).flatMap(([role, vars]) =>
+    vars.map(v => `${v.name} (${role})`)
+  ).join(", ");
+
+  const analysis = document.getElementById("analysis-desc")?.value || "";
+  const ethics = document.getElementById("ethics-desc")?.value || "";
+
+  const prompt = `
+Bạn là chuyên gia đánh giá đề cương RCT. Hãy kiểm tra tính nhất quán và logic giữa các phần sau:
+
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
+- Mục tiêu nghiên cứu: ${objective}
+- Số nhóm can thiệp: ${numArms}
+- Mô tả can thiệp: ${interventions.join("\n\n")}
+- Biến số đã chọn: ${variableList}
+- Mô tả phân tích số liệu: ${analysis}
+- Phần đạo đức nghiên cứu: ${ethics}
+
+Hãy nêu rõ:
+1. Có phần nào bị thiếu hoặc chưa điền không?
+2. Có mâu thuẫn giữa các phần không?
+3. Góp ý cách chỉnh sửa để hợp lý và nhất quán.
+
+Đánh giá tổng quan đề cương này.
+
+`;
+
+  const output = document.getElementById("logic-check-result");
+  output.innerText = "GPT đang kiểm tra...";
+
+const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ prompt })
+});
+
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+  } catch (e) {
+    output.innerText = "Lỗi GPT: " + text;
+  }
+}
+
+//Bước 16
+function downloadMermaidPNG() {
+  const target = document.getElementById("consort-mermaid");
+  html2canvas(target).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "consort_diagram.png";
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
+function renderStudyFlowDiagram() {
+  const saved = JSON.parse(localStorage.getItem("rctWizardData") || "{}");
+
+  // Bước 6 – Thiết kế
+  const designType = saved.design?.type || "parallel";
+  const arms = saved.design?.arms || ["Nhóm 1", "Nhóm 2"];
+  const interventions = saved.interventions || [];
+  const samplePerGroup = saved.sampleSize?.perGroup || "n=??";
+  const crossover = saved.design?.crossover || {};
+  const phase1Weeks = parseInt(crossover.phase1Weeks || "0");
+  const washoutWeeks = parseInt(crossover.washout || "0");
+
+  // Bước 7–8 – Tiêu chí
+  const inclusion = (saved.criteria?.inclusion || []).slice(0, 2).join("; ");
+  const exclusion = (saved.criteria?.exclusion || []).slice(0, 2).join("; ");
+
+  // Bước 11 – Biến và thời gian đo
+  const selected = saved.selectedVariables || {};
+  const timeMap = {};
+  for (const role in selected) {
+  (selected[role] || []).forEach(v => {
+    const varName = (v.name || "").trim();
+    const timesRaw = (v.time || "").split(",").map(s => s.trim()).filter(Boolean);
+    timesRaw.forEach(t => {
+      if (!t || !varName) return;
+      if (!timeMap[t]) timeMap[t] = [];
+      if (!timeMap[t].includes(varName)) timeMap[t].push(varName);
+    });
+  });
+}
+
+  // Tách giai đoạn nếu là crossover
+  const phase1Times = [], phase2Times = [];
+  if (designType === "cross-over") {
+    Object.keys(timeMap).forEach(t => {
+      const match = t.match(/Tuần\s*(\d+)/i);
+      if (match) {
+        const week = parseInt(match[1]);
+        if (week <= phase1Weeks) phase1Times.push(t);
+        else if (week > phase1Weeks + washoutWeeks) phase2Times.push(t);
+      }
+    });
+  }
+
+  const getVarsAt = times => {
+  const merged = {}; // key = time, value = list biến
+
+  times.forEach(t => {
+    (timeMap[t] || []).forEach(v => {
+      if (!merged[t]) merged[t] = new Set();
+      merged[t].add(v);
+    });
+  });
+
+  return Object.keys(merged)
+    .sort((a, b) => {
+      const n1 = parseInt(a.match(/\d+/)?.[0] || "0");
+      const n2 = parseInt(b.match(/\d+/)?.[0] || "0");
+      return n1 - n2;
+    })
+    .map(t => `🕒 ${t}: ${[...merged[t]].join(", ")}`)
+    .join("<br>") || "Chưa xác định";
+};
+
+  // Bắt đầu Mermaid
+  let diagram = `flowchart TD\n`;
+  diagram += `  A["📋 Thu nhận người bệnh<br>Tiêu chí chọn: ${inclusion || "..."}<br>Tiêu chí loại: ${exclusion || "..."}"] --> B["🎲 Ngẫu nhiên hóa (${designType})"]\n`;
+
+  if (designType === "parallel") {
+    arms.forEach((name, i) => {
+      const C = `C${i}`;
+      const D = `D${i}`;
+      const E = `E${i}`;
+      const intervention = interventions[i] || "Can thiệp";
+      const uniqueTimes = Object.keys(timeMap).filter(t => !!t);
+      const timesBlock = getVarsAt(uniqueTimes);
+      diagram += `  B --> ${C}["${name}<br>${intervention}<br>${samplePerGroup}"]\n`;
+      diagram += `  ${C} --> ${D}["📊 Thu thập dữ liệu:<br>${timesBlock}"]\n`;
+      diagram += `  ${D} --> ${E}["📈 Phân tích kết quả nhóm ${i + 1}"]\n`;
+    });
+    arms.forEach((_, i) => {
+      diagram += `  E${i} --> F["📝 Tổng hợp & báo cáo kết quả"]\n`;
+    });
+
+  } else if (designType === "cross-over") {
+    
+    const g1_phase1 = crossover.g1_phase1?.trim() || "Chưa rõ";
+    const g2_phase1 = crossover.g2_phase1?.trim() || "Chưa rõ";
+    const g1_phase2 = crossover.g1_phase2?.trim() || "Chưa rõ";
+    const g2_phase2 = crossover.g2_phase2?.trim() || "Chưa rõ";
+
+    const phase1Block = getVarsAt(phase1Times);
+    const phase2Block = getVarsAt(phase2Times);
+
+    diagram += `  B --> C1["Nhóm 1<br>⏱️ Giai đoạn 1 (${phase1Weeks} tuần): ${g1_phase1}<br>${samplePerGroup}"]\n`;
+    diagram += `  B --> C2["Nhóm 2<br>⏱️ Giai đoạn 1 (${phase1Weeks} tuần): ${g2_phase1}<br>${samplePerGroup}"]\n`;
+
+    diagram += `  C1 --> D1["📊 Thu thập dữ liệu giai đoạn 1:<br>${phase1Block}"]\n`;
+    diagram += `  C2 --> D2["📊 Thu thập dữ liệu giai đoạn 1:<br>${phase1Block}"]\n`;
+
+    diagram += `  D1 --> E1["🧼 Rửa trôi (${washoutWeeks} tuần)"] --> F1["⏱️ Giai đoạn 2: ${g1_phase2}"] --> G1["📊 Thu thập dữ liệu giai đoạn 2:<br>${phase2Block}"]\n`;
+    diagram += `  D2 --> E2["🧼 Rửa trôi (${washoutWeeks} tuần)"] --> F2["⏱️ Giai đoạn 2: ${g2_phase2}"] --> G2["📊 Thu thập dữ liệu giai đoạn 2:<br>${phase2Block}"]\n`;
+
+    diagram += `  G1 --> H["📈 Phân tích kết quả"]\n`;
+    diagram += `  G2 --> H\n`;
+    diagram += `  H --> I["📝 Tổng hợp & báo cáo"]\n`;
+  }
+
+  // Vẽ lại
+  const oldContainer = document.getElementById("studyflow-mermaid");
+  const parent = oldContainer?.parentElement;
+  if (oldContainer) oldContainer.remove();
+
+  const newPre = document.createElement("pre");
+  newPre.id = "studyflow-mermaid";
+  newPre.className = "mermaid";
+  newPre.textContent = diagram;
+  newPre.style.padding = "20px";
+  newPre.style.border = "1px solid #ccc";
+
+  parent.insertBefore(newPre, parent.querySelector("br"));
+
+  setTimeout(() => {
+    try {
+      mermaid.run();
+    } catch (err) {
+      newPre.innerHTML = `<pre style="color:red;">Lỗi Mermaid: ${err.message || err}</pre>`;
+      console.error("Mermaid error", err, diagram);
+    }
+  }, 50);
+}
+
+// ====================== PHẦN 2: Hàm xử lý dữ liệu ==================
+
+function saveData() {
+  const arms = Array.from(document.querySelectorAll(".arm-description")).map(el => el.value);
+  localStorage.setItem("num-arms", arms.length);
+  let ethics = {};
+    if (
+    document.getElementById("ethics-board") &&
+    document.getElementById("ethics-approval-code") &&
+    document.getElementById("ethics-date") &&
+    document.getElementById("ethics-rights") &&
+    document.getElementById("ethics-note")
+    ) {
+    ethics = {
+    board: document.getElementById("ethics-board").value,
+    approvalCode: document.getElementById("ethics-approval-code").value,
+    date: document.getElementById("ethics-date").value,
+    rights: document.getElementById("ethics-rights").value,
+    note: document.getElementById("ethics-note").value
+    };
+  }
+  const data = {
+    // Bước 1: PICO
+    pico: {
+      p: document.getElementById("pico-p").value,
+      i: document.getElementById("pico-i").value,
+      c: document.getElementById("pico-c").value,
+      o: document.getElementById("pico-o").value
+    },
+
+    // Bước 2: Câu hỏi nghiên cứu
+    question: document.getElementById("question").value,
+
+    // Bước 3: Mục tiêu nghiên cứu
+    mainObjective: document.getElementById("main-objective").value,
+    subObjectives: Array.from(document.querySelectorAll(".sub-objective")).map(el => el.value),
+
+    // Bước 4: Mở đầu (CaRS)
+    introduction: {
+      territory: document.getElementById("intro-territory")?.value || "",
+      niche: document.getElementById("intro-niche")?.value || "",
+      occupy: document.getElementById("intro-occupy")?.value || ""
+    },
+
+    // Bước 5: Tổng quan tài liệu
+    literature: Array.from(document.querySelectorAll(".literature-section")).map(div => ({
+      title: div.querySelector(".literature-title").value,
+      content: div.querySelector(".literature-content").value
+    })),
+
+    // Bước 6: Thiết kế nghiên cứu
+    design: {
+    type: document.getElementById("design-type").value,  // sẽ là: "parallel", "cross-over", "cluster", hoặc "factorial"
+    randomization: document.getElementById("randomization").value,
+    blinding: document.getElementById("blinding").value,
+    followupWeeks: document.getElementById("followup-weeks")?.value || "",
+    arms: Array.from(document.querySelectorAll(".arm-description")).map(el => el.value),
+    interventionWeeks: document.getElementById("intervention-weeks")?.value || "",
+    crossover: {
+          g1_phase1: document.getElementById("crossover-g1-phase1")?.value || "",
+          g2_phase1: document.getElementById("crossover-g2-phase1")?.value || "",
+          washout: document.getElementById("crossover-washout")?.value || "",
+          g1_phase2: document.getElementById("crossover-g1-phase2")?.value || "",
+          g2_phase2: document.getElementById("crossover-g2-phase2")?.value || "",
+          phase1Weeks: document.getElementById("crossover-phase1")?.value || "" 
+        }
+    },
+
+    // Bước 7: Cỡ mẫu
+    sampleSize: {
+      method: document.getElementById("sample-size-method")?.value || "",
+      alpha: document.getElementById("alpha")?.value || "",
+      power: document.getElementById("power")?.value || "",
+      sigma: document.getElementById("sigma")?.value || "",
+      delta: document.getElementById("delta")?.value || "",
+      deltaMean: document.getElementById("delta-mean")?.value || "",
+      deltaMargin: document.getElementById("delta-margin")?.value || "",
+      stdDev: document.getElementById("std-dev")?.value || "",
+      p1: document.getElementById("p1")?.value || "",
+      p2: document.getElementById("p2")?.value || "",
+      pc: document.getElementById("pc")?.value || "",
+      pt: document.getElementById("pt")?.value || "",
+      rsquared: document.getElementById("rsquared")?.value || "",
+      k: document.getElementById("k")?.value || "",
+      effectF: document.getElementById("effect-f")?.value || "",
+      effectW: document.getElementById("effect-w")?.value || "",
+      kChisq: document.getElementById("k-chisq")?.value || "",
+      pChisq: document.getElementById("p-chisq")?.value || "",
+      perGroup: window.calculatedSampleSize || ""
+    },
+
+    // Bước 8: Tiêu chí chọn và loại
+    criteria: {
+      inclusion: Array.from(document.querySelectorAll(".inclusion-item")).map(el => el.value),
+      exclusion: Array.from(document.querySelectorAll(".exclusion-item")).map(el => el.value)
+    },
+
+    // Bước 9: Phân bổ ngẫu nhiên
+    randomization: {
+      method: document.getElementById("random-method")?.value || "",
+      blockSize: document.getElementById("block-size")?.value || "",
+      strata: document.getElementById("strata-variables")?.value || "",
+      adaptive: document.getElementById("adaptive-type")?.value || ""
+    },
+
+    // Bước 10: Can thiệp
+    interventions: Array.from(document.querySelectorAll(".intervention-item")).map(el => el.value),
+
+    // Bước 11: Biến số
+    selectedVariables: (() => {
+  const result = {};
+  document.querySelectorAll(".variable-selected").forEach(list => {
+    const role = list.dataset.role;
+    const vars = Array.from(list.querySelectorAll("li")).map(li => ({
+      name: li.dataset.name,
+      role: li.dataset.role,
+      type: li.dataset.type || "",
+      time: li.dataset.time || "",
+      unit: li.dataset.unit || "",
+      measure: li.dataset.measure || "",
+      definition: li.dataset.definition || "",
+      source: li.dataset.source || "",
+      format: li.dataset.format || "",
+      range: li.dataset.range || "",
+      mcid_or_cutoff: li.dataset.mcid || ""
+    }));
+    result[role] = vars;
+  });
+  window.selectedVariables = result;  
+  return result;
+ })(),
+
+    // Bước 12: Thu thập số liệu
+    collectPlans: Array.from(document.querySelectorAll(".collection-block")).map(div => ({
+      time: div.querySelector(".collect-time").value,
+      variables: div.querySelector(".collect-variables").value,
+      method: div.querySelector(".collect-method").value,
+      by: div.querySelector(".collect-by").value,
+      note: div.querySelector(".collect-note").value
+    })),
+
+    // Bước 13: Phân tích số liệu
+    analysisPlans: Array.from(document.querySelectorAll(".analysis-block")).map(div => ({
+      variable: div.querySelector(".analysis-variable").value,
+      method: div.querySelector(".analysis-method").value,
+      software: div.querySelector(".analysis-software").value,
+      threshold: div.querySelector(".analysis-threshold").value,
+      note: div.querySelector(".analysis-note").value
+    })),
+
+    // Bước 14: Đạo đức nghiên cứu
+    
+      ethics: ethics
+    };
+   localStorage.setItem("rctWizardData", JSON.stringify(data));
+}
+
+
+function loadData() {
+  let data = JSON.parse(localStorage.getItem("rctWizardData"));
+  if (!data) data = {};
+  if (!data.pico) data.pico = {};
+
+  // Bước 1: PICO
+  document.getElementById("pico-p").value = data.pico.p || "";
+  document.getElementById("pico-i").value = data.pico.i || "";
+  document.getElementById("pico-c").value = data.pico.c || "";
+  document.getElementById("pico-o").value = data.pico.o || "";
+
+  // Bước 2: Câu hỏi
+  document.getElementById("question").value = data.question || "";
+
+  // Bước 3: Mục tiêu
+  document.getElementById("main-objective").value = data.mainObjective || "";
+  const container = document.getElementById("sub-objectives");
+  container.innerHTML = "";
+  (data.subObjectives || []).forEach(val => {
+    const div = document.createElement("div");
+    div.innerHTML = `<input type="text" class="sub-objective" value="${val}">`;
+    container.appendChild(div);
+  });
+
+  // Bước 4: Mở đầu
+  if (data.introduction) {
+    document.getElementById("intro-territory").value = data.introduction.territory || "";
+    document.getElementById("intro-niche").value = data.introduction.niche || "";
+    document.getElementById("intro-occupy").value = data.introduction.occupy || "";
+  }
+
+  // Bước 5: Tổng quan tài liệu
+  if (data.literature && Array.isArray(data.literature)) {
+  const container = document.getElementById("literature-sections");
+  if (container) {
+    container.innerHTML = "";
+    data.literature.forEach(sec => addLiteratureSection(sec.title, sec.content));
+  }
+}
+
+  // Bước 6: Thiết kế nghiên cứu
+  if (data.design) {
+  const typeEl = document.getElementById("design-type");
+  if (typeEl) {
+    typeEl.value = data.design.type || "";
+    updateDesignFields();
+  }
+
+  const randEl = document.getElementById("randomization");
+  if (randEl) randEl.value = data.design.randomization || "";
+
+  const blindEl = document.getElementById("blinding");
+  if (blindEl) blindEl.value = data.design.blinding || "";
+
+  const followupEl = document.getElementById("followup-weeks");
+  if (followupEl) followupEl.value = data.design.followupWeeks || "";
+
+  const numArmsEl = document.getElementById("num-arms");
+  if (numArmsEl) numArmsEl.value = data.design.arms?.length || 2;
+
+  renderArms();
+
+  const armsInputs = document.querySelectorAll(".arm-description");
+  (data.design.arms || []).forEach((desc, idx) => {
+    if (armsInputs[idx]) armsInputs[idx].value = desc;
+  });
+}
+
+  // Bước 7: Cỡ mẫu
+  if (data.sampleSize) {
+    document.getElementById("sample-size-method").value = data.sampleSize.method || "";
+    renderSampleSizeForm();
+    const f = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ""; };
+    f("alpha", data.sampleSize.alpha);
+    f("power", data.sampleSize.power);
+    f("sigma", data.sampleSize.sigma);
+    f("delta", data.sampleSize.delta);
+    f("delta-mean", data.sampleSize.deltaMean);
+    f("delta-margin", data.sampleSize.deltaMargin);
+    f("std-dev", data.sampleSize.stdDev);
+    f("p1", data.sampleSize.p1);
+    f("p2", data.sampleSize.p2);
+    f("pt", data.sampleSize.pt);
+    f("pc", data.sampleSize.pc);
+    f("rsquared", data.sampleSize.rsquared);
+    f("k", data.sampleSize.k);
+    f("effect-f", data.sampleSize.effectF);
+    f("effect-w", data.sampleSize.effectW);
+    f("k-chisq", data.sampleSize.kChisq);
+    f("p-chisq", data.sampleSize.pChisq);
+  }
+
+  // Bước 8: Tiêu chí
+  if (data.criteria) {
+    const inclusionBox = document.getElementById("inclusion-criteria");
+    const exclusionBox = document.getElementById("exclusion-criteria");
+    inclusionBox.innerHTML = "";
+    exclusionBox.innerHTML = "";
+    (data.criteria.inclusion || []).forEach(item => addInclusionCriterion(item));
+    (data.criteria.exclusion || []).forEach(item => addExclusionCriterion(item));
+  }
+
+  // Bước 9: Phân bổ ngẫu nhiên
+  if (data.randomization) {
+  const randomMethodEl = document.getElementById("random-method");
+  if (randomMethodEl) {
+    randomMethodEl.value = data.randomization.method || "";
+    renderRandomOptions();
+
+    if (data.randomization.blockSize) {
+      const el = document.getElementById("block-size");
+      if (el) el.value = data.randomization.blockSize;
+    }
+
+    if (data.randomization.strata) {
+      const el = document.getElementById("strata-variables");
+      if (el) el.value = data.randomization.strata;
+    }
+
+    if (data.randomization.adaptive) {
+      const el = document.getElementById("adaptive-type");
+      if (el) el.value = data.randomization.adaptive;
+    }
+  }
+}
+
+  // Bước 10: Mô tả can thiệp
+  if (data.interventions && Array.isArray(data.interventions)) {
+    const container = document.getElementById("intervention-descriptions");
+    container.innerHTML = "";
+    data.interventions.forEach(text => addIntervention(text));
+  }
+
+  // Bước 11: Biến số
+  if (data.selectedVariables) {
+    Object.entries(data.selectedVariables).forEach(([role, vars]) => {
+      selectedVariables[role] = vars;
+    });
+    if (typeof createVariableDragUI === 'function') createVariableDragUI();
+  }
+
+  // Bước 14: Đạo đức
+  if (data.ethics && typeof data.ethics === "string") {
+  document.getElementById("ethics-desc").value = data.ethics;
+  }
+}
+
+// ====================== PHẦN 3: Hàm điều hướng =====================
+
+let currentStep = 0;
+function goToStep(step) {
+      document.querySelectorAll('.step').forEach((el, i) => {
+        el.classList.toggle('active', i === step);
+      });
+      document.querySelectorAll('.steps-nav button').forEach((btn, i) => {
+        btn.classList.toggle('active', i === step);
+      });
+      currentStep = step;
+      localStorage.setItem("currentStep", step);
+      if (step === 8) loadRandomizationInfo();
+      if (step === 9) renderInterventionBlocks();
+      if (step === 10) createVariableDragUI();
+      if (step === 14) {
+      const logicResult = document.getElementById("logic-check-result");
+      if (logicResult) logicResult.innerHTML = "";
+      };
+      if (step === 15) renderStudyFlowDiagram();
+    }
+
+window.addEventListener('load', function () {
+  const savedStep = parseInt(localStorage.getItem("currentStep")) || 0;
+  goToStep(savedStep);  
+  loadData();
+  loadRandomizationInfo();
+  renderSampleSizeForm();
+  renderRandomOptions();
+
+  if (typeof createVariableDragUI === 'function') createVariableDragUI();
+  if (typeof updateDropdowns === 'function') updateDropdowns();
+  if (typeof loadCSVFiles === 'function') loadCSVFiles();
+  if (typeof setupPdfUpload === 'function') setupPdfUpload();
+  if (typeof renderStudyFlowDiagram === "function") renderStudyFlowDiagram();
+  if (typeof updateDesignFields === 'function') updateDesignFields();
+});
+
+function resetWizard() {
+  if (confirm("Bạn có chắc muốn xóa toàn bộ dữ liệu và làm lại từ đầu?")) {
+    localStorage.removeItem("rctWizardData");
+    localStorage.removeItem("num-arms");
+    location.reload();
+  }
+}
+
+ window.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("textarea, input[type='text']").forEach(el => {
+      el.setAttribute("spellcheck", "false");
+    });
+  });
+
+window.addEventListener("DOMContentLoaded", function () {
+    const inputs = document.querySelectorAll("input, textarea, select");
+    inputs.forEach(el => {
+      el.addEventListener("input", () => {
+        saveData();
+      });
+    });
+  });
+
+</script>
+<footer style="margin-top: 50px; padding: 20px; text-align: center; font-size: 14px; color: #666; border-top: 1px solid #ccc;">
+  Ứng dụng này được thiết kế bởi <strong>Võ Thanh Phong</strong> với sự hỗ trợ từ <strong>ChatGPT</strong>.<br>
+  Bản quyền thuộc về <strong>Võ Thanh Phong</strong> – Mọi quyền được bảo lưu.<br>
+  Liên hệ: <a href="mailto:phongvanltk@gmail.com">phongvanltk@gmail.com</a>
+</footer>
+</body>
+</html>
