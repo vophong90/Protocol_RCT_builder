@@ -1111,20 +1111,23 @@ for (const file of files) {
     ? `Tài liệu sau đây được trích từ bài báo người dùng cung cấp:\n\n${fileText}\n\n---\nDựa trên nội dung tài liệu trên và thông tin PICO sau, hãy viết một đoạn mô tả nghiên cứu RCT phù hợp:\n- P: ${p}\n- I: ${i}\n- C: ${c}\n- O: ${o}`
     : `Tôi đang xây dựng một đề cương nghiên cứu RCT với thông tin PICO sau:\n- P: ${p}\n- I: ${i}\n- C: ${c}\n- O: ${o}\nHãy viết một đoạn mô tả nghiên cứu ngắn gọn, rõ ràng.`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
-  try {
-    const data = JSON.parse(text);
-    document.getElementById("pico-gpt-result").innerText =
-      data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-  } catch (e) {
-    document.getElementById("pico-gpt-result").innerText = "Lỗi phản hồi: " + text;
-  }
+  const data = JSON.parse(text);
+
+  document.getElementById("pico-gpt-result").innerText =
+    data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+} catch (e) {
+  document.getElementById("pico-gpt-result").innerText =
+    "❌ Lỗi khi gọi hoặc xử lý GPT: " + e.message;
+}
+
 
 //Bước 2
 
@@ -4762,5 +4765,6 @@ window.addEventListener("DOMContentLoaded", function () {
 </footer>
 </body>
 </html>
+
 
 
