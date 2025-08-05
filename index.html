@@ -1125,7 +1125,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (e) {
     document.getElementById("pico-gpt-result").innerText = "Lỗi phản hồi: " + text;
   }
-}
 
 //Bước 2
 
@@ -1179,7 +1178,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (e) {
     document.getElementById("question-gpt-suggestion").innerText = "Lỗi khi phân tích phản hồi: " + text;
   }
-}
 
 async function evaluateResearchQuestion() {
   const question = document.getElementById("question").value.trim();
@@ -1214,7 +1212,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (e) {
     document.getElementById("question-gpt-evaluation").innerText = "Lỗi phản hồi: " + text;
   }
-}
 
 //Bước 3 
 
@@ -1303,7 +1300,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (e) {
     document.getElementById("objective-gpt-suggestion").innerText = "Lỗi phản hồi: " + text;
   }
-}
 
 async function evaluateObjectives() {
   const main = document.getElementById("main-objective").value.trim();
@@ -1341,7 +1337,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (e) {
     document.getElementById("objective-gpt-evaluation").innerText = "Lỗi phản hồi: " + text;
   }
-}
 
 
 //Bước 4
@@ -1397,7 +1392,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (err) {
     output.textContent = "Lỗi phản hồi: " + text;
   }
-}
 
 async function evaluateGPT_Territory() {
   const input = document.getElementById("intro-territory").value.trim();
@@ -1444,7 +1438,6 @@ Trả lời bằng tiếng Việt.
   } catch (error) {
     output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + error.message;
   }
-}
 
 async function generateGPT_Niche() {
   const output = document.getElementById("suggest-niche");
@@ -1487,7 +1480,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (err) {
     output.textContent = "Lỗi phản hồi: " + text;
   }
-}
 
 async function evaluateGPT_Niche() {
   const input = document.getElementById("intro-niche").value.trim();
@@ -1521,24 +1513,19 @@ Hãy đánh giá đoạn Niche trên theo các tiêu chí sau:
 Trả lời bằng tiếng Việt.
   `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-    } catch (e) {
-      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
-    }
-  } catch (error) {
-    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
-  }
+  const text = await response.text();
+  const data = JSON.parse(text);
+  output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+} catch (error) {
+  output.innerText = "❌ Lỗi xử lý hoặc phản hồi GPT: " + error.message;
 }
-
 
 async function generateGPT_Occupy() {
   const output = document.getElementById("suggest-occupy");
@@ -1585,7 +1572,6 @@ const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   } catch (err) {
     output.textContent = "Lỗi phản hồi: " + text;
   }
-}
 
 async function evaluateGPT_Occupy() {
   const input = document.getElementById("intro-occupy").value.trim();
@@ -1619,22 +1605,22 @@ Hãy đánh giá đoạn Occupy trên theo các tiêu chí sau:
 Trả lời bằng tiếng Việt.
   `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-    } catch (e) {
-      output.innerText = "❌ Lỗi xử lý phản hồi GPT: " + text;
-    }
-  } catch (error) {
-    output.innerText = "❌ Lỗi gọi GPT: " + error.message;
+  const text = await response.text();
+  try {
+    const data = JSON.parse(text);
+    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+  } catch (jsonError) {
+    output.innerText = "❌ Lỗi phân tích JSON: " + text;
   }
+} catch (fetchError) {
+  output.innerText = "❌ Lỗi khi gọi GPT: " + fetchError.message;
 }
 
 
@@ -1686,23 +1672,25 @@ Hãy viết phần tổng quan về đại cương y học hiện đại liên q
 
   const output = document.getElementById("suggest-yhhd-overview");
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+ try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý phản hồi GPT: " + text;
   }
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_YHHD_Overview() {
@@ -1714,25 +1702,27 @@ async function evaluateGPT_YHHD_Overview() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá bằng GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý JSON: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
+  
 async function generateGPT_Epidemiology() {
   const fileInput = document.getElementById('file-epidemiology');
   const output = document.getElementById('suggest-epidemiology');
@@ -1759,23 +1749,26 @@ Thông tin nghiên cứu:
 ${fileText ? "\nTài liệu PDF cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+  
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Epidemiology() {
@@ -1787,23 +1780,25 @@ async function evaluateGPT_Epidemiology() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_Diagnosis() {
@@ -1831,23 +1826,26 @@ async function generateGPT_Diagnosis() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Diagnosis() {
@@ -1859,24 +1857,28 @@ async function evaluateGPT_Diagnosis() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
+
 
 async function generateGPT_Treatment() {
   const fileInput = document.getElementById('file-treatment');
@@ -1903,23 +1905,26 @@ async function generateGPT_Treatment() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Treatment() {
@@ -1931,23 +1936,26 @@ async function evaluateGPT_Treatment() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_Limitation() {
@@ -1975,23 +1983,26 @@ async function generateGPT_Limitation() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+ try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Limitation() {
@@ -2003,23 +2014,26 @@ async function evaluateGPT_Limitation() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+ try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_YHCT_Overview() {
@@ -2047,23 +2061,26 @@ async function generateGPT_YHCT_Overview() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+ try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_YHCT_Overview() {
@@ -2075,23 +2092,26 @@ async function evaluateGPT_YHCT_Overview() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_Intervention() {
@@ -2119,23 +2139,26 @@ async function generateGPT_Intervention() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Intervention() {
@@ -2147,23 +2170,26 @@ async function evaluateGPT_Intervention() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
- const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_RelatedStudies() {
@@ -2191,23 +2217,26 @@ async function generateGPT_RelatedStudies() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_RelatedStudies() {
@@ -2219,23 +2248,26 @@ async function evaluateGPT_RelatedStudies() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+ try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateGPT_NewMethods() {
@@ -2263,23 +2295,26 @@ async function generateGPT_NewMethods() {
 ${fileText ? "\nTài liệu người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh nội dung từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_NewMethods() {
@@ -2291,25 +2326,27 @@ async function evaluateGPT_NewMethods() {
 ${inputText}`;
 
   output.textContent = "⏳ Đang đánh giá nội dung...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
-      output.textContent = result;
-    } catch (e) {
-      output.textContent = "❌ Lỗi xử lý phản hồi: " + text;
-    }
-  } catch (error) {
-    output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 6
 function updateDesignFields() {
@@ -2451,19 +2488,25 @@ Hãy gợi ý một mô tả đầy đủ và hợp lý cho phần Thiết kế 
 3. Thời gian can thiệp có đủ cho hiệu quả và washout (nếu có)?
 4. Nếu thiết kế chưa tối ưu, gợi ý thay đổi tốt hơn.`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
-  } catch (err) {
-    output.innerText = "Lỗi phản hồi: " + text;
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGPT_Design() {
@@ -2513,19 +2556,25 @@ ${designType === "cross-over" ? `- Phase 1: ${phase1}
 4. Thời gian can thiệp có phù hợp và đủ cho hiệu quả can thiệp không?
 5. Nếu có điểm chưa hợp lý, hãy chỉ rõ và gợi ý cách cải thiện.`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
-  } catch (err) {
-    output.innerText = "Lỗi phản hồi: " + text;
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 //Bước 7
@@ -2890,22 +2939,26 @@ async function generateSampleSizeSuggestion() {
 ${fileText ? "\nTài liệu PDF người dùng cung cấp:\n" + fileText : ""}`;
 
   output.textContent = "⏳ Đang sinh gợi ý từ GPT...";
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
-    } catch (err) {
-      output.textContent = "❌ Lỗi phân tích kết quả GPT: " + text;
-    }
-  } catch (err) {
-    output.textContent = "❌ Lỗi gọi GPT: " + err.message;
+  try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateSampleSize() {
@@ -2996,24 +3049,26 @@ Yêu cầu:
 
   output.textContent = "⏳ GPT đang phân tích...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      output.textContent = data.choices?.[0]?.message?.content || "GPT không trả về kết quả.";
-    } catch (err) {
-      output.textContent = "❌ Lỗi phân tích phản hồi GPT: " + text;
-    }
-  } catch (err) {
-    output.textContent = "❌ Lỗi gọi GPT: " + err.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 8
 
@@ -3085,22 +3140,25 @@ ${context}
 
 Hãy đề xuất các tiêu chí **chọn** và **loại** phù hợp cho một nghiên cứu RCT. Trình bày rõ ràng, phân biệt rõ hai nhóm tiêu chí. Cần nêu rõ lý do tại sao có tiêu chí đó. Cân nhắc đến tính phù hợp với bệnh/tình trạng trong nghiên cứu, các tiêu chuẩn thường được sử dụng trong các nghiên cứu cùng loại, sự phù hợp với mục tiêu nghiên cứu. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
-    const raw = await response.text();
-    try {
-      const data = JSON.parse(raw);
-      const reply = data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung.";
-      output.innerText = reply;
-    } catch (err) {
-      output.innerText = "❗ Lỗi xử lý phản hồi: " + raw;
-    }
-  } catch (err) {
-    output.innerText = "❗ Lỗi gọi API: " + err.message;
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
+
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateCriteria() {
@@ -3119,25 +3177,26 @@ Xem xét tính phù hợp, cụ thể, khoa học và có loại trừ đủ cá
 
 ${criteriaText}`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const raw = await response.text();
-    try {
-      const data = JSON.parse(raw);
-      const reply = data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung.";
-      output.innerText = reply;
-    } catch (err) {
-      output.innerText = "❗ Lỗi phản hồi từ GPT: " + raw;
-    }
-  } catch (error) {
-    output.innerText = "❗ Lỗi fetch tới GPT: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 9
 
@@ -3259,22 +3318,25 @@ Hãy mô tả chi tiết cách ngẫu nhiên hóa phù hợp với thiết kế 
 - Ưu nhược điểm (nếu có)
 `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const raw = await response.text();
-    try {
-      const data = JSON.parse(raw);
-      output.innerText = data.choices?.[0]?.message?.content || "❗ Không có phản hồi từ GPT.";
-    } catch (e) {
-      output.innerText = "❗ Lỗi xử lý phản hồi GPT: " + raw;
-    }
-  } catch (error) {
-    output.innerText = "❗ Lỗi fetch: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateRandomization() {
@@ -3322,24 +3384,26 @@ Hãy đánh giá đoạn mô tả trên có đáp ứng các yêu cầu khoa h�
 - Có nguy cơ sai lệch hay thiếu sót nào cần sửa
 `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const raw = await response.text();
-    try {
-      const data = JSON.parse(raw);
-      output.innerText = data.choices?.[0]?.message?.content || "❗ Không có phản hồi từ GPT.";
-    } catch (e) {
-      output.innerText = "❗ Lỗi phản hồi GPT: " + raw;
-    }
-  } catch (error) {
-    output.innerText = "❗ Lỗi fetch: " + error.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 10
 
@@ -3419,23 +3483,25 @@ async function generateGroupIntervention(index) {
 
   const prompt = `${fileText ? "Nội dung từ tài liệu:\n" + fileText + "\n\n" : ""}Hãy viết mô tả can thiệp cho nhóm: ${groupName}, phải chi tiết, rõ ràng, minh bạch đúng chuẩn một RCT chất lượng cao, tối thiểu phải có thời gian, tần suất, cách thức... trong nghiên cứu có thông tin PICO như sau:\nP: ${pico.p}\nI: ${pico.i}\nC: ${pico.c}\nO: ${pico.o}. Nếu can thiệp là châm cứu thì phải nêu rõ công thức thuyệt, cách châm, thông số kỹ thuật của kim, vị trí từng huyệt. Nếu can thiệp là dùng thuốc thang thì phải nêu rõ bài thuốc gồm những vị thuốc gì, liều lượng mỗi vị bao nhiêu, vị thuốc được cung cấp bởi đơn vị/cơ quan nào, tiêu chuẩn dược liệu đạt được là gì. Đảm bảo đủ thông tin can thiệp để có thể tái lập được. Nếu có tải tài liệu lên thì khi sử dụng thông tin trong tài liệu nào phải đánh số trích dẫn và cuối cùng phải cho danh mục tài liệu đã tham khảo theo AMA 11.`;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
-  const data = JSON.parse(text);
-  resultDiv.innerHTML = `
-    <div style="white-space: pre-wrap; background: #eef; padding: 10px; border: 1px solid #99c;">
-      ${data.choices?.[0]?.message?.content || "❗ GPT không trả về nội dung."}
-    </div>
-  `;
-} catch (e) {
-  resultDiv.innerText = "Lỗi GPT: " + text;
-}
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
+  }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateGroupIntervention(index) {
@@ -3450,19 +3516,25 @@ async function evaluateGroupIntervention(index) {
 
   evalDiv.innerText = "GPT đang đánh giá...";
 
- const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    evalDiv.innerText = data.choices?.[0]?.message?.content || "GPT không trả về nội dung.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    evalDiv.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function generateCrossoverIntervention(id) {
@@ -3501,20 +3573,25 @@ ${fileText ? "📄 Tài liệu hỗ trợ:\n" + fileText.slice(0, 1000) : "❌ K
 👉 Viết mô tả ngắn gọn, chi tiết về nội dung can thiệp nhóm tương ứng.
 `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const result = await res.json();
-    const content = result.choices?.[0]?.message?.content || "Không có nội dung.";
-    textarea.value = content;
-    suggestDiv.innerText = content;
-    saveData();
-  } catch (err) {
-    suggestDiv.innerText = "❌ Lỗi GPT: " + err.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateCrossoverIntervention(id) {
@@ -3543,17 +3620,25 @@ Viết phản hồi theo từng tiêu chí.
 
   evalDiv.innerText = "🧐 GPT đang đánh giá...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
-    const result = await res.json();
-    evalDiv.innerText = result.choices?.[0]?.message?.content || "Không có phản hồi.";
-  } catch (err) {
-    evalDiv.innerText = "❌ Lỗi GPT: " + err.message;
+  const text = await response.text();
+
+  try {
+    const data = JSON.parse(text);
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
+  } catch (e) {
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 //Bước 11
@@ -3632,19 +3717,25 @@ Yêu cầu: Hãy gợi ý một số biến phù hợp cho nhóm biến "${role}
 ${fileText ? `\nTài liệu tham khảo:\n${fileText}` : ""}
 `;
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "Không có phản hồi từ GPT.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateVariablesForRole(role) {
@@ -3679,21 +3770,26 @@ Hãy đánh giá xem nhóm biến này có phù hợp với mục tiêu nghiên 
 
   output.innerText = "GPT đang đánh giá...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 12
 async function generateCollectSuggestion() {
@@ -3754,19 +3850,25 @@ ${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
   const output = document.getElementById("suggest-collect");
   output.innerText = "GPT đang gợi ý...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateCollectDescription() {
@@ -3817,21 +3919,26 @@ Hãy đánh giá nội dung này về mức độ hợp lý, đầy đủ, khả
   const output = document.getElementById("eval-collect");
   output.innerText = "GPT đang đánh giá...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
-}
 
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
+}
 
 //Bước 13
 
@@ -3900,19 +4007,25 @@ ${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
   const output = document.getElementById("suggest-analysis");
   output.innerText = "GPT đang gợi ý...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateAnalysisPlan() {
@@ -3952,19 +4065,25 @@ Yêu cầu: Nhận xét rõ ràng về điểm mạnh, điểm thiếu sót, và
   const output = document.getElementById("eval-analysis");
   output.innerText = "GPT đang đánh giá...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+ctry {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không trả lời.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 //Bước 14
@@ -4008,19 +4127,25 @@ ${fileText ? `Tài liệu hỗ trợ:\n${fileText}` : ""}
   const output = document.getElementById("suggest-ethics");
   output.innerText = "GPT đang gợi ý...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 async function evaluateEthicsSection() {
@@ -4035,19 +4160,25 @@ Bạn là thành viên Hội đồng Đạo đức nghiên cứu. Hãy đánh gi
   const output = document.getElementById("eval-ethics");
   output.innerText = "GPT đang đánh giá...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 //Bước 15
@@ -4093,19 +4224,25 @@ Hãy nêu rõ:
   const output = document.getElementById("logic-check-result");
   output.innerText = "GPT đang kiểm tra...";
 
-const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ prompt })
-});
+try {
+  const response = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt })
+  });
 
   const text = await response.text();
+
   try {
     const data = JSON.parse(text);
-    output.innerText = data.choices?.[0]?.message?.content || "GPT không phản hồi.";
+    const result = data.choices?.[0]?.message?.content || "GPT không trả về phản hồi.";
+    output.textContent = result;
   } catch (e) {
-    output.innerText = "Lỗi GPT: " + text;
+    output.textContent = "❌ Lỗi xử lý JSON: " + text;
   }
+
+} catch (error) {
+  output.textContent = "❌ Lỗi khi gọi GPT API: " + error.message;
 }
 
 //Bước 16
@@ -4625,4 +4762,5 @@ window.addEventListener("DOMContentLoaded", function () {
 </footer>
 </body>
 </html>
+
 
