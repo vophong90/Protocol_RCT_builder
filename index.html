@@ -1,20 +1,192 @@
-<!-- Vendor (giữ đúng version như baseline) -->
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Wizard Đề cương RCT</title>
 
-<!-- pdf.js core + worker (v3.4.120) -->
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
-<script>
-  if (window['pdfjsLib']) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.worker.min.js';
-  }
-</script>
+  <!-- Favicons & PWA -->
+  <link rel="apple-touch-icon" sizes="180x180" href="./public/brand/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="./public/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="./public/brand/favicon-16.png">
+  <link rel="mask-icon" href="./public/brand/safari-pinned-tab.svg" color="#0ea44b">
+  <link rel="manifest" href="./public/brand/site.webmanifest">
+  <meta name="theme-color" content="#0ea44b" />
 
-<!-- App CSS (nếu trước đây bạn có CSS inline, tách sang styles.css; nếu chưa có thì vẫn OK) -->
-<link rel="stylesheet" href="./styles.css" />
+  <meta name="description" content="Wizard 16 bước xây dựng đề cương RCT: PICO → Logic check → Sơ đồ nghiên cứu." />
 
-<!-- App bootstrap (ESM) -->
-<script type="module" src="./src/main.js"></script>
+  <style>
+    :root {
+      --brand: #0ea44b;
+      --ink: #0b1324;
+      --muted: #6b7280;
+      --bg: #f7faf9;
+      --card: #ffffff;
+      --ring: rgba(14,164,75,.25);
+      --border: #e5e7eb;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg); color: var(--ink);
+    }
+    .app {
+      display: grid; grid-template-columns: 280px 1fr; min-height: 100vh;
+    }
+    aside {
+      background: #ffffff; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .brand {
+      display: flex; align-items: center; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid var(--border);
+    }
+    .brand img { height: 28px; }
+    .brand h1 { font-size: 1rem; margin: 0; font-weight: 700; letter-spacing: .2px; }
+    .collapse {
+      margin: .5rem 1rem 0; display: inline-flex; align-items: center; gap: .5rem;
+      font-size: .85rem; color: var(--muted); background: transparent; border: 1px solid var(--border);
+      padding: .35rem .6rem; border-radius: .6rem; cursor: pointer;
+    }
+    nav { overflow: auto; padding: .5rem 0 1rem; }
+    .tab {
+      display: block; width: 100%; text-align: left; padding: .6rem .95rem;
+      background: transparent; border: 0; border-left: 3px solid transparent; cursor: pointer;
+      color: #111827; font-size: .95rem;
+    }
+    .tab small { color: var(--muted); font-weight: 500; }
+    .tab.active, .tab:hover {
+      background: linear-gradient(90deg, rgba(14,164,75,.08), transparent);
+      border-left-color: var(--brand);
+    }
+
+    main { padding: 1rem 1.25rem 2.5rem; }
+    .topbar {
+      position: sticky; top: 0; z-index: 10; background: linear-gradient(180deg, rgba(247,250,249,.92), rgba(247,250,249,.75));
+      backdrop-filter: saturate(1.2) blur(4px); border-bottom: 1px solid var(--border);
+      margin: -1rem -1.25rem 1rem; padding: .8rem 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .title { font-size: 1.1rem; font-weight: 700; }
+    .pill {
+      display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .6rem;
+      border: 1px solid var(--border); background: #fff; border-radius: 999px; color: var(--muted); font-size: .8rem;
+    }
+
+    .step { display: none; }
+    .step.active { display: block; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1rem;
+      box-shadow: 0 1px 0 rgba(0,0,0,.03);
+    }
+    .hidden { display: none !important; }
+
+    /* Small screens: allow collapsing sidebar */
+    @media (max-width: 1024px) {
+      .app { grid-template-columns: 0 1fr; }
+      aside { position: fixed; inset: 0 auto 0 0; width: 280px; transform: translateX(-100%); transition: transform .25s ease; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+      aside.open { transform: translateX(0); }
+      .topbar { position: sticky; }
+      .menuBtn { display: inline-flex; }
+    }
+    .menuBtn {
+      display: none; border: 1px solid var(--border); background: #fff; border-radius: .6rem;
+      padding: .35rem .6rem; cursor: pointer; gap: .5rem; align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <noscript>Trình duyệt của bạn đang tắt JavaScript. Vui lòng bật để sử dụng ứng dụng.</noscript>
+
+  <div class="app" id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="brand">
+        <img src="./public/brand/logo.svg" alt="Logo" />
+        <h1>Wizard Đề cương RCT</h1>
+      </div>
+      <button id="toggle-nav" class="collapse" type="button">◀ Ẩn/Hiện tab</button>
+
+      <nav id="nav">
+        <!-- 16 tabs: nav-0..nav-15 -->
+        <button id="nav-0"  class="tab active"><strong>1. PICO</strong></button>
+        <button id="nav-1"  class="tab"><strong>2. Câu hỏi</strong></button>
+        <button id="nav-2"  class="tab"><strong>3. Mục tiêu</strong></button>
+        <button id="nav-3"  class="tab"><strong>4. Mở đầu</strong> <small>(CaRS)</small></button>
+        <button id="nav-4"  class="tab"><strong>5. Tổng quan</strong></button>
+        <button id="nav-5"  class="tab"><strong>6. Thiết kế</strong></button>
+        <button id="nav-6"  class="tab"><strong>7. Cỡ mẫu</strong></button>
+        <button id="nav-7"  class="tab"><strong>8. Tiêu chí</strong> <small>(vào/loại)</small></button>
+        <button id="nav-8"  class="tab"><strong>9. Ngẫu nhiên</strong></button>
+        <button id="nav-9"  class="tab"><strong>10. Can thiệp</strong></button>
+        <button id="nav-10" class="tab"><strong>11. Biến số</strong></button>
+        <button id="nav-11" class="tab"><strong>12. Thu thập</strong></button>
+        <button id="nav-12" class="tab"><strong>13. Phân tích</strong></button>
+        <button id="nav-13" class="tab"><strong>14. Đạo đức</strong></button>
+        <button id="nav-14" class="tab"><strong>15. Kiểm tra logic</strong></button>
+        <button id="nav-15" class="tab"><strong>16. Sơ đồ nghiên cứu</strong> <small>(Mermaid)</small></button>
+      </nav>
+    </aside>
+
+    <!-- Main content -->
+    <main id="main">
+      <div class="topbar">
+        <div class="title" id="page-title">Bước 1 – PICO</div>
+        <div class="actions">
+          <button id="open-menu" class="menuBtn" type="button">☰ Menu</button>
+          <span class="pill" id="brand-pill">Brand <span style="width:.5rem;height:.5rem;border-radius:999px;background:var(--brand);display:inline-block;"></span></span>
+        </div>
+      </div>
+
+      <!-- Các section bước: step-0..step-15. Nội dung sẽ do JS render. -->
+      <section id="step-0"  class="step active"><div class="card" id="step-0-body"></div></section>
+      <section id="step-1"  class="step"><div class="card" id="step-1-body"></div></section>
+      <section id="step-2"  class="step"><div class="card" id="step-2-body"></div></section>
+      <section id="step-3"  class="step"><div class="card" id="step-3-body"></div></section>
+      <section id="step-4"  class="step"><div class="card" id="step-4-body"></div></section>
+      <section id="step-5"  class="step"><div class="card" id="step-5-body"></div></section>
+      <section id="step-6"  class="step"><div class="card" id="step-6-body"></div></section>
+      <section id="step-7"  class="step"><div class="card" id="step-7-body"></div></section>
+      <section id="step-8"  class="step"><div class="card" id="step-8-body"></div></section>
+      <section id="step-9"  class="step"><div class="card" id="step-9-body"></div></section>
+      <section id="step-10" class="step"><div class="card" id="step-10-body"></div></section>
+      <section id="step-11" class="step"><div class="card" id="step-11-body"></div></section>
+      <section id="step-12" class="step"><div class="card" id="step-12-body"></div></section>
+      <section id="step-13" class="step"><div class="card" id="step-13-body"></div></section>
+      <section id="step-14" class="step"><div class="card" id="step-14-body"></div></section>
+      <section id="step-15" class="step"><div class="card" id="step-15-body"></div></section>
+
+      <!-- Root cho modal/toast nếu cần -->
+      <div id="modal-root" class="hidden"></div>
+      <div id="toast-root" class="hidden"></div>
+    </main>
+  </div>
+
+  <!-- ===== Vendor libs (local, pinned) ===== -->
+  <script src="./vendor/papaparse/papaparse.min.js"></script>
+  <script src="./vendor/pdfjs/pdf.min.js"></script>
+  <script src="./vendor/html2canvas/html2canvas.min.js"></script>
+  <script src="./vendor/chart.js/chart.umd.min.js"></script>
+  <script src="./vendor/mermaid/mermaid.min.js"></script>
+
+  <!-- (Tuỳ chọn) Khởi tạo Mermaid — giữ nguyên logic cũ (JS có thể gọi lại) -->
+  <script>
+    if (window.mermaid) {
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' });
+    }
+  </script>
+
+  <!-- ===== App entry (logic cũ nằm trong JS) ===== -->
+  <script type="module" src="./src/main.js"></script>
+
+  <!-- Sidebar toggle (UI nhỏ, không can thiệp logic nghiệp vụ) -->
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const openBtn  = document.getElementById('open-menu');
+    const toggleBtn = document.getElementById('toggle-nav');
+
+    openBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+    toggleBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+  </script>
+</body>
+</html>
