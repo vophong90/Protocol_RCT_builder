@@ -1,14 +1,34 @@
 // src/services/csv.js
-// PapaParse được load global từ vendor
-export function parseCSV(file, options = {}) {
+
+/**
+ * parseCSVFile(File): Promise<Papa.ParseResult>
+ * Yêu cầu: window.Papa đã được nạp (Đợt 3 mình gửi vendor).
+ */
+export function parseCSVFile(file, options = {}) {
   return new Promise((resolve, reject) => {
-    if (!window.Papa) return reject(new Error('PapaParse not found'));
-    window.Papa.parse(file, {
+    const Papa = window['Papa'];
+    if (!Papa) {
+      reject(new Error('PapaParse not loaded'));
+      return;
+    }
+    Papa.parse(file, {
       header: true,
-      skipEmptyLines: true,
+      skipEmptyLines: 'greedy',
+      transformHeader: (h) => h.trim(),
+      complete: (r) => resolve(r),
+      error: (e) => reject(e),
       ...options,
-      complete: (res) => resolve(res),
-      error: (err) => reject(err),
     });
+  });
+}
+
+export function parseCSVText(text, options = {}) {
+  const Papa = window['Papa'];
+  if (!Papa) throw new Error('PapaParse not loaded');
+  return Papa.parse(text, {
+    header: true,
+    skipEmptyLines: 'greedy',
+    transformHeader: (h) => h.trim(),
+    ...options,
   });
 }
