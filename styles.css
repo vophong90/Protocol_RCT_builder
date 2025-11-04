@@ -1,0 +1,73 @@
+:root{
+  --brand-primary: #0ea44b;
+  --brand-accent:  #0E7BD0;
+  --brand-bg:      #f8fafc;
+  --brand-fg:      #0f172a;
+  --brand-radius:  16px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md: 0 8px 24px rgba(2,6,23,.08);
+  --border: 1px solid rgba(2,6,23,.08);
+}
+
+html,body{ background: var(--brand-bg); color: var(--brand-fg); }
+body{ margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+
+/* ==== Steps giữ nguyên hành vi ==== */
+.step{ display:none; }
+.step.active{ display:block; }
+
+/* ==== Navbar hiện đại ==== */
+#navbar{
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: saturate(130%) blur(6px);
+  background: color-mix(in srgb, var(--brand-bg) 80%, white);
+  box-shadow: var(--shadow-sm);
+  border-bottom: var(--border);
+}
+#navbar .navbar-inner{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:12px; padding:10px 16px;
+}
+#navbar .brand{ display:flex; align-items:center; gap:10px; min-width:0; }
+#navbar .brand-logo{ height:28px; width:auto; }
+#navbar .brand-name{
+  font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+#navbar .nav-actions{ display:flex; align-items:center; gap:8px; }
+#navbar button{
+  border:none; padding:8px 12px; border-radius: calc(var(--brand-radius) / 2);
+  cursor:pointer; background: var(--brand-primary); color:white; font-weight:600;
+}
+#navbar button.ghost{
+  background: transparent; color: var(--brand-fg); border: var(--border);
+}
+#navbar #btn-toggle{ background: var(--brand-accent); }
+
+/* Panel ẩn/hiện các bước */
+#navbar .nav-steps-panel{
+  max-height:0; overflow:hidden; transition:max-height .25s ease;
+  border-top: var(--border);
+}
+#navbar .nav-steps-panel.open{ max-height: 200px; }
+#navbar .nav-steps-panel{
+  display:flex; flex-wrap:wrap; gap:8px; padding: 0 12px;
+}
+#navbar .nav-steps-panel.open{ padding: 12px; }
+
+#navbar .nav-step{
+  background: white; color: var(--brand-fg);
+  border: var(--border);
+  border-radius: 999px; padding:6px 10px; box-shadow: var(--shadow-sm);
+}
+#navbar .nav-step.is-active{
+  background: color-mix(in srgb, var(--brand-primary) 20%, white);
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+}
+
+/* Card/section chung (nếu bạn dùng) – không bắt buộc */
+.card{
+  background:white; border-radius: var(--brand-radius);
+  box-shadow: var(--shadow-md); border: var(--border);
+  padding:16px;
+}
