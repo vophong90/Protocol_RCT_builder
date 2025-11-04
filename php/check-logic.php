@@ -18,31 +18,56 @@ function json_response($arr, $code = 200) {
   exit;
 }
 
-$raw = file_get_contents('php://input');
-$body = json_decode($raw, true);
-$prompt = isset($body['prompt']) ? trim($body['prompt']) : '';
+function read_json_body() {
+  $raw = file_get_contents('php://input');
+  $body = json_decode($raw, true);
+  if (json_last_error() !== JSON_ERROR_NONE) {
+    json_response(['ok' => false, 'error' => 'JSON không hợp lệ: '. json_last_error_msg()], 400);
+  }
+  return $body;
+}
+
+function sanitize_prompt($p) {
+  $p = str_replace("\r\n", "\n", (string)$p);
+  // Giữ \n, gom khoảng trắng
+  $p = preg_replace('/[ \t\f\v\r]+/u', ' ', $p);
+  $p = preg_replace('/[ ]*\n[ ]*/u', "\n", $p);
+  // Loại ký tự điều khiển trừ \n
+  $p = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $p);
+  return trim($p);
+}
+
+$body   = read_json_body();
+$prompt = isset($body['prompt']) ? sanitize_prompt($body['prompt']) : '';
 
 if ($prompt === '') {
   json_response(['ok' => false, 'error' => 'Thiếu prompt'], 400);
 }
 
-// Lấy API key từ biến môi trường hoặc file cấu hình của bạn
-$apiKey = getenv('OPENAI_API_KEY') ?: '';
-$model  = getenv('OPENAI_MODEL') ?: 'gpt-4o-mini'; // tùy chỉnh nếu cần
-
-if (!$apiKey) {
-  // DEV MODE: không gọi ra ngoài, trả prompt để test luồng
-  json_response([
-    'ok' => true,
-    'content' => "[DEV MODE] Chưa cấu hình OPENAI_API_KEY.\n\nPrompt nhận được:\n\n" . $prompt
-  ]);
+// Cắt bớt prompt quá dài để tránh lỗi token (giữ ổn định hành vi)
+$MAX_PROMPT = 16000; // ký tự
+$truncated  = false;
+if (mb_strlen($prompt, 'UTF-8') > $MAX_PROMPT) {
+  $prompt    = mb_substr($prompt, 0, $MAX_PROMPT - 40, 'UTF-8') . " …[đã cắt bớt]";
+  $truncated = true;
 }
 
-// Gọi OpenAI Chat Completions
+$apiKey = getenv('OPENAI_API_KEY') ?: '';
+$model  = getenv('OPENAI_MODEL') ?: 'gpt-4o-mini';
+
+if (!$apiKey) {
+  // DEV MODE
+  $content = "[DEV MODE] Chưa cấu hình OPENAI_API_KEY.\n";
+  if ($truncated) $content .= "(Lưu ý: Prompt quá dài đã được cắt bớt)\n\n";
+  $content .= "Prompt nhận được:\n\n" . $prompt;
+  json_response(['ok' => true, 'content' => $content]);
+}
+
+// OpenAI Chat Completions
 $payload = [
   'model' => $model,
   'messages' => [
-    ['role' => 'system', 'content' => 'Bạn là trợ lý nghiên cứu y khoa, chuyên kiểm tra logic đề cương RCT một cách súc tích, có gợi ý hành động.'],
+    ['role' => 'system', 'content' => 'Bạn là trợ lý nghiên cứu y khoa, kiểm tra logic đề cương RCT súc tích, theo bullet, có gợi ý hành động.'],
     ['role' => 'user',   'content' => $prompt],
   ],
   'temperature' => 0.2,
@@ -72,7 +97,9 @@ if ($errno) {
 }
 
 if ($code < 200 || $code >= 300) {
-  json_response(['ok' => false, 'error' => 'OpenAI HTTP ' . $code . ': ' . $result], 502);
+  // Trả message rõ ràng hơn
+  $snippet = is_string($result) ? mb_substr($result, 0, 400, 'UTF-8') : '';
+  json_response(['ok' => false, 'error' => 'OpenAI HTTP ' . $code . ': ' . $snippet], 502);
 }
 
 $decoded = json_decode($result, true);
@@ -80,6 +107,10 @@ $content = $decoded['choices'][0]['message']['content'] ?? '';
 
 if (!$content) {
   json_response(['ok' => false, 'error' => 'Không nhận được nội dung phản hồi từ OpenAI'], 502);
+}
+
+if ($truncated) {
+  $content = "(Lưu ý: Prompt quá dài đã được cắt bớt ở server)\n\n" . $content;
 }
 
 json_response(['ok' => true, 'content' => $content]);
