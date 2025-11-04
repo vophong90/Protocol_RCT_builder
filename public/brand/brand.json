@@ -1,11 +1,22 @@
 {
   "name": "Năng Lực Y",
+  "shortName": "RCT Wizard",
+  "themeColor": "#0ea44b",
+  "backgroundColor": "#ffffff",
   "colors": {
     "primary": "#0ea44b",
     "secondary": "#f5c518",
     "accent": "#0ea5e9",
     "neutral": "#111827",
     "muted": "#6b7280",
-    "background": "#ffffff"
+    "bg": "#ffffff"
+  },
+  "assets": {
+    "logo": "./public/brand/logo.svg",
+    "logoLight": "./public/brand/logo-light.svg",
+    "maskIcon": "./public/brand/safari-pinned-tab.svg",
+    "appleTouchIcon": "./public/brand/apple-touch-icon.png",
+    "favicon16": "./public/brand/favicon-16.png",
+    "favicon32": "./public/brand/favicon-32.png"
   }
 }
