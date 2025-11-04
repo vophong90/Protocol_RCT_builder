@@ -1,18 +1,19 @@
-// src/main.js
-import { initRouter, goToStep } from './router.js';
-import { renderNavbar } from './components/navbar.js';
-import { loadData } from './state/storage.js';
-import { applyBrand } from './brand.js';   // <-- thêm
+<!-- Vendor libs (local, pinned versions) -->
+<script src="./vendor/papaparse/papaparse.min.js"></script>
+<script src="./vendor/pdfjs/pdf.min.js"></script>
+<script src="./vendor/html2canvas/html2canvas.min.js"></script>
+<script src="./vendor/chart.js/chart.umd.min.js"></script>
+<script src="./vendor/mermaid/mermaid.min.js"></script>
 
-if (window.mermaid && typeof window.mermaid.initialize === 'function') {
-  window.mermaid.initialize({ startOnLoad: false });
-}
-window.goToStep = goToStep;
+<!-- (Tuỳ chọn) Khởi tạo Mermaid, giữ nguyên logic cũ -->
+<script>
+  if (window.mermaid) {
+    window.mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: 'loose' // cho phép render từ nội dung nội bộ
+    });
+  }
+</script>
 
-async function bootstrap() {
-  await applyBrand();   // <-- áp brand từ public/brand/brand.json
-  loadData();
-  renderNavbar();
-  initRouter();
-}
-document.addEventListener('DOMContentLoaded', bootstrap);
+<!-- App -->
+<script type="module" src="./src/main.js"></script>
