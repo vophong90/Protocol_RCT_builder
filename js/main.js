@@ -1219,67 +1219,71 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /* ---------- Xuất các hàm ra phạm vi global để HTML gọi ---------- */
-Object.assign(window, {
-  // điều hướng & lưu
-  goToStep, saveData, resetWizard,
+// ===== Expose public API for inline handlers =====
+function exposeToWindow(obj) {
+  Object.entries(obj).forEach(([k, v]) => { if (typeof v === 'function') window[k] = v; });
+}
 
-  // B1
+// Liệt kê đúng các hàm đang được HTML gọi:
+exposeToWindow({
+  // điều hướng
+  goToStep,
+
+  // lưu/xóa
+  saveData, resetWizard,
+
+  // PICO
   generatePicoDescription,
 
-  // B2
+  // Câu hỏi
   generateResearchQuestionFromGPT, evaluateResearchQuestion,
 
-  // B3
+  // Mục tiêu
   addSubObjective, generateObjectivesFromGPT, evaluateObjectives,
 
-  // B4
-  generateGPT_Territory, evaluateGPT_Territory,
-  generateGPT_Niche,     evaluateGPT_Niche,
-  generateGPT_Occupy,    evaluateGPT_Occupy,
+  // Mở đầu (CaRS)
+  generateGPT_Territory,  evaluateGPT_Territory,
+  generateGPT_Niche,      evaluateGPT_Niche,
+  generateGPT_Occupy,     evaluateGPT_Occupy,
 
-  // B5
-  generateGPT_YHHD_Overview, evaluateGPT_YHHD_Overview,
-  generateGPT_Epidemiology,  evaluateGPT_Epidemiology,
-  generateGPT_Diagnosis,     evaluateGPT_Diagnosis,
-  generateGPT_Treatment,     evaluateGPT_Treatment,
-  generateGPT_Limitation,    evaluateGPT_Limitation,
-  generateGPT_YHCT_Overview, evaluateGPT_YHCT_Overview,
-  generateGPT_Intervention,  evaluateGPT_Intervention,
-  generateGPT_RelatedStudies,evaluateGPT_RelatedStudies,
-  generateGPT_NewMethods,    evaluateGPT_NewMethods,
+  // Tổng quan (9 mục)
+  generateGPT_YHHD_Overview,  evaluateGPT_YHHD_Overview,
+  generateGPT_Epidemiology,   evaluateGPT_Epidemiology,
+  generateGPT_Diagnosis,      evaluateGPT_Diagnosis,
+  generateGPT_Treatment,      evaluateGPT_Treatment,
+  generateGPT_Limitation,     evaluateGPT_Limitation,
+  generateGPT_YHCT_Overview,  evaluateGPT_YHCT_Overview,
+  generateGPT_Intervention,   evaluateGPT_Intervention,
+  generateGPT_RelatedStudies, evaluateGPT_RelatedStudies,
+  generateGPT_NewMethods,     evaluateGPT_NewMethods,
 
-  // B6
-  updateDesignFields, generateGPT_Design, evaluateGPT_Design,
+  // Thiết kế + sơ đồ
+  updateDesignFields, renderStudyFlowDiagram,
+  generateGPT_Design, evaluateGPT_Design,
 
-  // B7
-  renderSampleSizeForm, calculateSampleSize, generateSampleSizeSuggestion, evaluateSampleSize,
+  // Cỡ mẫu
+  renderSampleSizeForm, calculateSampleSize,
+  generateSampleSizeSuggestion, evaluateSampleSize,
 
-  // B8
-  addInclusionCriterion, addExclusionCriterion, generateCriteriaFromGPT, evaluateCriteria,
+  // Tiêu chí
+  addInclusionCriterion, addExclusionCriterion,
+  generateCriteriaFromGPT, evaluateCriteria,
 
-  // B9
+  // Ngẫu nhiên
   generateAutoRandomization, generateRandomizationSuggestion, evaluateRandomization,
 
-  // B10
-  renderInterventionDescriptions, gptInterventionSuggest, gptInterventionEvaluate,
+  // Biến số
+  addNewVariable, exportVariables,
 
-  // B11
-  createVariableDragUI, addNewVariable, exportVariables,
-  suggestVariablesForRole, evaluateVariablesForRole,
-  removeVariable, allowDrop, drag, drop,
-
-  // B12
+  // Thu thập
   generateCollectSuggestion, evaluateCollectDescription,
 
-  // B13
+  // Phân tích
   generateAnalysisPlan, evaluateAnalysisPlan,
 
-  // B14
+  // Đạo đức
   generateEthicsSection, evaluateEthicsSection,
 
-  // B15
-  checkLogic,
-
-  // B16
-  renderStudyFlowDiagram, downloadMermaidPNG,
+  // Check logic + xuất hình
+  checkLogic, downloadMermaidPNG
 });
