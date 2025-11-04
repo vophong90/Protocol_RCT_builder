@@ -1,7 +1,16 @@
 // /assets/js/check-logic.js
 // Điều phối: gom dữ liệu -> build prompt -> gọi PHP -> hiển thị kết quả
 (function (w) {
+  const U = (w.App && w.App.Utils) || { isElTextareaOrInput: ()=>false };
+
   function $(id) { return document.getElementById(id); }
+
+  function setOutput(el, text) {
+    if (!el) return;
+    const t = String(text || '').trim();
+    if (U.isElTextareaOrInput(el)) el.value = t;
+    else el.textContent = t;
+  }
 
   async function runCheckLogic(options = {}) {
     const outEl =
@@ -26,25 +35,20 @@
         text = `❗ Lỗi xử lý: ${(res && res.error) ? res.error : 'Không xác định'}`;
       }
     } catch (e) {
-      text = `❗ Lỗi kết nối: ${e.message || e}`;
+      const msg = e?.message || String(e);
+      const status = (e && typeof e.status === 'number') ? ` (HTTP ${e.status})` : '';
+      text = `❗ Lỗi kết nối${status}: ${msg}`;
     }
 
     // 4) Hiển thị
-    if (outEl) {
-      if (outEl.tagName === 'TEXTAREA' || outEl.tagName === 'INPUT') {
-        outEl.value = text;
-      } else {
-        outEl.textContent = text;
-      }
-    }
-
+    setOutput(outEl, text);
     return text;
   }
 
   function bindCheckLogicButton(btnId = 'btn-check-logic', outputId = 'logic-result') {
     const btn = $(btnId);
     if (!btn) return;
-    const out = $(outputId) || $( 'logic-output');
+    const out = $(outputId) || $('logic-output');
 
     btn.addEventListener('click', async () => {
       btn.disabled = true;
@@ -59,12 +63,11 @@
     });
   }
 
-  // Tự động bind nếu tìm thấy nút & ô output phổ biến
   document.addEventListener('DOMContentLoaded', () => {
     bindCheckLogicButton('btn-check-logic', 'logic-result');
   });
 
-  // Expose global để gọi thủ công khi cần
+  // Expose
   w.runCheckLogic = runCheckLogic;
   w.bindCheckLogicButton = bindCheckLogicButton;
 })(window);
