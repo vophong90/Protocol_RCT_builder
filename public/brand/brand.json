@@ -1,14 +1,8 @@
 {
-  "name": "Năng Lực Y",
-  "shortName": "RCT Wizard",
-  "themeColor": "#0ea44b",
-  "backgroundColor": "#ffffff",
-  "assets": {
-    "logo": "./public/brand/logo.svg",
-    "logoLight": "./public/brand/logo-light.svg",
-    "maskIcon": "./public/brand/safari-pinned-tab.svg",
-    "appleTouchIcon": "./public/brand/apple-touch-icon.png",
-    "favicon16": "./public/brand/favicon-16.png",
-    "favicon32": "./public/brand/favicon-32.png"
-  }
+  "name": "Wizard Đề cương RCT",
+  "primary": "#0ea44b",
+  "accent": "#0E7BD0",
+  "bg": "#f8fafc",
+  "fg": "#0f172a",
+  "radius": "16px"
 }
