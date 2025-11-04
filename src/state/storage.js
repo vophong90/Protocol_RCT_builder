@@ -1,34 +1,51 @@
 // src/state/storage.js
 const KEY = 'rctWizardData';
+let cache = null;
 
 export function loadData() {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || '{}');
+    cache = JSON.parse(localStorage.getItem(KEY) || '{}');
   } catch {
-    return {};
+    cache = {};
+  }
+  return cache;
+}
+
+export function getData() {
+  return cache ?? loadData();
+}
+
+export function saveData() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(cache ?? {}));
+  } catch (e) {
+    console.warn('saveData failed', e);
   }
 }
 
-export function saveData(data) {
-  localStorage.setItem(KEY, JSON.stringify(data));
-  return data;
+export function setData(path, value) {
+  const obj = getData();
+  const parts = Array.isArray(path) ? path : String(path).split('.');
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    const k = parts[i];
+    cur[k] = cur[k] ?? {};
+    cur = cur[k];
+  }
+  cur[parts.at(-1)] = value;
+  cache = obj;
+  saveData();
+  document.dispatchEvent(
+    new CustomEvent('wizard:datachange', { detail: { path, value } })
+  );
 }
 
-export function updateData(updater) {
-  const curr = loadData();
-  const next = typeof updater === 'function' ? updater(curr) : { ...curr, ...updater };
-  return saveData(next);
+export function updateData(mutator) {
+  const obj = getData();
+  const next = mutator ? mutator({ ...obj }) : obj;
+  cache = next;
+  saveData();
+  document.dispatchEvent(
+    new CustomEvent('wizard:datachange', { detail: { full: true } })
+  );
 }
-
-// Helpers thường dùng trong app gốc (không đổi khóa)
-export const getPICO = () => loadData().pico || {};
-export const setPICO = (pico) => updateData((d) => ({ ...d, pico }));
-
-export const getInterventions = () => loadData().interventions || [];
-export const setInterventions = (arr) => updateData((d) => ({ ...d, interventions: arr }));
-
-export const getSelectedVariables = () => loadData().selectedVariables || {};
-export const setSelectedVariables = (obj) => updateData((d) => ({ ...d, selectedVariables: obj }));
-
-export const getMainObjective = () => loadData().mainObjective || '';
-export const setMainObjective = (s) => updateData((d) => ({ ...d, mainObjective: s }));
