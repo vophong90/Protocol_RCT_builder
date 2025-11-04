@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Wizard Đề cương RCT</title>
 
   <!-- Favicons & PWA (from public/brand) -->
@@ -10,8 +10,11 @@
   <link rel="icon" type="image/png" sizes="32x32" href="./public/brand/favicon-32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="./public/brand/favicon-16.png">
   <link rel="mask-icon" href="./public/brand/safari-pinned-tab.svg" color="#0ea44b">
-  <link rel="manifest" href="./public/brand/site.manifest">
+  <!-- Sửa: dùng đúng tên file manifest -->
+  <link rel="manifest" href="./public/brand/site.webmanifest">
   <meta name="theme-color" content="#0ea44b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
   <!-- Libs (giữ giống bản cũ) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
@@ -27,7 +30,7 @@
   <!-- Base styles (giữ file cũ) -->
   <link rel="stylesheet" href="./css/styles.css" />
 
-  <!-- Brand overrides (tối ưu UI + sidebar) -->
+  <!-- Brand overrides (UI hiện đại + sidebar responsive) -->
   <style>
     :root{
       --brand-primary: #0ea44b;  /* from brand.json */
@@ -36,26 +39,51 @@
       --brand-neutral: #111827;
       --brand-muted: #6b7280;
       --brand-bg: #ffffff;
-      --sidebar-w: 280px;
+      --sidebar-w: 288px;
       --radius: 14px;
       --shadow: 0 6px 20px rgba(0,0,0,.08);
+      --ring: 0 0 0 3px color-mix(in srgb, var(--brand-accent) 20%, transparent);
     }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --brand-bg:#0b0f14; --brand-neutral:#e5e7eb; --brand-muted:#94a3b8;
+        --shadow: 0 6px 24px rgba(0,0,0,.35);
+      }
+      .sidebar, .panel, .btn { background:#0e141b; border-color:#1f2937; }
+      .steps-nav button:hover{ background:#0b1118; }
+    }
+
     html,body{height:100%;background:var(--brand-bg);color:var(--brand-neutral);}
     body{margin:0;font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";}
+    a{color:inherit}
 
-    /* App shell */
+    /* Topbar */
     .topbar{
-      position: sticky; top:0; z-index: 30;
+      position: sticky; top:0; z-index: 50;
       background: linear-gradient(90deg,var(--brand-primary), var(--brand-accent));
       color:#fff; box-shadow: var(--shadow);
     }
     .topbar-inner{
-      display:flex; align-items:center; gap:12px;
-      padding: 12px 18px;
+      display:flex; align-items:center; gap:12px; justify-content:space-between;
+      padding: 10px 16px;
     }
-    .topbar .brand-logo{height:28px; width:auto; display:block}
-    .topbar .title{font-size:18px; font-weight:700; letter-spacing:.2px}
+    .brand-side{display:flex; align-items:center; gap:12px;}
+    .topbar .brand-logo{height:30px; width:auto; display:block}
+    .topbar .title{font-size:17px; font-weight:800; letter-spacing:.2px}
 
+    /* Top progress */
+    .progress-wrap{ width:100%; max-width:560px; margin-left:auto; margin-right:12px; display:flex; align-items:center; gap:10px;}
+    .progress-text{font-size:12px; opacity:.9; white-space:nowrap}
+    .progress{
+      flex:1; height:8px; background: color-mix(in srgb, #fff 30%, transparent);
+      border-radius:999px; overflow:hidden;
+    }
+    .progress > .bar{
+      height:100%; width:0%;
+      background: #fff; border-radius:999px; transition: width .25s ease;
+    }
+
+    /* App shell */
     .app{
       display:grid; grid-template-columns: var(--sidebar-w) 1fr; gap:0;
       min-height: calc(100vh - 60px);
@@ -65,9 +93,15 @@
     .sidebar{
       position: sticky; top:60px; align-self:start; height: calc(100vh - 60px);
       background:#ffffff; border-right:1px solid #eef2f7; overflow:auto;
+      transition: transform .25s ease;
     }
     .sidebar-header{display:flex; align-items:center; justify-content:space-between; padding:12px 14px; border-bottom:1px solid #f1f5f9}
-    .sidebar h2{margin:0; font-size:14px; font-weight:700; color:#111827}
+    .sidebar h2{margin:0; font-size:14px; font-weight:800; color:#111827}
+    .sidebar-toggle{
+      all:unset; display:inline-grid; place-items:center;
+      width:36px; height:36px; border-radius:10px; cursor:pointer;
+      border:1px solid color-mix(in srgb, white 50%, black); background:#ffffff; color:#111827;
+    }
 
     .steps-nav{ display:flex; flex-direction:column; gap:6px; padding:12px; }
     .steps-nav button{
@@ -76,8 +110,9 @@
     }
     .steps-nav button .num{
       display:inline-grid; place-items:center; width:26px; height:26px; border-radius:6px;
-      background:#f3f4f6; font-weight:700; font-size:12px;
+      background:#f3f4f6; font-weight:800; font-size:12px;
     }
+    .steps-nav button .label{ font-size:14px; }
     .steps-nav button.active{ background: color-mix(in srgb, var(--brand-primary) 12%, white); border-color: color-mix(in srgb, var(--brand-primary) 22%, white); }
     .steps-nav button.active .num{ background: var(--brand-primary); color:white; }
     .steps-nav button:hover{ background:#f9fafb; }
@@ -90,7 +125,6 @@
       background:#fff; border:1px solid #eef2f7; border-radius: var(--radius); box-shadow: var(--shadow);
       padding: 18px; margin-bottom: 18px;
     }
-
     .step{ display:none; }
     .step.active{ display:block; }
 
@@ -100,7 +134,8 @@
       width:100%; box-sizing:border-box; padding:10px 12px; border-radius:12px; border:1px solid #e5e7eb;
       outline: none; background:#fff; transition: border .15s ease, box-shadow .15s ease;
     }
-    input:focus, select:focus, textarea:focus{ border-color: var(--brand-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-accent) 20%, transparent); }
+    input:focus, select:focus, textarea:focus{ border-color: var(--brand-accent); box-shadow: var(--ring); }
+    textarea{ resize: vertical; }
 
     .row-gap{ display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
 
@@ -117,50 +152,89 @@
     .strong.green{ background:#ecfdf5; border:1px solid #d1fae5; color:#065f46; }
     .strong.orange{ background:#fff7ed; border:1px solid #ffedd5; color:#9a3412; }
 
-    /* Responsive */
+    /* Mobile sidebar */
     @media (max-width: 980px){
       .app{ grid-template-columns: 1fr; }
-      .sidebar{ position: static; height:auto; border-right:0; border-bottom:1px solid #eef2f7; }
+      .sidebar{ position: fixed; top:56px; left:0; height: calc(100vh - 56px); width: var(--sidebar-w); transform: translateX(-100%); }
+      body[data-sidebar-open="true"] .sidebar{ transform: translateX(0%); box-shadow: var(--shadow); }
+      .content{ padding-top: 18px; }
     }
+
+    /* Skip link for accessibility */
+    .skip-link{
+      position: absolute; left:-9999px; top:auto; width:1px; height:1px; overflow:hidden;
+    }
+    .skip-link:focus{
+      position: static; width:auto; height:auto; padding:8px 12px; background:#fff; border-radius:10px; margin:6px; outline:2px dashed var(--brand-accent);
+    }
+
+    /* Save indicator */
+    .save-indicator{ font-size:12px; opacity:.9; display:flex; align-items:center; gap:8px; }
+    .dot{ width:10px; height:10px; border-radius:999px; background:#fff; opacity:.85; }
   </style>
 </head>
 <body>
+  <a href="#main" class="skip-link">Bỏ qua menu để tới nội dung</a>
+
   <!-- Topbar -->
-  <header class="topbar">
+  <header class="topbar" role="banner">
     <div class="topbar-inner">
-      <img src="./public/brand/logo-light.svg" alt="Năng Lực Y" class="brand-logo" onerror="this.src='./public/brand/logo.svg'" />
-      <div class="title">Xây dựng đề cương RCT – Wizard</div>
+      <div class="brand-side">
+        <button class="sidebar-toggle" aria-label="Mở/đóng danh sách bước" onclick="document.body.dataset.sidebarOpen = document.body.dataset.sidebarOpen === 'true' ? 'false' : 'true'">
+          <!-- hamburger -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path stroke-width="2" stroke-linecap="round" d="M3 6h18M3 12h18M3 18h18"/>
+          </svg>
+        </button>
+        <img src="./public/brand/logo-light.svg" alt="Năng Lực Y" class="brand-logo" onerror="this.src='./public/brand/logo.svg'" />
+        <div class="title">Xây dựng đề cương RCT – Wizard</div>
+      </div>
+
+      <div class="progress-wrap" aria-label="Tiến độ hoàn thành">
+        <span class="progress-text"><strong id="current-step">1</strong>/16</span>
+        <div class="progress" aria-hidden="true"><div id="progress-bar" class="bar"></div></div>
+        <div class="save-indicator" id="save-indicator" title="Trạng thái lưu">
+          <span class="dot" id="save-dot"></span><span id="save-text">Tự động lưu</span>
+        </div>
+      </div>
     </div>
   </header>
 
   <div class="app">
     <!-- Sidebar with vertical steps nav -->
-    <aside class="sidebar">
+    <aside class="sidebar" role="navigation" aria-label="Các bước">
       <div class="sidebar-header">
-        <h2>Các bước</h2>
+        <h2 style="display:flex;align-items:center;gap:8px;margin:0">
+          <!-- steps icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" d="M12 6h9M12 12h9M12 18h9M3 6h6M3 12h6M3 18h6"/></svg>
+          Các bước
+        </h2>
+        <button class="sidebar-toggle" aria-label="Đóng" onclick="document.body.dataset.sidebarOpen='false'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
       </div>
       <nav class="steps-nav">
-        <button onclick="goToStep(0)" id="nav-0"><span class="num">1</span> PICO</button>
-        <button onclick="goToStep(1)" id="nav-1"><span class="num">2</span> Câu hỏi</button>
-        <button onclick="goToStep(2)" id="nav-2"><span class="num">3</span> Mục tiêu</button>
-        <button onclick="goToStep(3)" id="nav-3"><span class="num">4</span> Mở đầu</button>
-        <button onclick="goToStep(4)" id="nav-4"><span class="num">5</span> Tổng quan</button>
-        <button onclick="goToStep(5)" id="nav-5"><span class="num">6</span> Thiết kế</button>
-        <button onclick="goToStep(6)" id="nav-6"><span class="num">7</span> Cỡ mẫu</button>
-        <button onclick="goToStep(7)" id="nav-7"><span class="num">8</span> Tiêu chí</button>
-        <button onclick="goToStep(8)" id="nav-8"><span class="num">9</span> Ngẫu nhiên</button>
-        <button onclick="goToStep(9)" id="nav-9"><span class="num">10</span> Can thiệp</button>
-        <button onclick="goToStep(10)" id="nav-10"><span class="num">11</span> Biến số</button>
-        <button onclick="goToStep(11)" id="nav-11"><span class="num">12</span> Thu thập</button>
-        <button onclick="goToStep(12)" id="nav-12"><span class="num">13</span> Phân tích</button>
-        <button onclick="goToStep(13)" id="nav-13"><span class="num">14</span> Đạo đức</button>
-        <button onclick="goToStep(14)" id="nav-14"><span class="num">15</span> Check logic</button>
-        <button onclick="goToStep(15)" id="nav-15"><span class="num">16</span> Sơ đồ</button>
+        <button onclick="goToStep(0)" id="nav-0"><span class="num">1</span> <span class="label">PICO</span></button>
+        <button onclick="goToStep(1)" id="nav-1"><span class="num">2</span> <span class="label">Câu hỏi</span></button>
+        <button onclick="goToStep(2)" id="nav-2"><span class="num">3</span> <span class="label">Mục tiêu</span></button>
+        <button onclick="goToStep(3)" id="nav-3"><span class="num">4</span> <span class="label">Mở đầu</span></button>
+        <button onclick="goToStep(4)" id="nav-4"><span class="num">5</span> <span class="label">Tổng quan</span></button>
+        <button onclick="goToStep(5)" id="nav-5"><span class="num">6</span> <span class="label">Thiết kế</span></button>
+        <button onclick="goToStep(6)" id="nav-6"><span class="num">7</span> <span class="label">Cỡ mẫu</span></button>
+        <button onclick="goToStep(7)" id="nav-7"><span class="num">8</span> <span class="label">Tiêu chí</span></button>
+        <button onclick="goToStep(8)" id="nav-8"><span class="num">9</span> <span class="label">Ngẫu nhiên</span></button>
+        <button onclick="goToStep(9)" id="nav-9"><span class="num">10</span> <span class="label">Can thiệp</span></button>
+        <button onclick="goToStep(10)" id="nav-10"><span class="num">11</span> <span class="label">Biến số</span></button>
+        <button onclick="goToStep(11)" id="nav-11"><span class="num">12</span> <span class="label">Thu thập</span></button>
+        <button onclick="goToStep(12)" id="nav-12"><span class="num">13</span> <span class="label">Phân tích</span></button>
+        <button onclick="goToStep(13)" id="nav-13"><span class="num">14</span> <span class="label">Đạo đức</span></button>
+        <button onclick="goToStep(14)" id="nav-14"><span class="num">15</span> <span class="label">Check logic</span></button>
+        <button onclick="goToStep(15)" id="nav-15"><span class="num">16</span> <span class="label">Sơ đồ</span></button>
       </nav>
     </aside>
 
     <!-- Main content -->
-    <main class="content">
+    <main id="main" class="content" role="main">
       <!-- ====== Bước 1: PICO ====== -->
       <section class="step active panel" id="step-0">
         <h2>Bước 1: PICO</h2>
@@ -740,19 +814,59 @@
 
   <!-- Small init to ensure first view + active nav when main.js isn't loaded yet -->
   <script>
-    document.addEventListener('DOMContentLoaded', function(){
+    (function(){
+      const TOTAL_STEPS = 16;
+      const $bar = () => document.getElementById('progress-bar');
+      const $stepText = () => document.getElementById('current-step');
+
+      const updateProgress = (i) => {
+        const pct = Math.round(((i+1)/TOTAL_STEPS)*100);
+        if ($bar()) $bar().style.width = pct + '%';
+        if ($stepText()) $stepText().textContent = (i+1);
+      };
+
       const setActive = (i)=>{
         document.querySelectorAll('.step').forEach((el,idx)=> el.classList.toggle('active', idx===i));
         document.querySelectorAll('.steps-nav button').forEach((b,idx)=> b.classList.toggle('active', idx===i));
+        updateProgress(i);
+        // đóng sidebar trên mobile sau khi chọn bước
+        if (document.body.dataset.sidebarOpen === 'true') document.body.dataset.sidebarOpen = 'false';
+        // đưa focus về đầu nội dung
+        const main = document.getElementById('main');
+        if (main) main.focus({preventScroll:true});
+        window.scrollTo({top:0, behavior:'smooth'});
       };
+
+      // fallback khi main.js chưa gắn goToStep
       if (typeof window.goToStep !== 'function') {
         window.goToStep = function(i){ setActive(i); };
+      } else {
+        // nếu đã có goToStep từ main.js thì bọc lại để thêm progress
+        const oldGo = window.goToStep;
+        window.goToStep = function(i){
+          try { oldGo(i); } catch(e){ /* ignore */ }
+          setActive(i);
+        };
       }
-      setActive(0);
-    });
+
+      document.addEventListener('DOMContentLoaded', function(){
+        setActive(0);
+      });
+      window.addEventListener('load', function(){
+        // nếu main.js override sau đó, gọi setActive lại bước hiện tại
+        const activeIdx = [...document.querySelectorAll('.step')].findIndex(s=>s.classList.contains('active'));
+        setActive(activeIdx >= 0 ? activeIdx : 0);
+      });
+    })();
   </script>
 
   <!-- Main JS (module) — sẽ attach các hàm lên window để các onclick/oninput ở trên hoạt động -->
   <script type="module" src="./js/main.js"></script>
+
+  <noscript>
+    <div style="padding:12px; margin:12px; border:1px solid #fbbf24; border-radius:12px; background:#fffbeb; color:#92400e;">
+      Ứng dụng cần JavaScript để hoạt động đầy đủ. Vui lòng bật JavaScript trong trình duyệt.
+    </div>
+  </noscript>
 </body>
 </html>
