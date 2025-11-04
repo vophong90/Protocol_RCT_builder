@@ -1,433 +1,622 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Protocol builder · RCT Wizard</title>
-  <meta name="theme-color" content="#0EA44B" />
+  <meta charset="UTF-8" />
+  <title>Wizard Đề cương RCT</title>
 
-  <!-- Brand nằm trong public/brand -->
-  <link rel="icon" type="image/png" sizes="192x192" href="public/brand/icon-192.png">
-  <link rel="icon" type="image/png" sizes="256x256" href="public/brand/icon-256.png">
-  <link rel="icon" type="image/png" sizes="512x512" href="public/brand/icon-512.png">
-  <link rel="manifest" href="public/brand/site.webmanifest">
+  <!-- Libs (giữ giống bản cũ) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js";
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script> mermaid.initialize({ startOnLoad: false }); </script>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --brand-primary:#0EA44B;
-      --brand-accent:#0EA5E9;
-      --brand-muted:#6B7280;
-      --brand-text:#111827;
-      --radius:16px;
-      --shadow:0 10px 30px rgba(0,0,0,.08);
-      --border:1px solid rgba(0,0,0,.06);
-    }
-    *,*::before,*::after{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,'Noto Sans','Liberation Sans',sans-serif;
-      color:var(--brand-text);
-      background:
-        radial-gradient(900px 500px at 15% -10%, rgba(14,164,75,.06), transparent 60%),
-        radial-gradient(900px 500px at 110% -10%, rgba(14,165,233,.06), transparent 60%),
-        #fff;
-    }
-    /* Topbar */
-    .topbar{
-      position:sticky;top:0;z-index:20;
-      background:rgba(255,255,255,.9);
-      backdrop-filter:blur(10px);
-      border-bottom:var(--border);
-    }
-    .topbar-inner{
-      max-width:1200px;margin:0 auto;padding:10px 18px;
-      display:flex;align-items:center;gap:12px;
-    }
-    .brand-logo{width:40px;height:40px;object-fit:contain;border-radius:10px}
-    .title{font-weight:700;letter-spacing:.2px}
-    .badge{font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent));padding:4px 10px;border-radius:999px;margin-left:8px}
-    .tagline{color:var(--brand-muted);font-size:13px}
-
-    /* Layout */
-    .wrap{max-width:1200px;margin:18px auto;padding:0 18px;display:grid;grid-template-columns:280px 1fr;gap:18px}
-    .sidebar{
-      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
-      overflow:hidden;position:sticky;top:72px;height:calc(100dvh - 96px);
-      display:flex;flex-direction:column;
-      transition:width .2s ease;
-    }
-    .sidebar.collapsed{width:78px}
-    .side-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px;border-bottom:var(--border)}
-    .side-title{font-weight:700}
-    .side-btn{appearance:none;border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-weight:600}
-    .step-list{list-style:none;margin:0;padding:8px;overflow:auto}
-    .step-item{
-      display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer;
-      border:1px solid transparent;user-select:none;
-    }
-    .step-item:hover{background:#fafafa;border-color:rgba(0,0,0,.05)}
-    .step-item.active{background:rgba(14,164,75,.08);border-color:rgba(14,164,75,.25)}
-    .step-idx{min-width:26px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:1px solid rgba(0,0,0,.15)}
-    .step-text{display:flex;flex-direction:column}
-    .step-name{font-weight:600}
-    .step-desc{font-size:12px;color:var(--brand-muted)}
-    .sidebar.collapsed .step-text{display:none}
-    .sidebar.collapsed .side-title{display:none}
-
-    /* Main area */
-    .main{min-width:0;display:flex;flex-direction:column;gap:18px}
-    .page-head{
-      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
-      padding:16px 18px;display:flex;align-items:center;gap:12px;justify-content:space-between
-    }
-    .page-head .left{display:flex;align-items:center;gap:12px}
-    .page-title{margin:0;font-size:20px}
-    .page-sub{margin:2px 0 0;font-size:13px;color:var(--brand-muted)}
-    .btn{
-      appearance:none;border:none;cursor:pointer;font-weight:700;
-      padding:10px 14px;border-radius:12px;background:var(--brand-primary);color:#fff;box-shadow:var(--shadow)
-    }
-    .btn.ghost{background:#fff;color:var(--brand-text);border:1px solid rgba(0,0,0,.15);box-shadow:none}
-    .btn.secondary{background:var(--brand-accent)}
-    .content{
-      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
-      padding:18px;
-    }
-    .panel{display:none}
-    .panel.active{display:block}
-    .panel h2{margin:0 0 6px;font-size:18px}
-    .muted{color:var(--brand-muted);font-size:13px}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
-    .block{border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:12px}
-    label{display:block;font-size:12px;color:var(--brand-muted);margin-bottom:6px}
-    input[type="file"]{display:block}
-    textarea{
-      width:100%;min-height:140px;resize:vertical;border-radius:12px;border:1px solid rgba(0,0,0,.15);padding:12px;font:inherit
-    }
-    .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
-    .nav-step{display:flex;gap:8px;margin-left:auto}
-    .footer{margin:18px 0 0;color:var(--brand-muted);font-size:12px;text-align:center}
-
-    @media (max-width:980px){ .wrap{grid-template-columns:1fr} .sidebar{position:static;height:auto} .row{grid-template-columns:1fr} }
-  </style>
+  <!-- Styles tách riêng -->
+  <link rel="stylesheet" href="./css/styles.css" />
 </head>
 <body>
-  <!-- Topbar -->
-  <header class="topbar">
-    <div class="topbar-inner">
-      <img src="public/brand/logo.png" class="brand-logo" alt="Logo">
-      <div>
-        <div class="title">Protocol builder <span class="badge">RCT Wizard</span></div>
-        <div class="tagline">Hỗ trợ xây dựng đề cương RCT trong YHCT</div>
-      </div>
-      <div style="margin-left:auto;display:flex;gap:8px;">
-        <a class="btn ghost" href="#" title="Hướng dẫn">Hướng dẫn</a>
-        <a class="btn ghost" href="#" title="Liên hệ">Liên hệ</a>
-      </div>
-    </div>
-  </header>
+  <h1>Xây dựng đề cương RCT – Wizard</h1>
 
-  <!-- Layout -->
-  <div class="wrap">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
-      <div class="side-head">
-        <div class="side-title">Các bước</div>
-        <button class="side-btn" id="btn-collapse">Thu gọn</button>
-      </div>
-      <ul class="step-list" id="steps"></ul>
-    </aside>
-
-    <!-- Main -->
-    <main class="main">
-      <div class="page-head">
-        <div class="left">
-          <h1 class="page-title" id="page-title">Bước 0 · Mở đầu</h1>
-          <p class="page-sub" id="page-sub">Bắt đầu quy trình, mở/tạo hồ sơ.</p>
-        </div>
-        <div class="nav-step">
-          <button class="btn ghost" id="btn-prev">← Trước</button>
-          <button class="btn" id="btn-next">Tiếp →</button>
-        </div>
-      </div>
-
-      <section class="content" id="content">
-        <!-- Panels render sẵn để không phá cấu trúc ID -->
-        <!-- Template khối chuẩn mỗi bước -->
-        <template id="tpl-step">
-          <div class="panel">
-            <h2 class="h"></h2>
-            <p class="muted d"></p>
-
-            <div class="row">
-              <div class="block">
-                <label>Tài liệu hỗ trợ (PDF)</label>
-                <input type="file" class="pdf" accept="application/pdf" multiple />
-                <div class="muted" style="margin-top:6px">Có thể chọn nhiều PDF; sẽ gửi kèm khi gọi GPT.</div>
-                <div class="actions">
-                  <button class="btn secondary act-suggest">GPT gợi ý</button>
-                  <button class="btn ghost act-eval">GPT đánh giá</button>
-                  <button class="btn ghost act-open">Mở form bước này</button>
-                </div>
-              </div>
-
-              <div class="block">
-                <label>Nội dung của tôi (dùng cho nút “GPT đánh giá”)</label>
-                <textarea class="input" placeholder="Dán nội dung bạn muốn GPT đánh giá ở đây…"></textarea>
-                <label style="margin-top:10px">Kết quả GPT</label>
-                <textarea class="output" placeholder="Kết quả GPT sẽ hiển thị tại đây…" readonly></textarea>
-                <div class="actions">
-                  <button class="btn ghost act-copy">Sao chép kết quả</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <!-- Bước 15 có thêm kiểm tra logic tổng thể -->
-        <div class="panel" id="panel-15" style="display:none">
-          <h2>Bước 15 – Kiểm tra logic tổng thể</h2>
-          <p class="muted">Kiểm tra nhất quán PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.</p>
-          <div class="actions">
-            <button class="btn" id="btn-check-logic">Kiểm tra logic</button>
-            <button class="btn ghost" id="btn-copy-logic">Sao chép kết quả</button>
-          </div>
-          <textarea id="logic-result" rows="12" style="width:100%;margin-top:10px;border-radius:12px;border:1px solid rgba(0,0,0,.15);padding:12px;" placeholder="Kết quả kiểm tra sẽ hiển thị tại đây…"></textarea>
-
-          <div class="row" style="margin-top:16px">
-            <div class="block">
-              <label>Tài liệu hỗ trợ (PDF)</label>
-              <input type="file" id="pdf-15" accept="application/pdf" multiple />
-              <div class="muted" style="margin-top:6px">Sẽ gửi kèm khi chạy kiểm tra nếu App.CheckLogic hỗ trợ.</div>
-            </div>
-            <div class="block">
-              <label>Ghi chú</label>
-              <textarea rows="6" placeholder="Ghi chú nhanh…"></textarea>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <p class="footer">© Protocol builder · RCT Wizard</p>
-    </main>
+  <!-- Thanh điều hướng (giữ id/nav như cũ) -->
+  <div class="steps-nav">
+    <button onclick="goToStep(0)" id="nav-0">1. PICO</button>
+    <button onclick="goToStep(1)" id="nav-1">2. Câu hỏi</button>
+    <button onclick="goToStep(2)" id="nav-2">3. Mục tiêu</button>
+    <button onclick="goToStep(3)" id="nav-3">4. Mở đầu</button>
+    <button onclick="goToStep(4)" id="nav-4">5. Tổng quan</button>
+    <button onclick="goToStep(5)" id="nav-5">6. Thiết kế</button>
+    <button onclick="goToStep(6)" id="nav-6">7. Cỡ mẫu</button>
+    <button onclick="goToStep(7)" id="nav-7">8. Tiêu chí</button>
+    <button onclick="goToStep(8)" id="nav-8">9. Ngẫu nhiên</button>
+    <button onclick="goToStep(9)" id="nav-9">10. Can thiệp</button>
+    <button onclick="goToStep(10)" id="nav-10">11. Biến số</button>
+    <button onclick="goToStep(11)" id="nav-11">12. Thu thập</button>
+    <button onclick="goToStep(12)" id="nav-12">13. Phân tích</button>
+    <button onclick="goToStep(13)" id="nav-13">14. Đạo đức</button>
+    <button onclick="goToStep(14)" id="nav-14">15. Check logic</button>
+    <button onclick="goToStep(15)" id="nav-15">16. Sơ đồ</button>
   </div>
 
-  <!-- JS modules của bạn (ở root/assets/js) -->
-  <script src="assets/js/utils.js" defer></script>
-  <script src="assets/js/wizard-storage.js" defer></script>
-  <script src="assets/js/prompt-builder.js" defer></script>
-  <script src="assets/js/api-client.js" defer></script>
-  <script src="assets/js/check-logic.js" defer></script>
+  <!-- ====== Bước 1: PICO ====== -->
+  <div class="step" id="step-0">
+    <h2>Bước 1: PICO</h2>
 
-  <!-- Glue: render 17 bước, gắn sự kiện Upload PDF / GPT / Logic -->
-  <script>
-    (function(){
-      const $ = (s,el=document)=>el.querySelector(s);
-      const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
-      const stepsMeta = [
-        {i:0,  name:'Mở đầu',            desc:'Bắt đầu quy trình, mở/tạo hồ sơ.'},
-        {i:1,  name:'PICO',               desc:'Dân số, can thiệp, so sánh, kết cục.'},
-        {i:2,  name:'Câu hỏi',            desc:'Chuyển PICO thành câu hỏi nghiên cứu.'},
-        {i:3,  name:'Mục tiêu',           desc:'Mục tiêu chính & phụ có đo lường.'},
-        {i:4,  name:'Mở đầu (CaRS)',      desc:'Bối cảnh & khoảng trống tri thức.'},
-        {i:5,  name:'Tổng quan',          desc:'Các tiểu mục tổng quan & bằng chứng.'},
-        {i:6,  name:'Thiết kế',           desc:'Loại thiết kế, khung thời gian.'},
-        {i:7,  name:'Cỡ mẫu',             desc:'Công thức, giả định, mất mẫu.'},
-        {i:8,  name:'Tiêu chí',           desc:'Chọn / loại trừ.'},
-        {i:9,  name:'Ngẫu nhiên',         desc:'Phân bổ & che giấu.'},
-        {i:10, name:'Can thiệp',          desc:'Mô tả chi tiết các nhánh.'},
-        {i:11, name:'Biến số',            desc:'Kết cục, nền, nhiễu…'},
-        {i:12, name:'Thu thập',           desc:'Quy trình thu thập dữ liệu.'},
-        {i:13, name:'Phân tích',          desc:'Chiến lược phân tích (SAP).'},
-        {i:14, name:'Đạo đức',            desc:'Các cân nhắc & phê duyệt.'},
-        {i:15, name:'Kiểm tra logic',     desc:'Nhất quán toàn bộ đề cương.'},
-        {i:16, name:'CONSORT',            desc:'Sơ đồ tiến hành nghiên cứu.'},
-      ];
+    <label>P - Dân số mục tiêu:</label>
+    <input type="text" id="pico-p" oninput="saveData()" />
 
-      /* ---------- Render sidebar ---------- */
-      const stepsUL = $('#steps');
-      stepsUL.innerHTML = stepsMeta.map(s=>`
-        <li class="step-item" data-step="${s.i}">
-          <span class="step-idx">${s.i}</span>
-          <span class="step-text">
-            <span class="step-name">${s.name}</span>
-            <span class="step-desc">${s.desc}</span>
-          </span>
-        </li>
-      `).join('');
+    <label>I - Can thiệp:</label>
+    <input type="text" id="pico-i" oninput="saveData()" />
 
-      /* ---------- Render panels (0..16) ---------- */
-      const content = $('#content');
-      const tpl = $('#tpl-step');
-      const panels = {};
-      for (const meta of stepsMeta){
-        if (meta.i === 15) { // panel-15 đã có sẵn phần logic
-          panels[15] = $('#panel-15');
-          continue;
-        }
-        const node = tpl.content.firstElementChild.cloneNode(true);
-        node.id = `panel-${meta.i}`;
-        node.querySelector('.h').textContent = `Bước ${meta.i} – ${meta.name}`;
-        node.querySelector('.d').textContent = meta.desc;
-        content.appendChild(node);
-        panels[meta.i] = node;
-      }
-      // Mặc định hiển thị panel-0
-      $$('.panel', content).forEach(p=>p.style.display = 'none');
-      $('#panel-0').style.display = 'block';
+    <label>C - So sánh:</label>
+    <input type="text" id="pico-c" oninput="saveData()" />
 
-      /* ---------- Routing bằng hash ---------- */
-      function hashStep(){
-        const m = location.hash.match(/step=(\d{1,2})/);
-        const n = m ? parseInt(m[1],10) : 0;
-        return isNaN(n) ? 0 : Math.max(0, Math.min(16, n));
-      }
-      function activate(step){
-        // sidebar
-        $$('.step-item', stepsUL).forEach(li=>li.classList.toggle('active', parseInt(li.dataset.step,10)===step));
-        // panels
-        $$('.panel', content).forEach(p=>p.style.display='none');
-        const p = panels[step];
-        if (p) p.style.display = 'block';
-        // head
-        const meta = stepsMeta.find(x=>x.i===step) || stepsMeta[0];
-        $('#page-title').textContent = `Bước ${meta.i} · ${meta.name}`;
-        $('#page-sub').textContent   = meta.desc;
-        // nav
-        $('#btn-prev').disabled = step<=0;
-        $('#btn-next').disabled = step>=16;
-        current = step;
-        location.hash = `#step=${step}`;
-      }
-      let current = hashStep();
-      activate(current);
-      window.addEventListener('hashchange', ()=>activate(hashStep()));
-      $$('.step-item', stepsUL).forEach(li=>li.addEventListener('click', ()=>activate(parseInt(li.dataset.step,10))));
-      $('#btn-prev').addEventListener('click', ()=> current>0 && activate(current-1));
-      $('#btn-next').addEventListener('click', ()=> current<16 && activate(current+1));
-      $('#btn-collapse').addEventListener('click', ()=> $('#sidebar').classList.toggle('collapsed'));
+    <label>O - Kết cục:</label>
+    <input type="text" id="pico-o" oninput="saveData()" />
 
-      /* ---------- Helpers ---------- */
-      function getSaved(){
-        try{ return JSON.parse(localStorage.getItem('rctWizardData')||'{}'); } catch(_){ return {}; }
-      }
-      async function readPDFs(inputEl){
-        const files = (inputEl && inputEl.files) ? [...inputEl.files] : [];
-        const out = [];
-        for (const f of files){
-          const base64 = await new Promise((res,rej)=>{
-            const r = new FileReader();
-            r.onerror = ()=>rej('Đọc PDF thất bại');
-            r.onload = ()=>res(String(r.result).split(',')[1]||'');
-            r.readAsDataURL(f); // data:application/pdf;base64,....
-          });
-          out.push({ name: f.name, mime: f.type||'application/pdf', base64 });
-        }
-        return out;
-      }
-      function toastTo(el, msg){
-        const out = el.closest('.block')?.querySelector('.output');
-        if (out) out.value = msg;
-      }
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="pico-file" accept=".pdf" multiple />
 
-      /* ---------- Gắn event cho tất cả panels ---------- */
-      stepsMeta.forEach(meta=>{
-        const panel = panels[meta.i];
-        if (!panel) return;
+    <div style="margin-top:8px;">
+      <button onclick="generatePicoDescription()">🧠 GPT viết mô tả từ PICO</button>
+    </div>
+    <div id="pico-gpt-result" class="gpt-suggest"></div>
 
-        const pdfEl   = panel.querySelector('.pdf');
-        const inputEl = panel.querySelector('.input');
-        const outEl   = panel.querySelector('.output');
+    <div class="row-gap">
+      <button disabled>⬅️</button>
+      <button onclick="goToStep(1)">Tiếp ➡️</button>
+    </div>
 
-        // GPT gợi ý
-        const btnSuggest = panel.querySelector('.act-suggest');
-        if (btnSuggest) btnSuggest.addEventListener('click', async ()=>{
-          outEl.value = 'Đang gọi GPT gợi ý…';
-          try{
-            const pdfs = await readPDFs(pdfEl);
-            const saved = getSaved();
-            if (window.App && App.API && typeof App.API.suggest === 'function'){
-              const r = await App.API.suggest({ step: meta.i, saved, pdfs });
-              outEl.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
-            }else{
-              outEl.value = 'Chưa tìm thấy App.API.suggest({...}). Kiểm tra assets/js/api-client.js';
-            }
-          }catch(e){ outEl.value = 'Lỗi khi gọi GPT gợi ý: ' + (e?.message || e); }
-        });
+    <button class="danger" onclick="resetWizard()">🗑 Xóa toàn bộ dữ liệu và bắt đầu lại</button>
+  </div>
 
-        // GPT đánh giá
-        const btnEval = panel.querySelector('.act-eval');
-        if (btnEval) btnEval.addEventListener('click', async ()=>{
-          outEl.value = 'Đang gọi GPT đánh giá…';
-          try{
-            const pdfs = await readPDFs(pdfEl);
-            const saved = getSaved();
-            const text  = (inputEl?.value || '').trim();
-            if (window.App && App.API && typeof App.API.evaluate === 'function'){
-              const r = await App.API.evaluate({ step: meta.i, text, saved, pdfs });
-              outEl.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
-            }else{
-              outEl.value = 'Chưa tìm thấy App.API.evaluate({...}). Kiểm tra assets/js/api-client.js';
-            }
-          }catch(e){ outEl.value = 'Lỗi khi gọi GPT đánh giá: ' + (e?.message || e); }
-        });
+  <!-- ====== Bước 2: Câu hỏi nghiên cứu ====== -->
+  <div class="step" id="step-1">
+    <h2>Bước 2: Câu hỏi nghiên cứu</h2>
+    <label for="question">Nhập câu hỏi:</label>
+    <textarea id="question" oninput="saveData()"></textarea>
 
-        // Mở form riêng cho bước (nếu bạn đã có)
-        const btnOpen = panel.querySelector('.act-open');
-        if (btnOpen) btnOpen.addEventListener('click', ()=>{
-          if (window.App && App.Steps && typeof App.Steps.open === 'function'){
-            App.Steps.open(meta.i);
-          }else{
-            toastTo(btnOpen, 'Chưa có App.Steps.open(step). Thêm vào assets/js/... để mở UI riêng của bước.');
-          }
-        });
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="question-file" accept=".pdf" multiple />
 
-        // Sao chép
-        const btnCopy = panel.querySelector('.act-copy');
-        if (btnCopy) btnCopy.addEventListener('click', ()=>{
-          outEl.select(); document.execCommand('copy');
-        });
-      });
+    <div class="row-gap">
+      <button onclick="generateResearchQuestionFromGPT()">🧠 GPT gợi ý câu hỏi</button>
+      <button onclick="evaluateResearchQuestion()">🧐 GPT đánh giá câu hỏi</button>
+    </div>
+    <div id="question-gpt-suggestion" class="gpt-suggest"></div>
+    <div id="question-gpt-evaluation" class="gpt-eval"></div>
 
-      /* ---------- BƯỚC 15: checkLogic ---------- */
-      const out15 = $('#logic-result');
-      const btnCL = $('#btn-check-logic');
-      const btnCP = $('#btn-copy-logic');
-      if (btnCL) btnCL.addEventListener('click', async ()=>{
-        out15.value = 'Đang kiểm tra logic…';
-        try{
-          // gửi kèm PDF nếu App.CheckLogic hỗ trợ
-          const pdfInput = $('#pdf-15');
-          let pdfs = [];
-          if (pdfInput) {
-            pdfs = await readPDFs(pdfInput);
-          }
-          if (typeof window.checkLogic === 'function'){
-            const r = await window.checkLogic(pdfs);
-            out15.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
-          } else if (window.App && App.CheckLogic && typeof App.CheckLogic.run === 'function'){
-            const r = await App.CheckLogic.run(pdfs);
-            out15.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
-          } else {
-            out15.value = 'Không tìm thấy checkLogic(). Kiểm tra assets/js/check-logic.js';
-          }
-        }catch(e){ out15.value = 'Lỗi kiểm tra logic: ' + (e?.message || e); }
-      });
-      if (btnCP && out15) btnCP.addEventListener('click', ()=>{ out15.select(); document.execCommand('copy'); });
+    <div class="row-gap">
+      <button onclick="goToStep(0)">⬅️ Quay lại</button>
+      <button onclick="goToStep(2)">Tiếp ➡️</button>
+    </div>
+  </div>
 
-      /* ---------- Storage quick actions (nếu bạn đã có) ---------- */
-      const S = (window.App && window.App.Storage) ? window.App.Storage : null;
-      const openBtn = document.getElementById('btn-open-storage');
-      const saveBtn = document.getElementById('btn-save-storage');
-      if (S && openBtn) openBtn.addEventListener('click', ()=> S.open && S.open());
-      if (S && saveBtn) saveBtn.addEventListener('click', ()=> S.save && S.save());
-    })();
-  </script>
+  <!-- ====== Bước 3: Mục tiêu ====== -->
+  <div class="step" id="step-2">
+    <h2>Bước 3: Mục tiêu nghiên cứu</h2>
+
+    <label>Mục tiêu chính:</label>
+    <input type="text" id="main-objective" oninput="saveData()" />
+
+    <label>Mục tiêu phụ:</label>
+    <div id="sub-objectives"></div>
+    <button onclick="addSubObjective()">➕ Thêm mục tiêu phụ</button>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="objective-file" accept=".pdf" multiple />
+
+    <div class="row-gap">
+      <button onclick="generateObjectivesFromGPT()">🧠 GPT gợi ý mục tiêu</button>
+      <button onclick="evaluateObjectives()">🧐 GPT đánh giá mục tiêu</button>
+    </div>
+    <div id="objective-gpt-suggestion" class="gpt-suggest"></div>
+    <div id="objective-gpt-evaluation" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(1)">⬅️ Quay lại</button>
+      <button onclick="goToStep(3)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 4: Mở đầu (CaRS) ====== -->
+  <div class="step" id="step-3">
+    <h2>Bước 4: Mở đầu (CaRS)</h2>
+
+    <!-- Territory -->
+    <h3>1. Territory - Bối cảnh nghiên cứu</h3>
+    <input type="file" id="file-territory" accept=".pdf" />
+    <label>Nhập nội dung Territory:</label>
+    <textarea id="intro-territory" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Territory()">🧠 GPT gợi ý Territory</button>
+      <button onclick="evaluateGPT_Territory()">🧐 GPT đánh giá Territory</button>
+    </div>
+    <div id="suggest-territory" class="gpt-suggest"></div>
+    <div id="eval-territory" class="gpt-eval"></div>
+
+    <!-- Niche -->
+    <h3>2. Niche - Khoảng trống kiến thức</h3>
+    <input type="file" id="file-niche" accept=".pdf" />
+    <label>Nhập nội dung Niche:</label>
+    <textarea id="intro-niche" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Niche()">🧠 GPT gợi ý Niche</button>
+      <button onclick="evaluateGPT_Niche()">🧐 GPT đánh giá Niche</button>
+    </div>
+    <div id="suggest-niche" class="gpt-suggest"></div>
+    <div id="eval-niche" class="gpt-eval"></div>
+
+    <!-- Occupy -->
+    <h3>3. Occupy - Cách chiếm lĩnh khoảng trống</h3>
+    <input type="file" id="file-occupy" accept=".pdf" />
+    <label>Nhập nội dung Occupy:</label>
+    <textarea id="intro-occupy" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Occupy()">🧠 GPT gợi ý Occupy</button>
+      <button onclick="evaluateGPT_Occupy()">🧐 GPT đánh giá Occupy</button>
+    </div>
+    <div id="suggest-occupy" class="gpt-suggest"></div>
+    <div id="eval-occupy" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(2)">⬅️ Quay lại</button>
+      <button onclick="goToStep(4)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 5: Tổng quan tài liệu (9 mục) ====== -->
+  <div class="step" id="step-4">
+    <h2>Bước 5: Tổng quan tài liệu</h2>
+
+    <!-- 1 -->
+    <h3>1. Đại cương YHHĐ</h3>
+    <input type="file" id="file-yhhd-overview" accept=".pdf" />
+    <textarea id="text-yhhd-overview" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_YHHD_Overview()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_YHHD_Overview()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-yhhd-overview" class="gpt-suggest"></div>
+    <div id="eval-yhhd-overview" class="gpt-eval"></div>
+
+    <!-- 2 -->
+    <h3>2. Dịch tễ học và gánh nặng bệnh tật</h3>
+    <input type="file" id="file-epidemiology" accept=".pdf" />
+    <textarea id="text-epidemiology" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Epidemiology()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Epidemiology()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-epidemiology" class="gpt-suggest"></div>
+    <div id="eval-epidemiology" class="gpt-eval"></div>
+
+    <!-- 3 -->
+    <h3>3. Chẩn đoán YHHĐ</h3>
+    <input type="file" id="file-diagnosis" accept=".pdf" />
+    <textarea id="text-diagnosis" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Diagnosis()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Diagnosis()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-diagnosis" class="gpt-suggest"></div>
+    <div id="eval-diagnosis" class="gpt-eval"></div>
+
+    <!-- 4 -->
+    <h3>4. Điều trị YHHĐ</h3>
+    <input type="file" id="file-treatment" accept=".pdf" />
+    <textarea id="text-treatment" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Treatment()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Treatment()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-treatment" class="gpt-suggest"></div>
+    <div id="eval-treatment" class="gpt-eval"></div>
+
+    <!-- 5 -->
+    <h3>5. Hạn chế của YHHĐ trong quản lý bệnh</h3>
+    <input type="file" id="file-limitation" accept=".pdf" />
+    <textarea id="text-limitation" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Limitation()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Limitation()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-limitation" class="gpt-suggest"></div>
+    <div id="eval-limitation" class="gpt-eval"></div>
+
+    <!-- 6 -->
+    <h3>6. Đại cương YHCT</h3>
+    <input type="file" id="file-yhct-overview" accept=".pdf" />
+    <textarea id="text-yhct-overview" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_YHCT_Overview()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_YHCT_Overview()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-yhct-overview" class="gpt-suggest"></div>
+    <div id="eval-yhct-overview" class="gpt-eval"></div>
+
+    <!-- 7 -->
+    <h3>7. Liệu pháp can thiệp trong nghiên cứu</h3>
+    <input type="file" id="file-intervention" accept=".pdf" />
+    <textarea id="text-intervention" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_Intervention()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Intervention()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-intervention" class="gpt-suggest"></div>
+    <div id="eval-intervention" class="gpt-eval"></div>
+
+    <!-- 8 -->
+    <h3>8. Các nghiên cứu cùng loại trong & ngoài nước</h3>
+    <input type="file" id="file-related-studies" accept=".pdf" />
+    <textarea id="text-related-studies" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_RelatedStudies()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_RelatedStudies()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-related-studies" class="gpt-suggest"></div>
+    <div id="eval-related-studies" class="gpt-eval"></div>
+
+    <!-- 9 -->
+    <h3>9. Phương pháp phân tích/đánh giá mới</h3>
+    <input type="file" id="file-new-methods" accept=".pdf" />
+    <textarea id="text-new-methods" rows="5"></textarea>
+    <div class="row-gap">
+      <button onclick="generateGPT_NewMethods()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_NewMethods()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-new-methods" class="gpt-suggest"></div>
+    <div id="eval-new-methods" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(3)">⬅️ Quay lại</button>
+      <button onclick="goToStep(5)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 6: Thiết kế nghiên cứu ====== -->
+  <div class="step" id="step-5">
+    <h2>Bước 6: Thiết kế nghiên cứu</h2>
+
+    <label>📘 Loại RCT:</label>
+    <select id="design-type" onchange="updateDesignFields(); saveData(); renderStudyFlowDiagram()">
+      <option value="">-- chọn --</option>
+      <option value="parallel">Song song</option>
+      <option value="cross-over">Bắt chéo (cross-over)</option>
+    </select>
+
+    <label>🎲 Phân bổ ngẫu nhiên:</label>
+    <select id="randomization" onchange="saveData()">
+      <option value="">-- chọn --</option>
+      <option>Ngẫu nhiên đơn giản</option>
+      <option>Ngẫu nhiên phân tầng</option>
+      <option>Ngẫu nhiên block</option>
+    </select>
+
+    <label>🙈 Làm mù:</label>
+    <select id="blinding" onchange="saveData()">
+      <option value="">-- chọn --</option>
+      <option>Không mù</option>
+      <option>Làm mù đơn</option>
+      <option>Làm mù đôi</option>
+      <option>Làm mù ba</option>
+    </select>
+
+    <!-- Xuất hiện tùy theo loại thiết kế -->
+    <div id="design-extra-fields" style="margin-top: 15px;"></div>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-design" accept="application/pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateGPT_Design()">🧠 GPT gợi ý</button>
+      <button onclick="evaluateGPT_Design()">🧐 GPT đánh giá</button>
+    </div>
+    <div id="suggest-design" class="gpt-suggest"></div>
+    <div id="eval-design" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(4)">⬅️ Quay lại</button>
+      <button onclick="goToStep(6)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 7: Cỡ mẫu ====== -->
+  <div class="step" id="step-6">
+    <h2>Bước 7: Tính cỡ mẫu</h2>
+
+    <label>Chọn loại công thức:</label>
+    <select id="sample-size-method" onchange="renderSampleSizeForm()">
+      <option value="">-- Chọn công thức --</option>
+      <option value="means">So sánh 2 trung bình</option>
+      <option value="noninferiority_means">Thử nghiệm không hơn kém (2 trung bình)</option>
+      <option value="crossover_means">So sánh trung bình (bắt chéo)</option>
+      <option value="proportions">So sánh 2 tỷ lệ</option>
+      <option value="noninferiority_prop">Thử nghiệm không hơn kém (2 tỷ lệ)</option>
+      <option value="crossover_props">So sánh tỷ lệ (bắt chéo)</option>
+      <option value="anova">So sánh nhiều trung bình (ANOVA)</option>
+      <option value="chisq">So sánh nhiều tỷ lệ (Chi-square)</option>
+      <option value="survival">Phân tích sống còn (Log-rank)</option>
+      <option value="ancova">Repeated measures / ANCOVA</option>
+    </select>
+
+    <div id="sample-size-form"></div>
+    <div id="sample-size-formula" class="note"></div>
+    <div id="sample-size-reference" class="muted"></div>
+
+    <button onclick="calculateSampleSize()">🧮 Tính cỡ mẫu</button>
+    <div id="sample-size-result" class="strong green"></div>
+    <div id="sample-size-adjusted" class="strong orange"></div>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-sample-size" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateSampleSizeSuggestion()">🧠 GPT gợi ý cách tính</button>
+      <button onclick="evaluateSampleSize()">🧐 GPT đánh giá cỡ mẫu</button>
+    </div>
+    <div id="suggest-sample-size" class="gpt-suggest"></div>
+    <div id="eval-sample-size" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(5)">⬅️ Quay lại</button>
+      <button onclick="goToStep(7)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 8: Tiêu chí ====== -->
+  <div class="step" id="step-7">
+    <h2>Bước 8: Tiêu chí chọn và loại</h2>
+
+    <h3>Tiêu chí chọn:</h3>
+    <div id="inclusion-criteria"></div>
+    <button onclick="addInclusionCriterion()">➕ Thêm tiêu chí chọn</button>
+
+    <h3>Tiêu chí loại:</h3>
+    <div id="exclusion-criteria"></div>
+    <button onclick="addExclusionCriterion()">➕ Thêm tiêu chí loại</button>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-criteria" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateCriteriaFromGPT()">🧠 GPT gợi ý tiêu chí</button>
+      <button onclick="evaluateCriteria()">🧐 GPT đánh giá tiêu chí</button>
+    </div>
+    <div id="criteria-gpt-suggestion" class="gpt-suggest"></div>
+    <div id="criteria-gpt-evaluation" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(6)">⬅️ Quay lại</button>
+      <button onclick="goToStep(8)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 9: Ngẫu nhiên ====== -->
+  <div class="step" id="step-8">
+    <h2>Bước 9: Phân bổ ngẫu nhiên</h2>
+
+    <label>Số lượng nhánh can thiệp (tự động từ bước 6):</label>
+    <input type="number" id="num-arms-step9" readonly />
+
+    <label>Chọn phương pháp phân bổ:</label>
+    <select id="random-method" onchange="generateAutoRandomization(); saveData()">
+      <option value="">-- Chọn phương pháp --</option>
+      <option value="simple">Ngẫu nhiên đơn giản</option>
+      <option value="block">Ngẫu nhiên theo khối</option>
+      <option value="stratified">Ngẫu nhiên phân tầng</option>
+      <option value="minimization">Ngẫu nhiên hóa tối thiểu</option>
+    </select>
+
+    <div id="random-options"></div>
+
+    <label>Mô tả ngẫu nhiên hóa:</label>
+    <textarea id="randomization-method" rows="5" oninput="saveData()"></textarea>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-randomization" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateRandomizationSuggestion()">🧠 GPT gợi ý nội dung</button>
+      <button onclick="evaluateRandomization()">✅ GPT đánh giá nội dung</button>
+    </div>
+    <div id="randomization-gpt-suggestion" class="gpt-suggest"></div>
+    <div id="randomization-gpt-evaluation" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(7)">⬅️ Quay lại</button>
+      <button onclick="goToStep(9)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 10: Mô tả can thiệp ====== -->
+  <div class="step" id="step-9">
+    <h2>Bước 10: Mô tả Can thiệp</h2>
+    <div id="intervention-descriptions"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(8)">⬅️ Quay lại</button>
+      <button onclick="goToStep(10)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 11: Biến số ====== -->
+  <div class="step" id="step-10">
+    <h2>Bước 11: Biến số nghiên cứu</h2>
+    <p>Tải CSV biến mẫu chuẩn; kéo-thả biến vào từng nhóm.</p>
+    <input type="file" id="variable-file" accept=".csv" />
+
+    <div class="collection-block">
+      <h3>➕ Thêm biến mới</h3>
+      <div id="new-variable-form">
+        <input type="text" placeholder="Tên biến" id="new-name" />
+
+        <select id="new-role">
+          <option value="">-- Vai trò --</option>
+          <option value="primary">Kết cục chính</option>
+          <option value="secondary">Kết cục phụ</option>
+          <option value="baseline">Biến nền</option>
+          <option value="confounder">Biến nhiễu</option>
+          <option value="mediator">Biến trung gian</option>
+          <option value="moderator">Biến điều biến</option>
+          <option value="safety">Biến an toàn</option>
+        </select>
+
+        <select id="new-type">
+          <option value="">-- Kiểu dữ liệu --</option>
+          <option value="numeric">Số liên tục (numeric)</option>
+          <option value="ordinal">Thứ bậc (ordinal)</option>
+          <option value="categorical">Phân loại (categorical)</option>
+          <option value="binary">Nhị phân (binary)</option>
+          <option value="text">Chuỗi văn bản (text)</option>
+          <option value="date">Ngày tháng (date)</option>
+        </select>
+
+        <input type="text" placeholder="Đơn vị" id="new-unit" />
+        <input type="text" placeholder="Thời điểm đo" id="new-time" />
+        <input type="text" placeholder="Cách đo lường" id="new-measure" />
+        <input type="text" placeholder="Định nghĩa" id="new-definition" />
+        <input type="text" placeholder="Nguồn" id="new-source" />
+
+        <select id="new-format">
+          <option value="">-- Định dạng --</option>
+          <option value="float">Số thực (float)</option>
+          <option value="integer">Số nguyên (integer)</option>
+          <option value="string">Chuỗi ký tự (string)</option>
+          <option value="percent">Phần trăm (percent)</option>
+          <option value="yes/no">Có / Không</option>
+          <option value="mm/dd/yyyy">Ngày (mm/dd/yyyy)</option>
+        </select>
+
+        <input type="text" placeholder="Khoảng giá trị" id="new-range" />
+        <input type="text" placeholder="MCID / Ngưỡng" id="new-mcid" />
+
+        <div class="row-gap">
+          <button onclick="addNewVariable()">✅ Thêm vào danh sách</button>
+          <button onclick="exportVariables()">💾 Xuất CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="variable-groups"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(9)">⬅️ Quay lại</button>
+      <button onclick="goToStep(11)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 12: Thu thập ====== -->
+  <div class="step" id="step-11">
+    <h2>Bước 12: Mô tả cách thu thập dữ liệu</h2>
+    <label>📝 Mô tả cách thu thập dữ liệu:</label>
+    <textarea id="collect-desc" rows="8" placeholder="Ví dụ: Thu thập tại 3 thời điểm..."></textarea>
+    <div id="data-collection-list"></div>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-collect-pdf" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateCollectSuggestion()">🧠 GPT gợi ý mô tả thu thập</button>
+      <button onclick="evaluateCollectDescription()">🧐 GPT đánh giá mô tả</button>
+    </div>
+    <div id="suggest-collect" class="gpt-suggest"></div>
+    <div id="eval-collect" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(10)">⬅️ Quay lại</button>
+      <button onclick="goToStep(12)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 13: Phân tích ====== -->
+  <div class="step" id="step-12">
+    <h2>Bước 13: Phân tích số liệu</h2>
+    <label>📝 Mô tả chiến lược phân tích số liệu:</label>
+    <textarea id="analysis-desc" rows="10" placeholder="Ví dụ: Phân tích theo ITT..."></textarea>
+    <div id="analysis-list"></div>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-analysis-pdf" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateAnalysisPlan()">🧠 GPT gợi ý chiến lược phân tích</button>
+      <button onclick="evaluateAnalysisPlan()">🧐 GPT đánh giá nội dung</button>
+    </div>
+    <div id="suggest-analysis" class="gpt-suggest"></div>
+    <div id="eval-analysis" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(11)">⬅️ Quay lại</button>
+      <button onclick="goToStep(13)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 14: Đạo đức ====== -->
+  <div class="step" id="step-13">
+    <h2>Bước 14: Đạo đức nghiên cứu</h2>
+    <label>📝 Mô tả phần đạo đức nghiên cứu:</label>
+    <textarea id="ethics-desc" rows="10" placeholder="Ví dụ: Tuân thủ Tuyên bố Helsinki..."></textarea>
+
+    <h3>Kết quả từ GPT:</h3>
+    <label>📂 Tải tài liệu PDF hỗ trợ (nếu có):</label>
+    <input type="file" id="file-ethics-pdf" accept=".pdf" />
+
+    <div class="row-gap">
+      <button onclick="generateEthicsSection()">🧠 GPT gợi ý nội dung đạo đức</button>
+      <button onclick="evaluateEthicsSection()">🧐 GPT đánh giá nội dung</button>
+    </div>
+    <div id="suggest-ethics" class="gpt-suggest"></div>
+    <div id="eval-ethics" class="gpt-eval"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(12)">⬅️ Quay lại</button>
+      <button onclick="goToStep(14)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 15: Check logic ====== -->
+  <div class="step" id="step-14">
+    <h2>Bước 15: Kiểm tra logic tổng thể</h2>
+    <p>🧠 GPT sẽ kiểm tra toàn bộ đề cương đã nhập (PICO, mục tiêu, biến số, can thiệp, phân tích, đạo đức...).</p>
+    <button onclick="checkLogic()">🧠 Kiểm tra logic toàn bộ đề cương</button>
+    <div id="logic-check-result" class="warn"></div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(13)">⬅️ Quay lại</button>
+      <button onclick="goToStep(15)">Tiếp ➡️</button>
+    </div>
+  </div>
+
+  <!-- ====== Bước 16: Sơ đồ tiến hành nghiên cứu ====== -->
+  <div class="step" id="step-15">
+    <h2>Bước 16: Sơ đồ tiến hành nghiên cứu</h2>
+    <pre id="studyflow-mermaid" class="mermaid"></pre>
+
+    <div class="row-gap">
+      <button onclick="renderStudyFlowDiagram()">🔁 Vẽ lại sơ đồ</button>
+      <button onclick="downloadMermaidPNG()">📷 Tải PNG</button>
+    </div>
+
+    <div class="row-gap">
+      <button onclick="goToStep(14)">⬅️ Quay lại</button>
+      <button onclick="alert('🎉 Đã hoàn tất toàn bộ đề cương!')">Kết thúc ✅</button>
+    </div>
+  </div>
+
+  <!-- Main JS (module) — sẽ attach các hàm lên window để các onclick/oninput ở trên hoạt động -->
+  <script type="module" src="./js/main.js"></script>
 </body>
 </html>
