@@ -18,98 +18,64 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root {
-      --brand-primary: #0ea44b;
-      --brand-secondary: #f5c518;
-      --brand-accent: #0ea5e9;
-      --brand-neutral: #111827;
-      --brand-muted: #6b7280;
-      --brand-bg: #ffffff;
-      --radius: 16px;
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
+    :root{
+      --brand-primary:#0ea44b;--brand-secondary:#f5c518;--brand-accent:#0ea5e9;
+      --brand-neutral:#111827;--brand-muted:#6b7280;--brand-bg:#fff;
+      --radius:16px;--shadow:0 10px 30px rgba(0,0,0,.08)
     }
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0;
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
-      color: var(--brand-neutral);
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(14,164,75,0.08), transparent 60%),
-                  radial-gradient(1000px 500px at 90% 10%, rgba(14,165,233,0.08), transparent 60%),
-                  var(--brand-bg);
-      line-height: 1.5;
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,'Noto Sans','Liberation Sans',sans-serif;
+      color:var(--brand-neutral);
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(14,164,75,.08), transparent 60%),
+        radial-gradient(1000px 500px at 90% 10%, rgba(14,165,233,.08), transparent 60%),
+        var(--brand-bg);
+      line-height:1.5
     }
-
     /* Topbar */
-    .topbar {
-      position: sticky; top: 0; z-index: 10;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .topbar-inner {
-      max-width: 1100px; margin: 0 auto; padding: 12px 20px;
-      display: flex; align-items: center; gap: 14px;
-    }
-    .brand-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 10px; }
-    .brand-title { font-weight: 700; letter-spacing: 0.2px; }
-    .brand-badge {
-      font-size: 12px; font-weight: 600; color: white;
-      background: linear-gradient(135deg, var(--brand-primary), var(--brand-accent));
-      padding: 4px 10px; border-radius: 999px;
-      margin-left: 8px;
-    }
-
-    /* Main container */
-    .container { max-width: 1100px; margin: 24px auto 48px; padding: 0 20px; }
-    .hero {
-      display: grid; grid-template-columns: 1.2fr 1fr; gap: 24px; align-items: center;
-      margin: 12px 0 24px;
-    }
-    .hero-card {
-      background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px;
-      border: 1px solid rgba(0,0,0,0.06);
-    }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    .sub { color: var(--brand-muted); font-size: 14px; }
-
-    /* Step cards */
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
-    .col-7 { grid-column: span 7; }
-    .col-5 { grid-column: span 5; }
-    .card {
-      background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px;
-      border: 1px solid rgba(0,0,0,0.06);
-    }
-    .card h2 { font-size: 18px; margin: 0 0 10px; }
-    .muted { color: var(--brand-muted); font-size: 13px; }
-
-    /* Buttons & inputs */
-    .btn {
-      appearance: none; border: none; outline: none; cursor: pointer;
-      padding: 10px 14px; border-radius: 12px; font-weight: 600;
-      background: var(--brand-primary); color: white; box-shadow: var(--shadow);
-      transition: transform .05s ease, filter .15s ease;
-    }
-    .btn:hover { filter: brightness(1.04); }
-    .btn:active { transform: translateY(1px); }
-    .btn.secondary { background: var(--brand-accent); }
-    .btn.ghost { background: transparent; color: var(--brand-neutral); border: 1px solid rgba(0,0,0,0.15); box-shadow: none; }
-
-    label { display:block; font-size: 13px; color: var(--brand-muted); margin: 8px 0 6px; }
-    textarea, input[type="text"] {
-      width: 100%; padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.15);
-      outline: none; font: inherit; resize: vertical; min-height: 44px;
-    }
-    textarea:focus, input[type="text"]:focus { border-color: var(--brand-primary); box-shadow: 0 0 0 3px rgba(14,164,75,0.2); }
-
-    .footer { margin: 28px 0 0; color: var(--brand-muted); font-size: 12px; text-align: center; }
-    .pill { display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:999px; border: 1px dashed rgba(0,0,0,0.15); }
-    .label { font-size: 12px; color: var(--brand-muted); font-weight: 600; letter-spacing: .4px; text-transform: uppercase; }
-
-    @media (max-width: 900px) {
-      .hero { grid-template-columns: 1fr; }
-      .col-7, .col-5 { grid-column: span 12; }
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.05)}
+    .topbar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+    .brand-logo{width:40px;height:40px;object-fit:contain;border-radius:10px}
+    .brand-title{font-weight:700;letter-spacing:.2px}
+    .brand-badge{font-size:12px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent));padding:4px 10px;border-radius:999px;margin-left:8px}
+    /* Layout */
+    .container{max-width:1200px;margin:24px auto 48px;padding:0 20px}
+    .hero{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center;margin:12px 0 24px}
+    .hero-card,.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;border:1px solid rgba(0,0,0,.06)}
+    h1{margin:0 0 8px;font-size:28px}
+    .sub{color:var(--brand-muted);font-size:14px}
+    /* Main grid: sidebar steps + content */
+    .main-grid{display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:start}
+    /* Step nav */
+    .steps-card{position:sticky;top:84px}
+    .steps-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .steps-list{list-style:none;margin:0;padding:0;max-height:70vh;overflow:auto}
+    .step-item{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;cursor:pointer;margin:4px 0;border:1px solid rgba(0,0,0,.06)}
+    .step-item:hover{background:#f9fafb}
+    .step-item.active{background:linear-gradient(0deg,rgba(14,164,75,.08),rgba(14,164,75,.08));border-color:rgba(14,164,75,.25)}
+    .step-num{min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:1px solid rgba(0,0,0,.15)}
+    .step-label{font-weight:600}
+    .muted{color:var(--brand-muted);font-size:12px}
+    /* Content area */
+    .panel{display:none}
+    .panel.active{display:block}
+    .panel h2{font-size:18px;margin:0 0 8px}
+    .panel .panel-desc{color:var(--brand-muted);font-size:13px;margin-bottom:10px}
+    .panel .actions{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}
+    .btn{appearance:none;border:none;outline:none;cursor:pointer;padding:10px 14px;border-radius:12px;font-weight:600;background:var(--brand-primary);color:#fff;box-shadow:var(--shadow);transition:transform .05s ease, filter .15s ease}
+    .btn:hover{filter:brightness(1.04)}
+    .btn:active{transform:translateY(1px)}
+    .btn.secondary{background:var(--brand-accent)}
+    .btn.ghost{background:transparent;color:var(--brand-neutral);border:1px solid rgba(0,0,0,.15);box-shadow:none}
+    .footer{margin:28px 0 0;color:var(--brand-muted);font-size:12px;text-align:center}
+    textarea,input[type="text"]{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(0,0,0,.15);outline:none;font:inherit;resize:vertical;min-height:44px}
+    textarea:focus,input[type="text"]:focus{border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(14,164,75,.2)}
+    @media (max-width:1000px){
+      .hero{grid-template-columns:1fr}
+      .main-grid{grid-template-columns:1fr}
+      .steps-card{position:relative;top:auto}
     }
   </style>
 </head>
@@ -118,11 +84,11 @@
   <header class="topbar">
     <div class="topbar-inner">
       <img src="/brand/logo.png" alt="Logo" class="brand-logo" />
-      <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="display:flex;flex-direction:column;gap:2px">
         <div class="brand-title">Năng Lực Y <span class="brand-badge">RCT Wizard</span></div>
-        <div class="sub">Hệ thống hỗ trợ xây dựng đề cương thử nghiệm lâm sàng (Pha 1 → Pha 3)</div>
+        <div class="sub">Hệ thống hỗ trợ xây dựng đề cương thử nghiệm lâm sàng (Bước 0 → 14, 16)</div>
       </div>
-      <div style="margin-left:auto; display:flex; gap:8px;">
+      <div style="margin-left:auto;display:flex;gap:8px">
         <a class="btn ghost" href="#" title="Tài liệu hướng dẫn">Hướng dẫn</a>
         <a class="btn ghost" href="#" title="Liên hệ hỗ trợ">Liên hệ</a>
       </div>
@@ -134,125 +100,273 @@
     <!-- Hero -->
     <section class="hero">
       <div class="hero-card">
-        <div class="label">Tổng quan</div>
+        <div class="sub" style="text-transform:uppercase;letter-spacing:.4px;font-weight:700">Tổng quan</div>
         <h1>RCT Wizard · Pha 3 – Làm sạch dần & cải thiện nhỏ</h1>
         <p class="sub">
           Tiếp tục hoàn thiện đề cương bằng việc làm sạch chuỗi, chuẩn hoá nội dung và kiểm tra tính nhất quán giữa PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.
         </p>
-        <div style="display:flex; gap:10px; margin-top:12px;">
+        <div style="display:flex;gap:10px;margin-top:12px">
           <button id="btn-check-logic" type="button" class="btn">Kiểm tra logic</button>
           <button type="button" class="btn secondary" id="btn-open-storage">Mở hồ sơ</button>
           <button type="button" class="btn ghost" id="btn-save-storage">Lưu hồ sơ</button>
         </div>
       </div>
       <div class="hero-card">
-        <div class="label">Thương hiệu</div>
-        <div style="display:flex; gap:14px; align-items:center;">
-          <img src="/brand/logo.png" alt="Logo" style="width:72px; height:72px; object-fit:contain; border-radius:12px; border:1px solid rgba(0,0,0,0.06);" />
+        <div class="sub" style="text-transform:uppercase;letter-spacing:.4px;font-weight:700">Thương hiệu</div>
+        <div style="display:flex;gap:14px;align-items:center">
+          <img src="/brand/logo.png" alt="Logo" style="width:72px;height:72px;object-fit:contain;border-radius:12px;border:1px solid rgba(0,0,0,.06)" />
           <div>
-            <div style="font-weight:700;">Năng Lực Y</div>
-            <div class="sub">Màu chủ đạo: <span class="pill" style="margin-left:6px;"><span style="width:12px;height:12px;background:var(--brand-primary);border-radius:50%;display:inline-block"></span> <code>#0EA44B</code></span></div>
-            <div class="sub">Phụ: <span class="pill"><span style="width:12px;height:12px;background:var(--brand-secondary);border-radius:50%;display:inline-block"></span> <code>#F5C518</code></span> · Nhấn: <span class="pill"><span style="width:12px;height:12px;background:var(--brand-accent);border-radius:50%;display:inline-block"></span> <code>#0EA5E9</code></span></div>
+            <div style="font-weight:700">Năng Lực Y</div>
+            <div class="sub">Màu chủ đạo: <span style="display:inline-flex;gap:8px;align-items:center;border:1px dashed rgba(0,0,0,.15);padding:4px 10px;border-radius:999px;margin-left:6px"><span style="width:12px;height:12px;background:var(--brand-primary);border-radius:50%;display:inline-block"></span> <code>#0EA44B</code></span></div>
+            <div class="sub">Phụ: <span style="display:inline-flex;gap:8px;align-items:center;border:1px dashed rgba(0,0,0,.15);padding:4px 10px;border-radius:999px"><span style="width:12px;height:12px;background:var(--brand-secondary);border-radius:50%;display:inline-block"></span> <code>#F5C518</code></span>
+              · Nhấn: <span style="display:inline-flex;gap:8px;align-items:center;border:1px dashed rgba(0,0,0,.15);padding:4px 10px;border-radius:999px"><span style="width:12px;height:12px;background:var(--brand-accent);border-radius:50%;display:inline-block"></span> <code>#0EA5E9</code></span></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Working area -->
-    <section class="grid" aria-label="Vùng làm việc">
-      <div class="card col-7">
-        <h2>Kết quả kiểm tra logic</h2>
-        <label for="logic-result">Bản tóm tắt & gợi ý chỉnh sửa</label>
-        <textarea id="logic-result" rows="16" placeholder="Kết quả sẽ hiển thị tại đây…"></textarea>
-        <div class="muted" style="margin-top:8px;">
-          Gợi ý: Sau khi chỉnh sửa các phần không nhất quán, hãy bấm lại <b>Kiểm tra logic</b> để cập nhật.
+    <!-- Steps + Content -->
+    <section class="main-grid" aria-label="Quy trình các bước">
+      <!-- Sidebar steps -->
+      <aside class="card steps-card">
+        <div class="steps-head">
+          <div style="font-weight:700">Các bước</div>
+          <button id="btn-collapse-steps" class="btn ghost" style="padding:6px 10px;font-size:12px">Thu gọn</button>
         </div>
-      </div>
+        <ul id="steps-list" class="steps-list"></ul>
+        <div class="muted" style="margin-top:8px">Mẹo: Dùng phím <b>J/K</b> hoặc <b>←/→</b> để chuyển bước nhanh.</div>
+      </aside>
 
-      <div class="card col-5">
+      <!-- Content area -->
+      <section id="step-panels">
+        <!-- Panel will be generated by JS using template below -->
+      </section>
+    </section>
+
+    <!-- Logic result + Clean utils -->
+    <section style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px">
+      <div class="card">
+        <h2>Kết quả kiểm tra logic</h2>
+        <label for="logic-result" class="muted">Bản tóm tắt & gợi ý chỉnh sửa</label>
+        <textarea id="logic-result" rows="14" placeholder="Kết quả sẽ hiển thị tại đây…"></textarea>
+        <div class="muted" style="margin-top:8px">Sau khi chỉnh sửa, bấm lại <b>Kiểm tra logic</b> để cập nhật.</div>
+      </div>
+      <div class="card">
         <h2>Tiện ích làm sạch</h2>
-        <div style="display:grid; gap:10px;">
+        <div style="display:grid;gap:10px">
           <div>
-            <label for="clean-input">Chuỗi cần làm sạch</label>
+            <label for="clean-input" class="muted">Chuỗi cần làm sạch</label>
             <textarea id="clean-input" rows="6" placeholder="Dán nội dung cần chuẩn hoá (giữ xuống dòng, gom khoảng trắng)…"></textarea>
           </div>
           <div>
-            <label for="clean-output">Kết quả</label>
+            <label for="clean-output" class="muted">Kết quả</label>
             <textarea id="clean-output" rows="6" placeholder="Kết quả làm sạch sẽ xuất hiện tại đây…" readonly></textarea>
           </div>
-          <div style="display:flex; gap:10px;">
+          <div style="display:flex;gap:10px">
             <button id="btn-clean" class="btn">Làm sạch</button>
             <button id="btn-copy" class="btn ghost">Sao chép</button>
           </div>
-          <div class="muted">Tính năng sử dụng <code>App.Utils.collapseWsKeepNl</code> &amp; <code>App.Utils.normalizeStr</code>.</div>
+          <div class="muted">Dùng <code>App.Utils.collapseWsKeepNl</code> &amp; <code>App.Utils.normalizeStr</code>.</div>
         </div>
       </div>
     </section>
 
-    <p class="footer">
-      © Năng Lực Y. Tích hợp thử nghiệm: <a href="#" style="color:var(--brand-accent); text-decoration:none;">API Client</a> · Gói lưu trữ cục bộ.
-    </p>
+    <p class="footer">© Năng Lực Y. Tích hợp: API Client · Lưu trữ cục bộ.</p>
   </main>
 
-  <!-- Your JS modules (from earlier steps) -->
+  <!-- Modules -->
   <script src="/assets/js/utils.js"></script>
   <script src="/assets/js/wizard-storage.js"></script>
   <script src="/assets/js/prompt-builder.js"></script>
   <script src="/assets/js/api-client.js"></script>
   <script src="/assets/js/check-logic.js"></script>
 
-  <!-- Minimal glue to wire the buttons to your modules without knowing internals -->
+  <!-- Boot & wiring -->
   <script>
-    (function() {
-      const $ = (sel) => document.querySelector(sel);
-      const result = $('#logic-result');
+    (function(){
+      const $ = (s)=>document.querySelector(s);
+      const LS_KEY = 'rctWizard.activeStep';
 
-      async function runCheck() {
+      // ====== Khai báo các bước theo đúng framework của bạn ======
+      const STEPS = [
+        {id:'0',  label:'Hồ sơ',         desc:'Chọn mở hồ sơ cũ hoặc tạo hồ sơ mới.'},
+        {id:'1',  label:'PICO',          desc:'Xác định dân số, can thiệp, so sánh, kết cục.'},
+        {id:'2',  label:'Câu hỏi',       desc:'Từ PICO → câu hỏi nghiên cứu rõ ràng.'},
+        {id:'3',  label:'Mục tiêu',      desc:'Mục tiêu chính & phụ, có đo lường được.'},
+        {id:'4',  label:'Mở đầu',        desc:'Bối cảnh, khoảng trống tri thức (CaRS).'},
+        {id:'5',  label:'Tổng quan',     desc:'Các tiểu phần tổng quan & bằng chứng.'},
+        {id:'6',  label:'Thiết kế',      desc:'Thiết kế thử nghiệm, khung thời gian.'},
+        {id:'7',  label:'Cỡ mẫu',        desc:'Công thức tính và giả định; mất mẫu.'},
+        {id:'8',  label:'Tiêu chí',      desc:'Tiêu chí chọn/loại & định nghĩa vận hành.'},
+        {id:'9',  label:'Ngẫu nhiên',    desc:'Số nhánh, ẩn phân bổ, làm mù.'},
+        {id:'10', label:'Can thiệp',     desc:'Mô tả chi tiết từng nhánh can thiệp.'},
+        {id:'11', label:'Biến số',       desc:'Kết cục chính/phụ, biến nền, nhiễu.'},
+        {id:'12', label:'Thu thập',      desc:'Quy trình đo lường, thời điểm, công cụ.'},
+        {id:'13', label:'Phân tích',     desc:'Kế hoạch phân tích như một SAP.'},
+        {id:'14', label:'Đạo đức',       desc:'Quy trình đạo đức & quản lý dữ liệu.'},
+        {id:'16', label:'CONSORT Flow',  desc:'Sơ đồ tiến hành nghiên cứu (Mermaid).'},
+      ];
+
+      // ====== Render Step Nav ======
+      const listEl = $('#steps-list');
+      function renderSteps(activeId){
+        listEl.innerHTML = '';
+        for(const s of STEPS){
+          const li = document.createElement('li');
+          li.className = 'step-item' + (s.id===activeId?' active':'');
+          li.dataset.step = s.id;
+          li.innerHTML = \`
+            <span class="step-num">\${s.id}</span>
+            <div>
+              <div class="step-label">\${s.label}</div>
+              <div class="muted">\${s.desc}</div>
+            </div>\`;
+          li.addEventListener('click', ()=>activateStep(s.id));
+          listEl.appendChild(li);
+        }
+      }
+
+      // ====== Render Panels ======
+      const panelsEl = $('#step-panels');
+      function renderPanels(){
+        panelsEl.innerHTML = '';
+        for(const s of STEPS){
+          const panel = document.createElement('section');
+          panel.id = 'panel-'+s.id;
+          panel.className = 'card panel';
+          panel.innerHTML = \`
+            <h2>Bước \${s.id} · \${s.label}</h2>
+            <div class="panel-desc">\${s.desc}</div>
+            <div class="actions">
+              <button class="btn secondary" data-open-step="\${s.id}">Mở form bước này</button>
+              <button class="btn ghost" data-gpt-step="\${s.id}">GPT gợi ý/đánh giá</button>
+            </div>
+            <!-- Chỗ bạn gắn form UI thực tế của từng bước -->
+            <div class="muted">Placeholder: gắn form của bạn cho bước \${s.id} vào đây (hoặc mount component).</div>
+            <div style="display:flex;gap:10px;margin-top:14px">
+              <button class="btn ghost" data-prev="\${s.id}">← Bước trước</button>
+              <button class="btn" data-next="\${s.id}">Bước tiếp theo →</button>
+            </div>
+          \`;
+          panelsEl.appendChild(panel);
+        }
+      }
+
+      function setActiveClasses(id){
+        // Nav
+        for(const li of listEl.querySelectorAll('.step-item')){
+          li.classList.toggle('active', li.dataset.step===id);
+        }
+        // Panels
+        for(const p of panelsEl.querySelectorAll('.panel')){
+          p.classList.toggle('active', p.id === 'panel-'+id);
+        }
+      }
+
+      function activateStep(id){
+        localStorage.setItem(LS_KEY, id);
+        setActiveClasses(id);
+      }
+
+      // ====== Wiring panel actions ======
+      function wirePanelActions(){
+        panelsEl.addEventListener('click', (e)=>{
+          const t = e.target;
+          if(!(t instanceof HTMLElement)) return;
+          if(t.dataset.openStep){
+            const id = t.dataset.openStep;
+            // Nếu bạn có namespace riêng cho từng bước, gọi ở đây. Ví dụ:
+            // window.App?.Steps?.open?.(id);
+            const evt = new CustomEvent('open-step', { detail:{ id } });
+            window.dispatchEvent(evt);
+          }
+          if(t.dataset.gptStep){
+            const id = t.dataset.gptStep;
+            // Gợi ý/đánh giá bằng GPT cho bước tương ứng
+            const evt = new CustomEvent('request-gpt', { detail:{ id } });
+            window.dispatchEvent(evt);
+          }
+          if(t.dataset.prev){
+            navPrev(t.dataset.prev);
+          }
+          if(t.dataset.next){
+            navNext(t.dataset.next);
+          }
+        });
+      }
+
+      function navPrev(currId){
+        const idx = STEPS.findIndex(s=>s.id===currId);
+        if(idx>0) activateStep(STEPS[idx-1].id);
+      }
+      function navNext(currId){
+        const idx = STEPS.findIndex(s=>s.id===currId);
+        if(idx>=0 && idx<STEPS.length-1) activateStep(STEPS[idx+1].id);
+      }
+
+      // ====== Keyboard shortcuts ======
+      window.addEventListener('keydown',(e)=>{
+        const curr = localStorage.getItem(LS_KEY) || STEPS[0].id;
+        if(e.key==='ArrowRight' || e.key.toLowerCase()==='k'){ e.preventDefault(); navNext(curr); }
+        if(e.key==='ArrowLeft'  || e.key.toLowerCase()==='j'){ e.preventDefault(); navPrev(curr); }
+      });
+
+      // ====== Collapse steps (mobile helper) ======
+      const btnCollapse = $('#btn-collapse-steps');
+      btnCollapse.addEventListener('click', ()=>{
+        const as = document.querySelector('.steps-card');
+        as.style.display = (as.style.display==='none') ? '' : 'none';
+      });
+
+      // ====== Glue with existing modules ======
+      const result = $('#logic-result');
+      async function runCheck(){
         result.value = 'Đang kiểm tra logic…';
-        try {
-          if (typeof checkLogic === 'function') {
+        try{
+          if(typeof checkLogic === 'function'){
             const out = await checkLogic();
-            if (typeof out === 'string') result.value = out;
-            else if (out && out.summary) result.value = out.summary;
-            else result.value = 'Đã chạy kiểm tra logic (không có chuỗi tóm tắt trả về).';
-          } else if (window.App && window.App.CheckLogic && typeof window.App.CheckLogic.run === 'function') {
+            if(typeof out === 'string') result.value = out;
+            else if(out && out.summary) result.value = out.summary;
+            else result.value = 'Đã chạy kiểm tra logic.';
+          } else if (window.App && window.App.CheckLogic && typeof window.App.CheckLogic.run === 'function'){
             const out = await window.App.CheckLogic.run();
-            result.value = typeof out === 'string' ? out : JSON.stringify(out, null, 2);
+            result.value = typeof out === 'string' ? out : JSON.stringify(out,null,2);
           } else {
             result.value = 'Không tìm thấy hàm checkLogic(). Hãy đảm bảo /assets/js/check-logic.js đã khai báo.';
           }
-        } catch (e) {
-          console.error(e);
-          result.value = 'Lỗi khi kiểm tra logic: ' + (e && e.message ? e.message : e);
-        }
+        }catch(e){ console.error(e); result.value = 'Lỗi khi kiểm tra logic: ' + (e?.message||e); }
       }
+      $('#btn-check-logic').addEventListener('click', runCheck);
 
-      function doClean() {
+      function doClean(){
         const i = document.getElementById('clean-input').value;
-        try {
+        try{
           const has = window.App && window.App.Utils;
           const cleaned = has ? window.App.Utils.collapseWsKeepNl(i) : String(i).trim();
           document.getElementById('clean-output').value = cleaned;
-        } catch (e) {
-          document.getElementById('clean-output').value = 'Lỗi làm sạch: ' + (e && e.message ? e.message : e);
+        }catch(e){
+          document.getElementById('clean-output').value = 'Lỗi làm sạch: ' + (e?.message||e);
         }
       }
-
-      function copyOut() {
-        const o = document.getElementById('clean-output');
-        o.select(); document.execCommand('copy');
+      function copyOut(){
+        const o = document.getElementById('clean-output'); o.select(); document.execCommand('copy');
       }
-
-      $('#btn-check-logic').addEventListener('click', runCheck);
       $('#btn-clean').addEventListener('click', doClean);
       $('#btn-copy').addEventListener('click', copyOut);
 
-      // Storage quick actions (optional)
+      // Storage quick actions (nếu có App.Storage)
       const S = (window.App && window.App.Storage) ? window.App.Storage : null;
       const openBtn = document.getElementById('btn-open-storage');
       const saveBtn = document.getElementById('btn-save-storage');
-      if (S && openBtn) openBtn.addEventListener('click', () => S.open && S.open());
-      if (S && saveBtn) saveBtn.addEventListener('click', () => S.save && S.save());
+      if(S && openBtn) openBtn.addEventListener('click', ()=> S.open && S.open());
+      if(S && saveBtn) saveBtn.addEventListener('click', ()=> S.save && S.save());
+
+      // ====== Init render ======
+      const initial = localStorage.getItem(LS_KEY) || STEPS[0].id;
+      renderSteps(initial);
+      renderPanels();
+      setActiveClasses(initial);
+      wirePanelActions();
     })();
   </script>
 </body>
