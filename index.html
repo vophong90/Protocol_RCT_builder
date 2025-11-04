@@ -6,7 +6,7 @@
   <title>Protocol builder · RCT Wizard</title>
   <meta name="theme-color" content="#0EA44B" />
 
-  <!-- App icons & manifest (brand trong public/brand) -->
+  <!-- Brand nằm trong public/brand -->
   <link rel="icon" type="image/png" sizes="192x192" href="public/brand/icon-192.png">
   <link rel="icon" type="image/png" sizes="256x256" href="public/brand/icon-256.png">
   <link rel="icon" type="image/png" sizes="512x512" href="public/brand/icon-512.png">
@@ -38,7 +38,6 @@
         radial-gradient(900px 500px at 110% -10%, rgba(14,165,233,.06), transparent 60%),
         #fff;
     }
-
     /* Topbar */
     .topbar{
       position:sticky;top:0;z-index:20;
@@ -82,10 +81,7 @@
     .sidebar.collapsed .side-title{display:none}
 
     /* Main area */
-    .main{
-      min-width:0;
-      display:flex;flex-direction:column;gap:18px;
-    }
+    .main{min-width:0;display:flex;flex-direction:column;gap:18px}
     .page-head{
       background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
       padding:16px 18px;display:flex;align-items:center;gap:12px;justify-content:space-between
@@ -107,14 +103,18 @@
     .panel.active{display:block}
     .panel h2{margin:0 0 6px;font-size:18px}
     .muted{color:var(--brand-muted);font-size:13px}
-    .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px}
+    .block{border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:12px}
+    label{display:block;font-size:12px;color:var(--brand-muted);margin-bottom:6px}
+    input[type="file"]{display:block}
+    textarea{
+      width:100%;min-height:140px;resize:vertical;border-radius:12px;border:1px solid rgba(0,0,0,.15);padding:12px;font:inherit
+    }
+    .actions{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
     .nav-step{display:flex;gap:8px;margin-left:auto}
     .footer{margin:18px 0 0;color:var(--brand-muted);font-size:12px;text-align:center}
 
-    @media (max-width:980px){
-      .wrap{grid-template-columns:1fr}
-      .sidebar{position:static;height:auto}
-    }
+    @media (max-width:980px){ .wrap{grid-template-columns:1fr} .sidebar{position:static;height:auto} .row{grid-template-columns:1fr} }
   </style>
 </head>
 <body>
@@ -141,9 +141,7 @@
         <div class="side-title">Các bước</div>
         <button class="side-btn" id="btn-collapse">Thu gọn</button>
       </div>
-      <ul class="step-list" id="steps">
-        <!-- items được render bởi JS dưới -->
-      </ul>
+      <ul class="step-list" id="steps"></ul>
     </aside>
 
     <!-- Main -->
@@ -159,130 +157,60 @@
         </div>
       </div>
 
-      <section class="content">
-        <!-- Panels for each step -->
-        <!-- 0 -->
-        <div class="panel active" id="panel-0">
-          <h2>Bước 0 – Mở đầu</h2>
-          <p class="muted">Bắt đầu quy trình; mở hoặc tạo hồ sơ làm việc.</p>
-          <div class="actions">
-            <button class="btn" id="btn-open-storage">Mở hồ sơ</button>
-            <button class="btn ghost" id="btn-save-storage">Lưu hồ sơ</button>
-            <button class="btn secondary">GPT gợi ý / đánh giá</button>
+      <section class="content" id="content">
+        <!-- Panels render sẵn để không phá cấu trúc ID -->
+        <!-- Template khối chuẩn mỗi bước -->
+        <template id="tpl-step">
+          <div class="panel">
+            <h2 class="h"></h2>
+            <p class="muted d"></p>
+
+            <div class="row">
+              <div class="block">
+                <label>Tài liệu hỗ trợ (PDF)</label>
+                <input type="file" class="pdf" accept="application/pdf" multiple />
+                <div class="muted" style="margin-top:6px">Có thể chọn nhiều PDF; sẽ gửi kèm khi gọi GPT.</div>
+                <div class="actions">
+                  <button class="btn secondary act-suggest">GPT gợi ý</button>
+                  <button class="btn ghost act-eval">GPT đánh giá</button>
+                  <button class="btn ghost act-open">Mở form bước này</button>
+                </div>
+              </div>
+
+              <div class="block">
+                <label>Nội dung của tôi (dùng cho nút “GPT đánh giá”)</label>
+                <textarea class="input" placeholder="Dán nội dung bạn muốn GPT đánh giá ở đây…"></textarea>
+                <label style="margin-top:10px">Kết quả GPT</label>
+                <textarea class="output" placeholder="Kết quả GPT sẽ hiển thị tại đây…" readonly></textarea>
+                <div class="actions">
+                  <button class="btn ghost act-copy">Sao chép kết quả</button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
 
-        <!-- 1..16: placeholders gọn gàng -->
-        <div class="panel" id="panel-1">
-          <h2>Bước 1 – PICO</h2>
-          <p class="muted">Dân số, can thiệp, so sánh, kết cục.</p>
-          <div class="actions">
-            <button class="btn">Mở form</button>
-            <button class="btn secondary">GPT gợi ý / đánh giá</button>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-2">
-          <h2>Bước 2 – Câu hỏi</h2>
-          <p class="muted">Chuyển PICO thành câu hỏi nghiên cứu.</p>
-          <div class="actions">
-            <button class="btn">Mở form</button>
-            <button class="btn secondary">GPT gợi ý / đánh giá</button>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-3">
-          <h2>Bước 3 – Mục tiêu</h2>
-          <p class="muted">Mục tiêu chính và phụ có đo lường.</p>
-          <div class="actions">
-            <button class="btn">Mở form</button>
-            <button class="btn secondary">GPT gợi ý / đánh giá</button>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-4">
-          <h2>Bước 4 – Mở đầu (Introduction · CaRS)</h2>
-          <p class="muted">Bối cảnh, khoảng trống tri thức, mục tiêu nghiên cứu.</p>
-          <div class="actions">
-            <button class="btn">Mở form</button>
-            <button class="btn secondary">GPT gợi ý / đánh giá</button>
-          </div>
-        </div>
-
-        <div class="panel" id="panel-5">
-          <h2>Bước 5 – Tổng quan tài liệu</h2>
-          <p class="muted">Các tiểu mục tổng quan & bằng chứng.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-6">
-          <h2>Bước 6 – Thiết kế</h2>
-          <p class="muted">Loại thiết kế, khung thời gian.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-7">
-          <h2>Bước 7 – Cỡ mẫu</h2>
-          <p class="muted">Công thức, giả định, mất mẫu.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-8">
-          <h2>Bước 8 – Tiêu chí</h2>
-          <p class="muted">Tiêu chí chọn và loại trừ.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-9">
-          <h2>Bước 9 – Ngẫu nhiên</h2>
-          <p class="muted">Phân bổ ngẫu nhiên & che giấu.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-10">
-          <h2>Bước 10 – Can thiệp</h2>
-          <p class="muted">Mô tả chi tiết từng nhánh.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-11">
-          <h2>Bước 11 – Biến số</h2>
-          <p class="muted">Kết cục chính/phụ, nền, nhiễu…</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-12">
-          <h2>Bước 12 – Thu thập</h2>
-          <p class="muted">Kế hoạch thu thập và quản lý dữ liệu.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-13">
-          <h2>Bước 13 – Phân tích số liệu</h2>
-          <p class="muted">Chiến lược phân tích (tựa SAP).</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-14">
-          <h2>Bước 14 – Đạo đức nghiên cứu</h2>
-          <p class="muted">Các cân nhắc đạo đức và phê duyệt.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
-        </div>
-
-        <div class="panel" id="panel-15">
+        <!-- Bước 15 có thêm kiểm tra logic tổng thể -->
+        <div class="panel" id="panel-15" style="display:none">
           <h2>Bước 15 – Kiểm tra logic tổng thể</h2>
-          <p class="muted">Kiểm tra tính nhất quán PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.</p>
+          <p class="muted">Kiểm tra nhất quán PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.</p>
           <div class="actions">
             <button class="btn" id="btn-check-logic">Kiểm tra logic</button>
             <button class="btn ghost" id="btn-copy-logic">Sao chép kết quả</button>
           </div>
           <textarea id="logic-result" rows="12" style="width:100%;margin-top:10px;border-radius:12px;border:1px solid rgba(0,0,0,.15);padding:12px;" placeholder="Kết quả kiểm tra sẽ hiển thị tại đây…"></textarea>
-        </div>
 
-        <div class="panel" id="panel-16">
-          <h2>Bước 16 – Sơ đồ nghiên cứu (CONSORT)</h2>
-          <p class="muted">Vẽ sơ đồ CONSORT dựa trên các bước trước và cho phép xuất PNG.</p>
-          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+          <div class="row" style="margin-top:16px">
+            <div class="block">
+              <label>Tài liệu hỗ trợ (PDF)</label>
+              <input type="file" id="pdf-15" accept="application/pdf" multiple />
+              <div class="muted" style="margin-top:6px">Sẽ gửi kèm khi chạy kiểm tra nếu App.CheckLogic hỗ trợ.</div>
+            </div>
+            <div class="block">
+              <label>Ghi chú</label>
+              <textarea rows="6" placeholder="Ghi chú nhanh…"></textarea>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -290,43 +218,41 @@
     </main>
   </div>
 
-  <!-- JS: đường dẫn đúng theo repo tĩnh -->
+  <!-- JS modules của bạn (ở root/assets/js) -->
   <script src="assets/js/utils.js" defer></script>
   <script src="assets/js/wizard-storage.js" defer></script>
   <script src="assets/js/prompt-builder.js" defer></script>
   <script src="assets/js/api-client.js" defer></script>
   <script src="assets/js/check-logic.js" defer></script>
 
-  <!-- Glue JS cho sidebar, điều hướng bước, và gọi checkLogic -->
+  <!-- Glue: render 17 bước, gắn sự kiện Upload PDF / GPT / Logic -->
   <script>
     (function(){
       const $ = (s,el=document)=>el.querySelector(s);
       const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
-
-      /* --------- Sidebar steps data (0..16) ---------- */
-      const steps = [
-        {i:0, name:'Mở đầu', desc:'Bắt đầu quy trình, mở/tạo hồ sơ.'},
-        {i:1, name:'PICO', desc:'Dân số, can thiệp, so sánh, kết cục.'},
-        {i:2, name:'Câu hỏi', desc:'Chuyển PICO thành câu hỏi nghiên cứu.'},
-        {i:3, name:'Mục tiêu', desc:'Mục tiêu chính & phụ có đo lường.'},
-        {i:4, name:'Mở đầu (CaRS)', desc:'Bối cảnh & khoảng trống tri thức.'},
-        {i:5, name:'Tổng quan', desc:'Các tiểu mục tổng quan & bằng chứng.'},
-        {i:6, name:'Thiết kế', desc:'Loại thiết kế, khung thời gian.'},
-        {i:7, name:'Cỡ mẫu', desc:'Công thức, giả định, mất mẫu.'},
-        {i:8, name:'Tiêu chí', desc:'Chọn / loại trừ.'},
-        {i:9, name:'Ngẫu nhiên', desc:'Phân bổ & che giấu.'},
-        {i:10, name:'Can thiệp', desc:'Mô tả chi tiết các nhánh.'},
-        {i:11, name:'Biến số', desc:'Kết cục, nền, nhiễu…'},
-        {i:12, name:'Thu thập', desc:'Quy trình thu thập dữ liệu.'},
-        {i:13, name:'Phân tích', desc:'Chiến lược phân tích (SAP).'},
-        {i:14, name:'Đạo đức', desc:'Các cân nhắc & phê duyệt.'},
-        {i:15, name:'Kiểm tra logic', desc:'Nhất quán toàn bộ đề cương.'},
-        {i:16, name:'CONSORT', desc:'Sơ đồ tiến hành nghiên cứu.'},
+      const stepsMeta = [
+        {i:0,  name:'Mở đầu',            desc:'Bắt đầu quy trình, mở/tạo hồ sơ.'},
+        {i:1,  name:'PICO',               desc:'Dân số, can thiệp, so sánh, kết cục.'},
+        {i:2,  name:'Câu hỏi',            desc:'Chuyển PICO thành câu hỏi nghiên cứu.'},
+        {i:3,  name:'Mục tiêu',           desc:'Mục tiêu chính & phụ có đo lường.'},
+        {i:4,  name:'Mở đầu (CaRS)',      desc:'Bối cảnh & khoảng trống tri thức.'},
+        {i:5,  name:'Tổng quan',          desc:'Các tiểu mục tổng quan & bằng chứng.'},
+        {i:6,  name:'Thiết kế',           desc:'Loại thiết kế, khung thời gian.'},
+        {i:7,  name:'Cỡ mẫu',             desc:'Công thức, giả định, mất mẫu.'},
+        {i:8,  name:'Tiêu chí',           desc:'Chọn / loại trừ.'},
+        {i:9,  name:'Ngẫu nhiên',         desc:'Phân bổ & che giấu.'},
+        {i:10, name:'Can thiệp',          desc:'Mô tả chi tiết các nhánh.'},
+        {i:11, name:'Biến số',            desc:'Kết cục, nền, nhiễu…'},
+        {i:12, name:'Thu thập',           desc:'Quy trình thu thập dữ liệu.'},
+        {i:13, name:'Phân tích',          desc:'Chiến lược phân tích (SAP).'},
+        {i:14, name:'Đạo đức',            desc:'Các cân nhắc & phê duyệt.'},
+        {i:15, name:'Kiểm tra logic',     desc:'Nhất quán toàn bộ đề cương.'},
+        {i:16, name:'CONSORT',            desc:'Sơ đồ tiến hành nghiên cứu.'},
       ];
 
-      /* --------- Render sidebar ---------- */
-      const ul = $('#steps');
-      ul.innerHTML = steps.map(s=>`
+      /* ---------- Render sidebar ---------- */
+      const stepsUL = $('#steps');
+      stepsUL.innerHTML = stepsMeta.map(s=>`
         <li class="step-item" data-step="${s.i}">
           <span class="step-idx">${s.i}</span>
           <span class="step-text">
@@ -336,88 +262,171 @@
         </li>
       `).join('');
 
-      /* --------- Routing by hash ---------- */
-      function getStepFromHash(){
+      /* ---------- Render panels (0..16) ---------- */
+      const content = $('#content');
+      const tpl = $('#tpl-step');
+      const panels = {};
+      for (const meta of stepsMeta){
+        if (meta.i === 15) { // panel-15 đã có sẵn phần logic
+          panels[15] = $('#panel-15');
+          continue;
+        }
+        const node = tpl.content.firstElementChild.cloneNode(true);
+        node.id = `panel-${meta.i}`;
+        node.querySelector('.h').textContent = `Bước ${meta.i} – ${meta.name}`;
+        node.querySelector('.d').textContent = meta.desc;
+        content.appendChild(node);
+        panels[meta.i] = node;
+      }
+      // Mặc định hiển thị panel-0
+      $$('.panel', content).forEach(p=>p.style.display = 'none');
+      $('#panel-0').style.display = 'block';
+
+      /* ---------- Routing bằng hash ---------- */
+      function hashStep(){
         const m = location.hash.match(/step=(\d{1,2})/);
         const n = m ? parseInt(m[1],10) : 0;
-        return isNaN(n) ? 0 : Math.min(Math.max(n,0),16);
+        return isNaN(n) ? 0 : Math.max(0, Math.min(16, n));
       }
-      function setHash(step){ location.hash = `#step=${step}`; }
-
       function activate(step){
         // sidebar
-        $$('.step-item', ul).forEach(li=>{
-          li.classList.toggle('active', parseInt(li.dataset.step,10)===step);
-        });
+        $$('.step-item', stepsUL).forEach(li=>li.classList.toggle('active', parseInt(li.dataset.step,10)===step));
         // panels
-        $$('.panel').forEach(p=>p.classList.remove('active'));
-        const panel = document.getElementById('panel-'+step);
-        if(panel) panel.classList.add('active');
-
+        $$('.panel', content).forEach(p=>p.style.display='none');
+        const p = panels[step];
+        if (p) p.style.display = 'block';
         // head
-        const meta = steps.find(x=>x.i===step) || steps[0];
+        const meta = stepsMeta.find(x=>x.i===step) || stepsMeta[0];
         $('#page-title').textContent = `Bước ${meta.i} · ${meta.name}`;
         $('#page-sub').textContent   = meta.desc;
-
-        // nav buttons
+        // nav
         $('#btn-prev').disabled = step<=0;
         $('#btn-next').disabled = step>=16;
+        current = step;
+        location.hash = `#step=${step}`;
+      }
+      let current = hashStep();
+      activate(current);
+      window.addEventListener('hashchange', ()=>activate(hashStep()));
+      $$('.step-item', stepsUL).forEach(li=>li.addEventListener('click', ()=>activate(parseInt(li.dataset.step,10))));
+      $('#btn-prev').addEventListener('click', ()=> current>0 && activate(current-1));
+      $('#btn-next').addEventListener('click', ()=> current<16 && activate(current+1));
+      $('#btn-collapse').addEventListener('click', ()=> $('#sidebar').classList.toggle('collapsed'));
+
+      /* ---------- Helpers ---------- */
+      function getSaved(){
+        try{ return JSON.parse(localStorage.getItem('rctWizardData')||'{}'); } catch(_){ return {}; }
+      }
+      async function readPDFs(inputEl){
+        const files = (inputEl && inputEl.files) ? [...inputEl.files] : [];
+        const out = [];
+        for (const f of files){
+          const base64 = await new Promise((res,rej)=>{
+            const r = new FileReader();
+            r.onerror = ()=>rej('Đọc PDF thất bại');
+            r.onload = ()=>res(String(r.result).split(',')[1]||'');
+            r.readAsDataURL(f); // data:application/pdf;base64,....
+          });
+          out.push({ name: f.name, mime: f.type||'application/pdf', base64 });
+        }
+        return out;
+      }
+      function toastTo(el, msg){
+        const out = el.closest('.block')?.querySelector('.output');
+        if (out) out.value = msg;
       }
 
-      // Initial
-      let current = getStepFromHash();
-      activate(current);
+      /* ---------- Gắn event cho tất cả panels ---------- */
+      stepsMeta.forEach(meta=>{
+        const panel = panels[meta.i];
+        if (!panel) return;
 
-      // Click on sidebar
-      $$('.step-item', ul).forEach(li=>{
-        li.addEventListener('click', ()=>{
-          const idx = parseInt(li.dataset.step,10);
-          current = idx; setHash(current); activate(current);
+        const pdfEl   = panel.querySelector('.pdf');
+        const inputEl = panel.querySelector('.input');
+        const outEl   = panel.querySelector('.output');
+
+        // GPT gợi ý
+        const btnSuggest = panel.querySelector('.act-suggest');
+        if (btnSuggest) btnSuggest.addEventListener('click', async ()=>{
+          outEl.value = 'Đang gọi GPT gợi ý…';
+          try{
+            const pdfs = await readPDFs(pdfEl);
+            const saved = getSaved();
+            if (window.App && App.API && typeof App.API.suggest === 'function'){
+              const r = await App.API.suggest({ step: meta.i, saved, pdfs });
+              outEl.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
+            }else{
+              outEl.value = 'Chưa tìm thấy App.API.suggest({...}). Kiểm tra assets/js/api-client.js';
+            }
+          }catch(e){ outEl.value = 'Lỗi khi gọi GPT gợi ý: ' + (e?.message || e); }
+        });
+
+        // GPT đánh giá
+        const btnEval = panel.querySelector('.act-eval');
+        if (btnEval) btnEval.addEventListener('click', async ()=>{
+          outEl.value = 'Đang gọi GPT đánh giá…';
+          try{
+            const pdfs = await readPDFs(pdfEl);
+            const saved = getSaved();
+            const text  = (inputEl?.value || '').trim();
+            if (window.App && App.API && typeof App.API.evaluate === 'function'){
+              const r = await App.API.evaluate({ step: meta.i, text, saved, pdfs });
+              outEl.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
+            }else{
+              outEl.value = 'Chưa tìm thấy App.API.evaluate({...}). Kiểm tra assets/js/api-client.js';
+            }
+          }catch(e){ outEl.value = 'Lỗi khi gọi GPT đánh giá: ' + (e?.message || e); }
+        });
+
+        // Mở form riêng cho bước (nếu bạn đã có)
+        const btnOpen = panel.querySelector('.act-open');
+        if (btnOpen) btnOpen.addEventListener('click', ()=>{
+          if (window.App && App.Steps && typeof App.Steps.open === 'function'){
+            App.Steps.open(meta.i);
+          }else{
+            toastTo(btnOpen, 'Chưa có App.Steps.open(step). Thêm vào assets/js/... để mở UI riêng của bước.');
+          }
+        });
+
+        // Sao chép
+        const btnCopy = panel.querySelector('.act-copy');
+        if (btnCopy) btnCopy.addEventListener('click', ()=>{
+          outEl.select(); document.execCommand('copy');
         });
       });
 
-      // Hash change
-      window.addEventListener('hashchange', ()=>{
-        current = getStepFromHash(); activate(current);
+      /* ---------- BƯỚC 15: checkLogic ---------- */
+      const out15 = $('#logic-result');
+      const btnCL = $('#btn-check-logic');
+      const btnCP = $('#btn-copy-logic');
+      if (btnCL) btnCL.addEventListener('click', async ()=>{
+        out15.value = 'Đang kiểm tra logic…';
+        try{
+          // gửi kèm PDF nếu App.CheckLogic hỗ trợ
+          const pdfInput = $('#pdf-15');
+          let pdfs = [];
+          if (pdfInput) {
+            pdfs = await readPDFs(pdfInput);
+          }
+          if (typeof window.checkLogic === 'function'){
+            const r = await window.checkLogic(pdfs);
+            out15.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
+          } else if (window.App && App.CheckLogic && typeof App.CheckLogic.run === 'function'){
+            const r = await App.CheckLogic.run(pdfs);
+            out15.value = (typeof r === 'string') ? r : JSON.stringify(r, null, 2);
+          } else {
+            out15.value = 'Không tìm thấy checkLogic(). Kiểm tra assets/js/check-logic.js';
+          }
+        }catch(e){ out15.value = 'Lỗi kiểm tra logic: ' + (e?.message || e); }
       });
+      if (btnCP && out15) btnCP.addEventListener('click', ()=>{ out15.select(); document.execCommand('copy'); });
 
-      // Prev/Next
-      $('#btn-prev').addEventListener('click', ()=>{ if(current>0){ current--; setHash(current); activate(current);} });
-      $('#btn-next').addEventListener('click', ()=>{ if(current<16){ current++; setHash(current); activate(current);} });
-
-      // Collapse sidebar
-      $('#btn-collapse').addEventListener('click', ()=>{
-        $('#sidebar').classList.toggle('collapsed');
-      });
-
-      // Storage quick actions (nếu có App.Storage)
+      /* ---------- Storage quick actions (nếu bạn đã có) ---------- */
       const S = (window.App && window.App.Storage) ? window.App.Storage : null;
       const openBtn = document.getElementById('btn-open-storage');
       const saveBtn = document.getElementById('btn-save-storage');
       if (S && openBtn) openBtn.addEventListener('click', ()=> S.open && S.open());
       if (S && saveBtn) saveBtn.addEventListener('click', ()=> S.save && S.save());
-
-      // Step 15 – Check logic
-      const out = document.getElementById('logic-result');
-      const btnCheck = document.getElementById('btn-check-logic');
-      const btnCopy  = document.getElementById('btn-copy-logic');
-      if (btnCheck) btnCheck.addEventListener('click', async ()=>{
-        if (!out) return;
-        out.value = 'Đang kiểm tra logic…';
-        try{
-          if (typeof window.checkLogic === 'function'){
-            const r = await window.checkLogic();
-            out.value = typeof r === 'string' ? r : JSON.stringify(r,null,2);
-          }else if (window.App && window.App.CheckLogic && typeof window.App.CheckLogic.run === 'function'){
-            const r = await window.App.CheckLogic.run();
-            out.value = typeof r === 'string' ? r : JSON.stringify(r,null,2);
-          }else{
-            out.value = 'Không tìm thấy checkLogic(). Kiểm tra file assets/js/check-logic.js';
-          }
-        }catch(e){ out.value = 'Lỗi khi kiểm tra logic: ' + (e?.message || e); }
-      });
-      if (btnCopy && out) btnCopy.addEventListener('click', ()=>{ out.select(); document.execCommand('copy'); });
-
     })();
   </script>
 </body>
