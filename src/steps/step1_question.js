@@ -1,5 +1,5 @@
-export async function mount(el, ctx) {
-      el.innerHTML = `
+export async function mount(root, ctx) {
+  root.innerHTML = `
 <div class="card">
   <div class="card-header"><h3 class="card-title">Câu hỏi nghiên cứu</h3></div>
   <div class="card-body">
@@ -9,13 +9,13 @@ export async function mount(el, ctx) {
     <button id="rq-save" class="btn-primary">Lưu</button>
   </div>
 </div>
-`.trim();
+  `.trim();
 
-const el = document.getElementById('rq');
-el.value = ctx.get('researchQuestion', '');
-document.getElementById('rq-save').addEventListener('click', () => {
-  ctx.save('researchQuestion', el.value.trim());
-  ctx.toast('Đã lưu câu hỏi nghiên cứu');
-});
+  const rq = root.querySelector('#rq');
+  rq.value = ctx.get('researchQuestion', '') || '';
 
-    }
+  root.querySelector('#rq-save').addEventListener('click', () => {
+    ctx.save('researchQuestion', (rq.value || '').trim());
+    ctx.toast('Đã lưu câu hỏi nghiên cứu');
+  });
+}
