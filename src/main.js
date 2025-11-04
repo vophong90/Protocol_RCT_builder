@@ -54,6 +54,7 @@ const titleEl    = document.getElementById('page-title');
 const stepEls    = [...Array(16).keys()].map(i => document.getElementById(`step-${i}`));
 const stepBodies = [...Array(16).keys()].map(i => document.getElementById(`step-${i}-body`));
 const navEls     = [...Array(16).keys()].map(i => document.getElementById(`nav-${i}`));
+const GPT_ENDPOINT = 'https://gpt-api-19xu.onrender.com';
 
 /* ---------------------------- Vendor handles --------------------------- */
 /* PDF.js */
@@ -148,38 +149,49 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
   }
 }
 
-async function callGPT(prompt, opts = {}) {
-  try {
-    // Chỉ cho phép vài key an toàn; loại bỏ temperature/top_p/max_tokens...
-    const safe = {};
-    if (typeof opts.system === 'string') safe.system = opts.system;
-    if (typeof opts.model === 'string')  safe.model  = opts.model;
+async function callGPT(prompt) {
+  const paths = [''];                  // Ưu tiên root /
+  const payloads = [
+    { action: 'chat', prompt },        // format bạn đang dùng
+    { prompt },                        // format đơn giản
+    { messages: [{ role: 'user', content: prompt }] } // format kiểu OpenAI
+  ];
 
-    const payload = { action: 'chat', prompt: String(prompt ?? '') , ...safe };
+  for (const path of paths) {
+    for (const body of payloads) {
+      try {
+        const res = await fetch(`${GPT_ENDPOINT}${path}`, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json,text/plain'
+          },
+          body: JSON.stringify(body)
+        });
 
-    const res = await fetch('https://gpt-api-19xu.onrender.com/gpt.php', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+        const text = await res.text();
+        if (!res.ok) {
+          console.warn('GPT endpoint status', res.status, text);
+          continue;
+        }
 
-    const txt = await res.text();
-
-    // Trả về content nếu JSON hợp lệ, nếu có error thì ném để UI hiển thị gọn
-    try {
-      const j = JSON.parse(txt);
-      if (j?.error) throw j.error; // đồng nhất lỗi
-      const c = j?.choices?.[0]?.message?.content ?? j?.content ?? txt;
-      return String(c);
-    } catch {
-      // Trả về chuỗi thường (server có thể trả plain text)
-      return txt;
+        // cố parse JSON trước, nếu không thì trả raw text
+        try {
+          const j = JSON.parse(text);
+          const out =
+            j?.choices?.[0]?.message?.content ??
+            j?.content ?? j?.reply ?? j?.text ?? text;
+          return String(out);
+        } catch {
+          return text;
+        }
+      } catch (e) {
+        console.error('callGPT fetch error:', e);
+      }
     }
-  } catch (e) {
-    console.error('callGPT error:', e);
-    toast('GPT: yêu cầu không hợp lệ hoặc máy chủ từ chối tham số.');
-    return '';
   }
+  return '';
 }
 
 function downloadJSON(filename, obj) {
