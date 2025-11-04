@@ -1,33 +1,29 @@
 /* ========================================================================
-   Wizard Đề cương RCT – App entry
-   - Điều hướng 16 bước
-   - State & storage
-   - Tiện ích chung (PDF, GPT, download, toast)
-   - Gọi renderer của từng bước nếu có
+   Wizard Đề cương RCT – App entry (fixed paths for scripts/steps/*)
    ======================================================================== */
 
-// ----------------------------- Imports bước ------------------------------
-// Mỗi module bước cần export: export function mount(el, ctx) { ... }
-import step0  from '../scripts/steps/step0_pico.js';
-import step1  from '../scripts/steps/step1_question.js';
-import step2  from '../scripts/steps/step2_objectives.js';
-import step3  from '../scripts/steps/step3_intro.js';
-import step4  from '../scripts/steps/step4_literature.js';
-import step5  from '../scripts/steps/step5_design.js';
-import step6  from '../scripts/steps/step6_sample_size.js';
-import step7  from '../scripts/steps/step7_criteria.js';
-import step8  from '../scripts/steps/step8_randomization.js';
-import step9  from '../scripts/steps/step9_intervention.js';
-import step10 from '../scripts/steps/step10_variables.js';
-import step11 from '../scripts/steps/step11_data_collection.js';
-import step12 from '../scripts/steps/step12_analysis.js';
-import step13 from '../scripts/steps/step13_ethics.js';
-import step14 from '../scripts/steps/step14_logic_check.js';
-import step15 from '../scripts/steps/step15_flow_diagram.js';
+/* ---------------------------- Imports bước ----------------------------- */
+/* Mỗi module bước export: export function mount(el, ctx) { ... } */
+import Step0  from './steps/step0_pico.js';
+import Step1  from './steps/step1_question.js';
+import Step2  from './steps/step2_objectives.js';
+import Step3  from './steps/step3_intro.js';
+import Step4  from './steps/step4_literature.js';
+import Step5  from './steps/step5_design.js';
+import Step6  from './steps/step6_sample_size.js';
+import Step7  from './steps/step7_criteria.js';
+import Step8  from './steps/step8_randomization.js';
+import Step9  from './steps/step9_intervention.js';
+import Step10 from './steps/step10_variables.js';
+import Step11 from './steps/step11_data_collection.js';
+import Step12 from './steps/step12_analysis.js';
+import Step13 from './steps/step13_ethics.js';
+import Step14 from './steps/step14_logic_check.js';
+import Step15 from './steps/step15_flow_diagram.js';
+// Lưu ý: nếu thiếu bất kỳ file nào ở trên, trình duyệt sẽ báo lỗi import.
+// Đảm bảo đã tạo đủ 16 file theo đúng tên.
 
-// Nếu bạn chưa có đủ file ở trên, ứng dụng vẫn chạy—chỉ hiển thị nhắc ở bước đó.
-
-// ----------------------------- Hằng số & DOM -----------------------------
+/* ----------------------------- Hằng số & DOM ---------------------------- */
 const LS_KEY_DATA     = 'rctWizardData';
 const LS_KEY_LASTSTEP = 'rctWizardLastStep';
 
@@ -52,7 +48,7 @@ const TITLES = [
 
 const STEPS = [
   Step0, Step1, Step2, Step3, Step4, Step5, Step6, Step7,
-  Step8, Step9, Step10, Step11, Step12, Step13, Step14, Step15
+  Step8, Step9, Step10, Step11, Step12, Step13, Step14, Step15,
 ];
 
 const appEl      = document.getElementById('app');
@@ -61,24 +57,23 @@ const stepEls    = [...Array(16).keys()].map(i => document.getElementById(`step-
 const stepBodies = [...Array(16).keys()].map(i => document.getElementById(`step-${i}-body`));
 const navEls     = [...Array(16).keys()].map(i => document.getElementById(`nav-${i}`));
 
-// ----------------------------- Vendor handles ----------------------------
+/* ---------------------------- Vendor handles --------------------------- */
 /* PDF.js */
 const pdfjsLib = window['pdfjsLib'] || window['pdfjs-dist'] || window['pdfjs'];
 if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-  // Đảm bảo đúng đường dẫn worker trong repo
+  // Worker nằm ở repo root/vendor/pdfjs/
   pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/pdf.worker.min.js';
 }
 
-/* Mermaid (khởi tạo trong index.html), Chart, Papa, html2canvas có sẵn từ window */
+/* Mermaid, Chart, Papa, html2canvas lấy từ window (đã load trong index.html) */
 const mermaid      = window.mermaid;
 const Chart        = window.Chart;
 const Papa         = window.Papa;
 const html2canvas  = window.html2canvas;
 
-// ----------------------------- State & Storage ---------------------------
+/* ----------------------------- State & Storage -------------------------- */
 let state = loadState();
 
-/** Tải state từ localStorage */
 function loadState() {
   try {
     const raw = localStorage.getItem(LS_KEY_DATA);
@@ -88,17 +83,10 @@ function loadState() {
     return {};
   }
 }
-
-/** Lưu state vào localStorage */
 function persist() {
-  try {
-    localStorage.setItem(LS_KEY_DATA, JSON.stringify(state));
-  } catch (e) {
-    console.error('Lưu state thất bại:', e);
-  }
+  try { localStorage.setItem(LS_KEY_DATA, JSON.stringify(state)); }
+  catch (e) { console.error('Lưu state thất bại:', e); }
 }
-
-/** Set deep theo path dạng 'a.b.c' */
 function setDeep(obj, path, value) {
   if (!path) return;
   const keys = Array.isArray(path) ? path : path.split('.');
@@ -110,8 +98,6 @@ function setDeep(obj, path, value) {
   }
   cur[keys[keys.length - 1]] = value;
 }
-
-/** Get deep theo path 'a.b.c' */
 function getDeep(obj, path, fallback = undefined) {
   if (!path) return fallback;
   const keys = Array.isArray(path) ? path : path.split('.');
@@ -123,8 +109,7 @@ function getDeep(obj, path, fallback = undefined) {
   return cur === undefined ? fallback : cur;
 }
 
-// ----------------------------- Tiện ích chung ----------------------------
-/** Toast nhỏ (không phụ thuộc UI lib) */
+/* ------------------------------ Tiện ích chung -------------------------- */
 function toast(msg, ms = 1800) {
   let root = document.getElementById('toast-root');
   if (!root) return alert(msg);
@@ -136,14 +121,12 @@ function toast(msg, ms = 1800) {
       z-index: 50; max-width: 60vw; font-size: 14px;">${escapeHtml(msg)}</div>`;
   setTimeout(() => { root.classList.add('hidden'); root.innerHTML = ''; }, ms);
 }
-
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/** Tải text từ PDF (giữ tên hàm cũ để tương thích) */
 async function extractTextFromPDF(fileOrArrayBuffer) {
   try {
     const data =
@@ -167,7 +150,6 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
   }
 }
 
-/** Gọi GPT endpoint custom (giữ logic cũ) */
 async function callGPT(prompt) {
   try {
     const res = await fetch('https://gpt-api-19xu.onrender.com/gpt.php', {
@@ -176,7 +158,6 @@ async function callGPT(prompt) {
       body: JSON.stringify({ action: 'chat', prompt }),
     });
     const txt = await res.text();
-    // Một số phiên bản trả về JSON {choices:[{message:{content}}]} — fallback chuỗi thuần
     try {
       const j = JSON.parse(txt);
       const c = j?.choices?.[0]?.message?.content ?? j?.content ?? txt;
@@ -191,7 +172,6 @@ async function callGPT(prompt) {
   }
 }
 
-/** Tải JSON về máy */
 function downloadJSON(filename, obj) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -201,53 +181,30 @@ function downloadJSON(filename, obj) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
 }
 
-/** Lưu một phần state: save('pico.i', 'xxx') hoặc save({pico:{...}}) */
 function save(input, value) {
-  if (typeof input === 'string') {
-    setDeep(state, input, value);
-  } else if (typeof input === 'object' && input) {
-    state = { ...state, ...input }; // nông; các module có thể setDeep thủ công
-  }
+  if (typeof input === 'string') setDeep(state, input, value);
+  else if (typeof input === 'object' && input) state = { ...state, ...input };
   persist();
 }
+function get(path, fallback) { return path ? getDeep(state, path, fallback) : state; }
 
-/** Đọc nhanh: get('pico.i') */
-function get(path, fallback) {
-  if (!path) return state;
-  return getDeep(state, path, fallback);
-}
-
-// ----------------------------- Điều hướng bước ---------------------------
+/* ----------------------------- Điều hướng bước -------------------------- */
 let current = clamp(parseInt(localStorage.getItem(LS_KEY_LASTSTEP) || '0', 10), 0, 15);
-
 function clamp(v, a, b) { return Math.min(Math.max(v, a), b); }
 
-/** Ẩn/hiện section + gọi renderer bước nếu có */
 async function goto(stepIndex) {
   current = clamp(stepIndex, 0, 15);
   localStorage.setItem(LS_KEY_LASTSTEP, String(current));
 
-  // Active tab
-  navEls.forEach((el, i) => {
-    if (!el) return;
-    if (i === current) el.classList.add('active');
-    else el.classList.remove('active');
-  });
+  navEls.forEach((el, i) => { if (el) el.classList.toggle('active', i === current); });
+  stepEls.forEach((el, i) => { if (el) el.classList.toggle('active', i === current); });
 
-  // Show step
-  stepEls.forEach((el, i) => {
-    if (!el) return;
-    el.classList.toggle('active', i === current);
-  });
-
-  // Title
   if (titleEl) titleEl.textContent = TITLES[current];
 
-  // Mount renderer nếu module có export mount
   const mod = STEPS[current];
-  const targetEl = stepBodies[current];
+  // Nếu layout không có #step-i-body, mount vào #app
+  const targetEl = stepBodies[current] || appEl;
   if (mod && typeof mod.mount === 'function' && targetEl) {
-    // ctx: context dùng chung truyền cho tất cả bước
     const ctx = {
       appEl, titleEl,
       state,
@@ -262,18 +219,16 @@ async function goto(stepIndex) {
       targetEl.innerHTML = `<div style="color:#b91c1c">Không render được bước này. Xem console để biết chi tiết.</div>`;
     }
   } else if (targetEl) {
-    // Fallback nếu chưa có module
     targetEl.innerHTML = `
       <div style="display:flex;align-items:center;gap:.75rem;">
         <span style="font-size:20px">ℹ️</span>
         <div>
           <div><strong>Chưa có module cho bước ${current + 1}.</strong></div>
-          <div>Tạo file: <code>src/steps/step${current}_${slugTitle(TITLES[current])}.js</code> và export <code>mount(el, ctx)</code>.</div>
+          <div>Tạo file: <code>scripts/steps/step${current}_${slugTitle(TITLES[current])}.js</code> và export <code>mount(el, ctx)</code>.</div>
         </div>
       </div>`;
   }
 
-  // Đóng sidebar trên màn hình nhỏ (nếu đang mở)
   const sidebar = document.getElementById('sidebar');
   if (sidebar && sidebar.classList.contains('open')) sidebar.classList.remove('open');
 }
@@ -286,26 +241,16 @@ function slugTitle(s) {
     .replace(/-+/g,'-');
 }
 
-// ----------------------------- Sự kiện UI --------------------------------
+/* ------------------------------- Sự kiện UI ----------------------------- */
 function wireNav() {
-  navEls.forEach((el, i) => {
-    if (!el) return;
-    el.addEventListener('click', () => goto(i));
-  });
+  navEls.forEach((el, i) => { if (el) el.addEventListener('click', () => goto(i)); });
 }
+window.addEventListener('storage', (ev) => { if (ev.key === LS_KEY_DATA) state = loadState(); });
 
-// Đồng bộ giữa nhiều tab
-window.addEventListener('storage', (ev) => {
-  if (ev.key === LS_KEY_DATA) {
-    state = loadState();
-  }
-});
-
-// ----------------------------- Khởi động ---------------------------------
+/* -------------------------------- Khởi động ----------------------------- */
 function init() {
   wireNav();
   goto(current);
   console.log('%cWizard RCT', 'color:#0ea44b;font-weight:700', { step: current, state });
 }
-
 document.addEventListener('DOMContentLoaded', init);
