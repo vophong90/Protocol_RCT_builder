@@ -1,6 +1,8 @@
 // /assets/js/wizard-storage.js
-// Thu thập dữ liệu từ localStorage + DOM, không đổi hành vi
+// Thu thập dữ liệu từ localStorage + DOM, chuẩn hoá với Utils
 (function (w) {
+  const U = (w.App && w.App.Utils) || { normalizeStr: x => x || '', dedupeStable: x=>x, summarizeList: x=>String(x||'') };
+
   const Storage = {
     _safeParse(json, fallback) {
       try { return JSON.parse(json || ''); } catch { return fallback; }
@@ -8,35 +10,48 @@
 
     loadWizardData() {
       const saved = Storage._safeParse(localStorage.getItem('rctWizardData'), {});
-      const pico  = saved.pico || {};
-      const objective = saved.mainObjective || '';
-      const interventions = saved.interventions || [];
-      const numArms = (localStorage.getItem('num-arms') || 'Không xác định');
+      const pico  = {
+        p: U.normalizeStr(saved?.pico?.p || saved?.pico?.P),
+        i: U.normalizeStr(saved?.pico?.i || saved?.pico?.I),
+        c: U.normalizeStr(saved?.pico?.c || saved?.pico?.C),
+        o: U.normalizeStr(saved?.pico?.o || saved?.pico?.O),
+      };
 
-      // selectedVariables có thể là biến global có sẵn
-      const selected = (w.selectedVariables && typeof w.selectedVariables === 'object')
-        ? w.selectedVariables
-        : {};
+      const objective    = U.normalizeStr(saved?.mainObjective);
+      const interventions = Array.isArray(saved?.interventions) ? saved.interventions : [];
+      const numArms      = U.normalizeStr(localStorage.getItem('num-arms') || 'Không xác định');
 
-      // DOM fields (nếu không tồn tại thì để rỗng)
-      const analysis = (document.getElementById('analysis-desc')?.value || '').trim();
-      const ethics   = (document.getElementById('ethics-desc')?.value || '').trim();
+      // selectedVariables có thể là biến global
+      const selected = (w.selectedVariables && typeof w.selectedVariables === 'object') ? w.selectedVariables : {};
 
-      // Biến danh sách biến đã chọn thành chuỗi "Tên (vai trò)"
-      const variableList = Object.entries(selected).flatMap(([role, vars]) => {
+      // Chuẩn hoá danh sách biến: "Tên (vai trò)"
+      const variableArr = Object.entries(selected).flatMap(([role, vars]) => {
         if (!Array.isArray(vars)) return [];
-        return vars.map(v => `${v.name} (${role})`);
-      }).join(', ');
+        return vars
+          .map(v => U.normalizeStr(v?.name))
+          .filter(Boolean)
+          .map(name => `${name} (${role})`);
+      });
+
+      const variableList = U.summarizeList(U.dedupeStable(variableArr), 80);
+
+      // DOM fields
+      const analysis = U.collapseWsKeepNl(document.getElementById('analysis-desc')?.value || '');
+      const ethics   = U.collapseWsKeepNl(document.getElementById('ethics-desc')?.value || '');
 
       return {
         pico,
         objective,
         interventions,
         numArms,
-        selected,        // để dùng khi cần
+        selected,       // giữ để tuỳ nghi dùng sau này
         variableList,
         analysis,
         ethics,
+        _meta: {
+          variableCount: variableArr.length,
+          interventionsCount: interventions.length,
+        }
       };
     },
   };
