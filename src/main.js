@@ -8,22 +8,22 @@
 
 // ----------------------------- Imports bước ------------------------------
 // Mỗi module bước cần export: export function mount(el, ctx) { ... }
-import * as Step0  from './steps/step0_pico.js';
-import * as Step1  from './steps/step1_question.js';
-import * as Step2  from './steps/step2_objectives.js';
-import * as Step3  from './steps/step3_intro_cars.js';
-import * as Step4  from './steps/step4_litreview.js';
-import * as Step5  from './steps/step5_design.js';
-import * as Step6  from './steps/step6_sample_size.js';
-import * as Step7  from './steps/step7_criteria.js';
-import * as Step8  from './steps/step8_randomization.js';
-import * as Step9  from './steps/step9_intervention.js';
-import * as Step10 from './steps/step10_variables.js';
-import * as Step11 from './steps/step11_collection.js';
-import * as Step12 from './steps/step12_analysis.js';
-import * as Step13 from './steps/step13_ethics.js';
-import * as Step14 from './steps/step14_logic_check.js';
-import * as Step15 from './steps/step15_flow_diagram.js';
+import step0  from '../scripts/steps/step0_pico.js';
+import step1  from '../scripts/steps/step1_question.js';
+import step2  from '../scripts/steps/step2_objectives.js';
+import step3  from '../scripts/steps/step3_intro.js';
+import step4  from '../scripts/steps/step4_literature.js';
+import step5  from '../scripts/steps/step5_design.js';
+import step6  from '../scripts/steps/step6_sample_size.js';
+import step7  from '../scripts/steps/step7_criteria.js';
+import step8  from '../scripts/steps/step8_randomization.js';
+import step9  from '../scripts/steps/step9_intervention.js';
+import step10 from '../scripts/steps/step10_variables.js';
+import step11 from '../scripts/steps/step11_data_collection.js';
+import step12 from '../scripts/steps/step12_analysis.js';
+import step13 from '../scripts/steps/step13_ethics.js';
+import step14 from '../scripts/steps/step14_logic_check.js';
+import step15 from '../scripts/steps/step15_flow_diagram.js';
 
 // Nếu bạn chưa có đủ file ở trên, ứng dụng vẫn chạy—chỉ hiển thị nhắc ở bước đó.
 
