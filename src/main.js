@@ -150,48 +150,24 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
 }
 
 async function callGPT(prompt) {
-  const paths = [''];                  // Ưu tiên root /
-  const payloads = [
-    { action: 'chat', prompt },        // format bạn đang dùng
-    { prompt },                        // format đơn giản
-    { messages: [{ role: 'user', content: prompt }] } // format kiểu OpenAI
-  ];
+  const body = new URLSearchParams({ prompt });
 
-  for (const path of paths) {
-    for (const body of payloads) {
-      try {
-        const res = await fetch(`${GPT_ENDPOINT}${path}`, {
-          method: 'POST',
-          mode: 'cors',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json,text/plain'
-          },
-          body: JSON.stringify(body)
-        });
+  try {
+    const res = await fetch(GPT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
 
-        const text = await res.text();
-        if (!res.ok) {
-          console.warn('GPT endpoint status', res.status, text);
-          continue;
-        }
-
-        // cố parse JSON trước, nếu không thì trả raw text
-        try {
-          const j = JSON.parse(text);
-          const out =
-            j?.choices?.[0]?.message?.content ??
-            j?.content ?? j?.reply ?? j?.text ?? text;
-          return String(out);
-        } catch {
-          return text;
-        }
-      } catch (e) {
-        console.error('callGPT fetch error:', e);
-      }
-    }
+    const text = await res.text();
+    try {
+      const j = JSON.parse(text);
+      return String(j?.content ?? j?.reply ?? j?.text ?? text);
+    } catch { return text; }
+  } catch (e) {
+    console.error('callGPT fetch error:', e);
+    return '';
   }
-  return '';
 }
 
 function downloadJSON(filename, obj) {
