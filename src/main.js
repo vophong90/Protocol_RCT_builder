@@ -148,24 +148,36 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
   }
 }
 
-async function callGPT(prompt) {
+async function callGPT(prompt, opts = {}) {
   try {
+    // Chỉ cho phép vài key an toàn; loại bỏ temperature/top_p/max_tokens...
+    const safe = {};
+    if (typeof opts.system === 'string') safe.system = opts.system;
+    if (typeof opts.model === 'string')  safe.model  = opts.model;
+
+    const payload = { action: 'chat', prompt: String(prompt ?? '') , ...safe };
+
     const res = await fetch('https://gpt-api-19xu.onrender.com/gpt.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'chat', prompt }),
+      body: JSON.stringify(payload),
     });
+
     const txt = await res.text();
+
+    // Trả về content nếu JSON hợp lệ, nếu có error thì ném để UI hiển thị gọn
     try {
       const j = JSON.parse(txt);
+      if (j?.error) throw j.error; // đồng nhất lỗi
       const c = j?.choices?.[0]?.message?.content ?? j?.content ?? txt;
       return String(c);
     } catch {
+      // Trả về chuỗi thường (server có thể trả plain text)
       return txt;
     }
   } catch (e) {
     console.error('callGPT error:', e);
-    toast('Không kết nối được GPT endpoint.');
+    toast('GPT: yêu cầu không hợp lệ hoặc máy chủ từ chối tham số.');
     return '';
   }
 }
