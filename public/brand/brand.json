@@ -3,14 +3,6 @@
   "shortName": "RCT Wizard",
   "themeColor": "#0ea44b",
   "backgroundColor": "#ffffff",
-  "colors": {
-    "primary": "#0ea44b",
-    "secondary": "#f5c518",
-    "accent": "#0ea5e9",
-    "neutral": "#111827",
-    "muted": "#6b7280",
-    "bg": "#ffffff"
-  },
   "assets": {
     "logo": "./public/brand/logo.svg",
     "logoLight": "./public/brand/logo-light.svg",
