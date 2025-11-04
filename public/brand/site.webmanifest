@@ -1,14 +1,14 @@
 {
   "name": "Wizard Đề cương RCT",
   "short_name": "RCT Wizard",
-  "start_url": ".",
-  "scope": ".",
+  "start_url": "../index.html",
   "display": "standalone",
-  "theme_color": "#0ea44b",
   "background_color": "#ffffff",
+  "theme_color": "#0ea44b",
   "icons": [
-    { "src": "./public/brand/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
-    { "src": "./public/brand/favicon-32.png", "sizes": "32x32", "type": "image/png" },
-    { "src": "./public/brand/favicon-16.png", "sizes": "16x16", "type": "image/png" }
+    { "src": "./favicon-16.png",  "sizes": "16x16",  "type": "image/png" },
+    { "src": "./favicon-32.png",  "sizes": "32x32",  "type": "image/png" },
+    { "src": "./apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "./logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
 }
