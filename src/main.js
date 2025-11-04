@@ -1,27 +1,25 @@
 /* ========================================================================
-   Wizard Đề cương RCT – App entry (fixed paths for scripts/steps/*)
+   Wizard Đề cương RCT – App entry (paths for src/steps/*, named exports)
    ======================================================================== */
 
 /* ---------------------------- Imports bước ----------------------------- */
 /* Mỗi module bước export: export function mount(el, ctx) { ... } */
-import Step0  from './steps/step0_pico.js';
-import Step1  from './steps/step1_question.js';
-import Step2  from './steps/step2_objectives.js';
-import Step3  from './steps/step3_intro.js';
-import Step4  from './steps/step4_literature.js';
-import Step5  from './steps/step5_design.js';
-import Step6  from './steps/step6_sample_size.js';
-import Step7  from './steps/step7_criteria.js';
-import Step8  from './steps/step8_randomization.js';
-import Step9  from './steps/step9_intervention.js';
-import Step10 from './steps/step10_variables.js';
-import Step11 from './steps/step11_data_collection.js';
-import Step12 from './steps/step12_analysis.js';
-import Step13 from './steps/step13_ethics.js';
-import Step14 from './steps/step14_logic_check.js';
-import Step15 from './steps/step15_flow_diagram.js';
-// Lưu ý: nếu thiếu bất kỳ file nào ở trên, trình duyệt sẽ báo lỗi import.
-// Đảm bảo đã tạo đủ 16 file theo đúng tên.
+import * as Step0  from './steps/step0_pico.js';
+import * as Step1  from './steps/step1_question.js';
+import * as Step2  from './steps/step2_objectives.js';
+import * as Step3  from './steps/step3_intro.js';
+import * as Step4  from './steps/step4_literature.js';
+import * as Step5  from './steps/step5_design.js';
+import * as Step6  from './steps/step6_sample_size.js';
+import * as Step7  from './steps/step7_criteria.js';
+import * as Step8  from './steps/step8_randomization.js';
+import * as Step9  from './steps/step9_intervention.js';
+import * as Step10 from './steps/step10_variables.js';
+import * as Step11 from './steps/step11_data_collection.js';
+import * as Step12 from './steps/step12_analysis.js';
+import * as Step13 from './steps/step13_ethics.js';
+import * as Step14 from './steps/step14_logic_check.js';
+import * as Step15 from './steps/step15_flow_diagram.js';
 
 /* ----------------------------- Hằng số & DOM ---------------------------- */
 const LS_KEY_DATA     = 'rctWizardData';
@@ -61,8 +59,8 @@ const navEls     = [...Array(16).keys()].map(i => document.getElementById(`nav-$
 /* PDF.js */
 const pdfjsLib = window['pdfjsLib'] || window['pdfjs-dist'] || window['pdfjs'];
 if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-  // Worker nằm ở repo root/vendor/pdfjs/
-  pdfjsLib.GlobalWorkerOptions.workerSrc = './vendor/pdfjs/pdf.worker.min.js';
+  // Dùng đường dẫn tuyệt đối từ web root (public root): /vendor/pdfjs/...
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js';
 }
 
 /* Mermaid, Chart, Papa, html2canvas lấy từ window (đã load trong index.html) */
@@ -202,7 +200,6 @@ async function goto(stepIndex) {
   if (titleEl) titleEl.textContent = TITLES[current];
 
   const mod = STEPS[current];
-  // Nếu layout không có #step-i-body, mount vào #app
   const targetEl = stepBodies[current] || appEl;
   if (mod && typeof mod.mount === 'function' && targetEl) {
     const ctx = {
@@ -224,7 +221,7 @@ async function goto(stepIndex) {
         <span style="font-size:20px">ℹ️</span>
         <div>
           <div><strong>Chưa có module cho bước ${current + 1}.</strong></div>
-          <div>Tạo file: <code>scripts/steps/step${current}_${slugTitle(TITLES[current])}.js</code> và export <code>mount(el, ctx)</code>.</div>
+          <div>Tạo file: <code>src/steps/step${current}_${slugTitle(TITLES[current])}.js</code> và export <code>mount(el, ctx)</code>.</div>
         </div>
       </div>`;
   }
