@@ -149,32 +149,67 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
   }
 }
 
-async function callGPT(prompt) {
-  const body = new URLSearchParams({ action: 'chat', prompt });
+async function callGPT(prompt, opts = {}) {
+  const payload = {
+    action: 'chat',
+    prompt: String(prompt ?? ''),
+    ...(opts.model ? { model: opts.model } : {})
+  };
 
   try {
     const res = await fetch(GPT_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // simple request → tránh preflight
-      body
+      mode: 'cors',
+      credentials: 'omit',                 
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
-    // Chuẩn hoá các kiểu trả về khác nhau
-    try {
-      const j = JSON.parse(text);
-      return String(
-        j?.content ??
-        j?.choices?.[0]?.message?.content ??
-        j?.reply ?? j?.text ?? text
-      );
-    } catch {
-      return text;
+    const raw = await res.text();
+
+    let j;
+    try { j = JSON.parse(raw); } catch { j = null; }
+
+    if (!res.ok) {
+      if (j && String(j?.model || '').includes('moderation')) {
+        throw new Error('Server đang trả MODERATION (thiếu action=chat).');
+      }
+      throw new Error(j?.error?.message || raw || `HTTP ${res.status}`);
     }
-  } catch (e) {
-    console.error('callGPT fetch error:', e);
+
+    if (j) {
+      if (typeof j.output_text === 'string' && j.output_text.trim()) {
+        return j.output_text;
+      }
+      if (Array.isArray(j.output)) {
+        const msg = j.output.find(x => x.type === 'message') || j.output[0];
+        const piece =
+          msg?.content?.find(c => c.type === 'output_text' || c.type === 'text') ||
+          (Array.isArray(msg?.content) ? { text: msg.content.map(c => c?.text || '').join('\n') } : null);
+        if (piece?.text) return String(piece.text);
+      }
+      if (j?.choices?.[0]?.message?.content) return String(j.choices[0].message.content);
+      if (j?.choices?.[0]?.text)           return String(j.choices[0].text);
+      if (typeof j.content === 'string') return j.content;
+      if (typeof j.reply   === 'string') return j.reply;
+      if (typeof j.text    === 'string') return j.text;
+    }
+
+    return raw;
+  } catch (err) {
+    console.error('callGPT error:', err);
     return '';
   }
+}
+
+async function moderate(text, opts = {}) {
+  const payload = { input: String(text ?? ''), ...(opts.model ? { model: opts.model } : {}) };
+  const res = await fetch(GPT_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return res.json().catch(() => ({}));
 }
 
 function downloadJSON(filename, obj) {
