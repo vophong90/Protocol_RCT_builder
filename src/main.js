@@ -54,7 +54,7 @@ const titleEl    = document.getElementById('page-title');
 const stepEls    = [...Array(16).keys()].map(i => document.getElementById(`step-${i}`));
 const stepBodies = [...Array(16).keys()].map(i => document.getElementById(`step-${i}-body`));
 const navEls     = [...Array(16).keys()].map(i => document.getElementById(`nav-${i}`));
-const GPT_ENDPOINT = 'https://gpt-api-19xu.onrender.com';
+const GPT_ENDPOINT = 'https://gpt-api-19xu.onrender.com/gpt.php';
 
 /* ---------------------------- Vendor handles --------------------------- */
 /* PDF.js */
@@ -150,20 +150,27 @@ async function extractTextFromPDF(fileOrArrayBuffer) {
 }
 
 async function callGPT(prompt) {
-  const body = new URLSearchParams({ prompt });
+  const body = new URLSearchParams({ action: 'chat', prompt });
 
   try {
     const res = await fetch(GPT_ENDPOINT, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // simple request → tránh preflight
       body
     });
 
     const text = await res.text();
+    // Chuẩn hoá các kiểu trả về khác nhau
     try {
       const j = JSON.parse(text);
-      return String(j?.content ?? j?.reply ?? j?.text ?? text);
-    } catch { return text; }
+      return String(
+        j?.content ??
+        j?.choices?.[0]?.message?.content ??
+        j?.reply ?? j?.text ?? text
+      );
+    } catch {
+      return text;
+    }
   } catch (e) {
     console.error('callGPT fetch error:', e);
     return '';
