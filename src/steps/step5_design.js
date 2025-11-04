@@ -1,23 +1,342 @@
-export async function mount(el, ctx) {
-      el.innerHTML = `
+// src/steps/step5_design.js
+// Step 5 – Thiết kế nghiên cứu (parallel/crossover + blinding + allocation + arms)
+// Lưu vào state.design và state.interventions (tên nhánh) để Step 10 tái sử dụng.
+// Đồng thời set localStorage 'num-arms' theo baseline.
+
+export async function mount(rootEl, ctx) {
+  rootEl.innerHTML = `
 <div class="card">
-  <div class="card-header"><h3 class="card-title">Thiết kế nghiên cứu</h3></div>
-  <div class="card-body grid-3">
-    <label>Loại thiết kế<input id="des-type" placeholder="RCT song song / cross-over"/></label>
-    <label>Ngụy trang/che giấu<input id="des-blind" placeholder="mù đơn / đôi / ..."/></label>
-    <label>Ghi chú<textarea id="des-notes" rows="3"></textarea></label>
+  <div class="card-header">
+    <h3 class="card-title">Thiết kế nghiên cứu</h3>
+    <div class="card-subtitle">
+      Chọn loại thiết kế, mức blinding, tỷ lệ phân bổ và số nhánh can thiệp. Tên nhánh sẽ được sử dụng lại ở Bước 10.
+    </div>
   </div>
-  <div class="card-footer"><button id="des-save" class="btn-primary">Lưu</button></div>
+
+  <div class="card-body grid-2">
+    <label>Loại thiết kế
+      <select id="dsg-type">
+        <option value="parallel">Song song (parallel)</option>
+        <option value="crossover">Chéo (cross-over)</option>
+      </select>
+    </label>
+
+    <label>Blinding
+      <select id="dsg-blinding">
+        <option value="none">Không che giấu</option>
+        <option value="single">Đơn mù (single-blind)</option>
+        <option value="double">Đôi mù (double-blind)</option>
+      </select>
+    </label>
+
+    <label>Tỷ lệ phân bổ (allocation ratio)
+      <input id="dsg-alloc" type="text" placeholder="1:1" />
+    </label>
+
+    <label>Số nhánh (2–6)
+      <input id="dsg-arms" type="number" min="2" max="6" step="1" />
+    </label>
+  </div>
+
+  <div class="card-body">
+    <div style="font-weight:600;margin-bottom:8px">Tên các nhánh can thiệp</div>
+    <div id="dsg-armnames" class="grid-2"></div>
+  </div>
+
+  <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+    <button id="dsg-gpt-suggest" class="btn-outline">GPT gợi ý mô tả thiết kế</button>
+    <button id="dsg-gpt-eval" class="btn-outline">GPT đánh giá mô tả</button>
+  </div>
+
+  <div class="card-body" id="dsg-sugg-wrap" style="display:none">
+    <div style="font-weight:600;margin-bottom:.5rem">Gợi ý từ GPT:</div>
+    <div id="dsg-sugg" class="prose"></div>
+    <div style="margin-top:.75rem;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="dsg-apply-replace" class="btn-secondary">Thay thế toàn bộ</button>
+      <button id="dsg-apply-append"  class="btn-secondary">Chèn thêm vào cuối</button>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <label>Mô tả thiết kế (tóm tắt)
+      <textarea id="dsg-desc" rows="7" placeholder="Ví dụ: Nghiên cứu RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi ..."></textarea>
+    </label>
+  </div>
+
+  <div class="card-body" id="dsg-eval-wrap" style="display:none">
+    <div style="font-weight:600;margin-bottom:.5rem">Đánh giá:</div>
+    <div id="dsg-eval-out" class="prose"></div>
+  </div>
+
+  <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
+    <button id="dsg-save" class="btn-primary">Lưu thiết kế</button>
+  </div>
 </div>
 `.trim();
 
-const st = ctx.get('design', {});
-des_type.value  = st.type || '';
-des_blind.value = st.blind || '';
-des_notes.value = st.notes || '';
-document.getElementById('des-save').addEventListener('click', () => {
-  ctx.save('design', { type: des_type.value.trim(), blind: des_blind.value.trim(), notes: des_notes.value.trim() });
-  ctx.toast('Đã lưu thiết kế');
-});
+  // ------- Elements -------
+  const typeEl   = rootEl.querySelector('#dsg-type');
+  const blindEl  = rootEl.querySelector('#dsg-blinding');
+  const allocEl  = rootEl.querySelector('#dsg-alloc');
+  const armsEl   = rootEl.querySelector('#dsg-arms');
+  const namesBox = rootEl.querySelector('#dsg-armnames');
+  const descEl   = rootEl.querySelector('#dsg-desc');
 
+  const suggWrap = rootEl.querySelector('#dsg-sugg-wrap');
+  const suggEl   = rootEl.querySelector('#dsg-sugg');
+  const applyRep = rootEl.querySelector('#dsg-apply-replace');
+  const applyApp = rootEl.querySelector('#dsg-apply-append');
+
+  const evalWrap = rootEl.querySelector('#dsg-eval-wrap');
+  const evalOut  = rootEl.querySelector('#dsg-eval-out');
+
+  const btnSuggest = rootEl.querySelector('#dsg-gpt-suggest');
+  const btnEval    = rootEl.querySelector('#dsg-gpt-eval');
+  const btnSave    = rootEl.querySelector('#dsg-save');
+
+  // ------- Load state -------
+  const dsg = ctx.get('design', {}) || {};
+  const initType     = dsg.type || 'parallel';
+  const initBlind    = dsg.blinding || 'none';
+  const initAlloc    = dsg.allocationRatio || '1:1';
+  const initArms     = clampInt(dsg.arms ?? 2, 2, 6);
+  const initNames    = Array.isArray(dsg.armNames) && dsg.armNames.length >= 2
+    ? dsg.armNames
+    : defaultArmNames(initArms);
+
+  typeEl.value  = initType;
+  blindEl.value = initBlind;
+  allocEl.value = initAlloc;
+  armsEl.value  = String(initArms);
+  descEl.value  = dsg.description || '';
+
+  // Render inputs for arm names
+  renderArmInputs(initArms, initNames);
+
+  // ------- Events -------
+  armsEl.addEventListener('change', () => {
+    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    armsEl.value = String(n);
+    const curNames = readArmNames();
+    const next = (curNames.length === n)
+      ? curNames
+      : padOrTrim(curNames.length ? curNames : defaultArmNames(n), n);
+    renderArmInputs(n, next);
+  });
+
+  btnSuggest.addEventListener('click', async () => {
+    try {
+      btnSuggest.disabled = true;
+      const prev = btnSuggest.textContent;
+      btnSuggest.textContent = 'Đang gọi GPT...';
+
+      const pico = ctx.get('pico', {}) || {};
+      const rq   = ctx.get('researchQuestion', '') || '';
+      const mainObj = ctx.get('mainObjective', '') || '';
+      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+
+      const curType  = typeEl.value;
+      const curBlind = blindEl.value;
+      const curAlloc = safeText(allocEl.value || '1:1');
+      const nArms    = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+      const armNames = readArmNames();
+
+      const prompt = buildSuggestPrompt(pico, rq, mainObj, subObjs, {
+        type: curType, blinding: curBlind, allocationRatio: curAlloc, arms: nArms, armNames
+      });
+      const raw = await ctx.callGPT(prompt);
+      const md  = String(raw || '').trim();
+
+      if (!md) {
+        ctx.toast('GPT không trả về gợi ý.');
+      } else {
+        suggWrap.style.display = '';
+        suggEl.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
+
+        applyRep.onclick = () => {
+          descEl.value = md;
+          ctx.save('design.description', (descEl.value || '').trim());
+          ctx.toast('Đã thay thế toàn bộ mô tả thiết kế');
+        };
+        applyApp.onclick = () => {
+          const cur = descEl.value || '';
+          descEl.value = cur ? `${cur}\n\n${md}` : md;
+          ctx.save('design.description', (descEl.value || '').trim());
+          ctx.toast('Đã chèn thêm gợi ý vào cuối');
+        };
+      }
+
+      btnSuggest.textContent = prev;
+      btnSuggest.disabled = false;
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Lỗi khi gọi GPT gợi ý.');
+      btnSuggest.disabled = false;
+      btnSuggest.textContent = 'GPT gợi ý mô tả thiết kế';
     }
+  });
+
+  btnEval.addEventListener('click', async () => {
+    const content = (descEl.value || '').trim();
+    if (!content) {
+      ctx.toast('Chưa có mô tả để đánh giá.');
+      return;
+    }
+    try {
+      btnEval.disabled = true;
+      const prev = btnEval.textContent;
+      btnEval.textContent = 'Đang đánh giá...';
+
+      const pico = ctx.get('pico', {}) || {};
+      const rq   = ctx.get('researchQuestion', '') || '';
+      const mainObj = ctx.get('mainObjective', '') || '';
+      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+
+      const prompt = buildEvaluatePrompt(content, pico, rq, mainObj, subObjs);
+      const raw = await ctx.callGPT(prompt);
+      const md  = String(raw || '').trim();
+
+      if (!md) {
+        ctx.toast('GPT không trả về đánh giá.');
+      } else {
+        evalWrap.style.display = '';
+        evalOut.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
+        ctx.save('design.evaluation', md);
+        ctx.toast('Đã cập nhật đánh giá');
+      }
+
+      btnEval.textContent = prev;
+      btnEval.disabled = false;
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Lỗi khi gọi GPT đánh giá.');
+      btnEval.disabled = false;
+      btnEval.textContent = 'GPT đánh giá mô tả';
+    }
+  });
+
+  btnSave.addEventListener('click', () => {
+    const nArms = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    const armNames = padOrTrim(readArmNames(), nArms).map(s => safeText(s) || '');
+
+    const payload = {
+      type: typeEl.value,
+      blinding: blindEl.value,
+      allocationRatio: (allocEl.value || '1:1').trim(),
+      arms: nArms,
+      armNames,
+      description: (descEl.value || '').trim(),
+    };
+
+    ctx.save('design', payload);
+    ctx.save('interventions', armNames); // để Step 10 dùng lại đúng baseline
+    try { localStorage.setItem('num-arms', String(nArms)); } catch {}
+
+    ctx.toast('Đã lưu thiết kế & tên nhánh');
+  });
+
+  // ------- helpers -------
+  function renderArmInputs(n, names) {
+    namesBox.innerHTML = '';
+    const list = padOrTrim(names || [], n);
+    for (let i = 0; i < n; i++) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `
+        <label>Tên nhánh ${i + 1}
+          <input type="text" data-arm-index="${i}" placeholder="${i === 0 ? 'Nhóm can thiệp' : i === 1 ? 'Nhóm chứng' : 'Nhánh ' + (i + 1)}" />
+        </label>
+      `.trim();
+      const inp = wrap.querySelector('input');
+      inp.value = list[i] || '';
+      namesBox.appendChild(wrap);
+    }
+  }
+
+  function readArmNames() {
+    return Array.from(namesBox.querySelectorAll('input[data-arm-index]'))
+      .map(inp => (inp.value || '').trim());
+  }
+
+  function padOrTrim(arr, n) {
+    const out = (arr || []).slice(0, n);
+    while (out.length < n) out.push(defaultName(out.length));
+    return out;
+  }
+
+  function defaultName(i) {
+    if (i === 0) return 'Nhóm can thiệp';
+    if (i === 1) return 'Nhóm chứng';
+    return `Nhánh ${i + 1}`;
+    }
+  function defaultArmNames(n) {
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(defaultName(i));
+    return out;
+  }
+
+  function clampInt(v, min, max) {
+    v = Number.isFinite(v) ? v : min;
+    return Math.min(Math.max(v, min), max);
+  }
+
+  function safeText(s) {
+    return String(s || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function toHtmlSafe(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
+    return `
+Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.
+Yêu cầu:
+- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.
+- Trả về **MARKDOWN** thuần, không thêm tài liệu tham khảo.
+
+Bối cảnh:
+P: ${pico.p || '(chưa có)'}
+I: ${pico.i || '(chưa có)'}
+C: ${pico.c || '(chưa có)'}
+O: ${pico.o || '(chưa có)'}
+Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
+Mục tiêu chính: ${mainObj || '(chưa có)'}
+Mục tiêu phụ:
+${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+
+Lựa chọn hiện có:
+- Loại thiết kế: ${cur.type}
+- Blinding: ${cur.blinding}
+- Tỷ lệ phân bổ: ${cur.allocationRatio}
+- Số nhánh: ${cur.arms}
+- Tên nhánh: ${cur.armNames && cur.armNames.length ? cur.armNames.join(', ') : '(chưa có)'}
+`.trim();
+  }
+
+  function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
+    return `
+Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:
+- Tính phù hợp với PICO/câu hỏi/mục tiêu
+- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)
+- Tính khả thi và rủi ro thiên lệch có thể phát sinh
+- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)
+Trả về **MARKDOWN**.
+
+--- MÔ TẢ CẦN ĐÁNH GIÁ ---
+${content}
+
+--- THAM CHIẾU BỐI CẢNH ---
+P: ${pico.p || '(chưa có)'}
+I: ${pico.i || '(chưa có)'}
+C: ${pico.c || '(chưa có)'}
+O: ${pico.o || '(chưa có)'}
+Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
+Mục tiêu chính: ${mainObj || '(chưa có)'}
+Mục tiêu phụ:
+${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+`.trim();
+  }
+}
