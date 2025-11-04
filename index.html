@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Năng Lực Y · RCT Wizard</title>
-  <meta name="theme-color" content="#0ea44b" />
+  <title>Protocol builder · RCT Wizard</title>
+  <meta name="theme-color" content="#0EA44B" />
 
-  <!-- Brand assets: dùng đúng cấu trúc repo public/brand/... -->
+  <!-- App icons & manifest (brand trong public/brand) -->
   <link rel="icon" type="image/png" sizes="192x192" href="public/brand/icon-192.png">
   <link rel="icon" type="image/png" sizes="256x256" href="public/brand/icon-256.png">
   <link rel="icon" type="image/png" sizes="512x512" href="public/brand/icon-512.png">
@@ -19,381 +19,406 @@
 
   <style>
     :root{
-      --brand-primary:#0EA44B; --brand-secondary:#F5C518; --brand-accent:#0EA5E9;
-      --text:#111827; --muted:#6B7280; --bg:#fff;
-      --radius:16px; --shadow:0 12px 30px rgba(0,0,0,.08);
-      --sidebar-w:280px;
+      --brand-primary:#0EA44B;
+      --brand-accent:#0EA5E9;
+      --brand-muted:#6B7280;
+      --brand-text:#111827;
+      --radius:16px;
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --border:1px solid rgba(0,0,0,.06);
     }
     *,*::before,*::after{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,'Noto Sans','Liberation Sans',sans-serif;
-      color:var(--text); background:
-       radial-gradient(1100px 600px at 20% -10%, rgba(14,164,75,.07), transparent 60%),
-       radial-gradient(900px 500px at 90% 10%, rgba(14,165,233,.07), transparent 60%),
-       var(--bg);
-      line-height:1.5;
+      margin:0;
+      font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,'Noto Sans','Liberation Sans',sans-serif;
+      color:var(--brand-text);
+      background:
+        radial-gradient(900px 500px at 15% -10%, rgba(14,164,75,.06), transparent 60%),
+        radial-gradient(900px 500px at 110% -10%, rgba(14,165,233,.06), transparent 60%),
+        #fff;
     }
 
     /* Topbar */
-    .topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.88);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.06)}
-    .topbar-inner{max-width:1280px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
-    .brand-logo{width:36px;height:36px;border-radius:10px;object-fit:contain}
-    .brand-title{font-weight:700}
-    .badge{font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent));border-radius:999px;padding:3px 10px;margin-left:8px}
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px dashed rgba(0,0,0,.15);padding:3px 10px;border-radius:999px;font-size:12px;color:var(--muted)}
-    .ghost{appearance:none;border:1px solid rgba(0,0,0,.15);background:transparent;border-radius:12px;padding:8px 12px;font-weight:600;color:var(--text);cursor:pointer}
-
-    /* Shell */
-    .shell{max-width:1280px;margin:16px auto;padding:0 16px}
-    .app{
-      display:grid; grid-template-columns: var(--sidebar-w) minmax(0,1fr); gap:16px; align-items:start;
-      transition: grid-template-columns .18s ease;
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background:rgba(255,255,255,.9);
+      backdrop-filter:blur(10px);
+      border-bottom:var(--border);
     }
-    .app.collapsed{ grid-template-columns: 0 minmax(0,1fr); }
+    .topbar-inner{
+      max-width:1200px;margin:0 auto;padding:10px 18px;
+      display:flex;align-items:center;gap:12px;
+    }
+    .brand-logo{width:40px;height:40px;object-fit:contain;border-radius:10px}
+    .title{font-weight:700;letter-spacing:.2px}
+    .badge{font-size:12px;font-weight:700;color:#fff;background:linear-gradient(135deg,var(--brand-primary),var(--brand-accent));padding:4px 10px;border-radius:999px;margin-left:8px}
+    .tagline{color:var(--brand-muted);font-size:13px}
 
-    /* Sidebar */
+    /* Layout */
+    .wrap{max-width:1200px;margin:18px auto;padding:0 18px;display:grid;grid-template-columns:280px 1fr;gap:18px}
     .sidebar{
-      position:sticky; top:76px; height:calc(100vh - 100px);
-      background:#fff; border:1px solid rgba(0,0,0,.06); border-radius:var(--radius);
-      box-shadow:var(--shadow); overflow:auto; padding:12px; transition:transform .18s ease, opacity .18s ease;
+      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
+      overflow:hidden;position:sticky;top:72px;height:calc(100dvh - 96px);
+      display:flex;flex-direction:column;
+      transition:width .2s ease;
     }
-    .app.collapsed .sidebar{ transform:translateX(-16px); opacity:0; pointer-events:none; }
-    .side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .side-actions{display:flex;gap:8px}
-    .btn{appearance:none;border:none;border-radius:12px;padding:9px 12px;font-weight:700;cursor:pointer;background:var(--brand-primary);color:#fff;box-shadow:var(--shadow)}
-    .btn.secondary{background:var(--brand-accent)}
-    .btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(0,0,0,.15);box-shadow:none}
-    .btn.sm{padding:6px 10px;font-size:12px}
-    .steps{list-style:none;margin:0;padding:0}
-    .step{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid rgba(0,0,0,.06);border-radius:12px;margin:6px 0;cursor:pointer}
-    .step:hover{background:#F9FAFB}
-    .step.active{background:linear-gradient(0deg,rgba(14,164,75,.09),rgba(14,164,75,.09));border-color:rgba(14,164,75,.28)}
-    .num{min-width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;border:1px solid rgba(0,0,0,.15)}
-    .label{font-weight:700}
-    .sub{color:var(--muted);font-size:12px}
+    .sidebar.collapsed{width:78px}
+    .side-head{display:flex;align-items:center;justify-content:space-between;padding:12px 12px;border-bottom:var(--border)}
+    .side-title{font-weight:700}
+    .side-btn{appearance:none;border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:10px;padding:6px 10px;cursor:pointer;font-weight:600}
+    .step-list{list-style:none;margin:0;padding:8px;overflow:auto}
+    .step-item{
+      display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;cursor:pointer;
+      border:1px solid transparent;user-select:none;
+    }
+    .step-item:hover{background:#fafafa;border-color:rgba(0,0,0,.05)}
+    .step-item.active{background:rgba(14,164,75,.08);border-color:rgba(14,164,75,.25)}
+    .step-idx{min-width:26px;height:26px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;border:1px solid rgba(0,0,0,.15)}
+    .step-text{display:flex;flex-direction:column}
+    .step-name{font-weight:600}
+    .step-desc{font-size:12px;color:var(--brand-muted)}
+    .sidebar.collapsed .step-text{display:none}
+    .sidebar.collapsed .side-title{display:none}
 
-    /* Content */
-    .content{display:flex;flex-direction:column;gap:16px}
-    .card{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
-    .hero{display:grid;grid-template-columns:1.25fr 1fr;gap:16px}
-    h1{margin:0 0 8px;font-size:26px}
-    h2{margin:0 0 6px;font-size:18px}
-    textarea,input[type="text"]{width:100%;padding:11px 12px;border-radius:12px;border:1px solid rgba(0,0,0,.15);min-height:44px;font:inherit}
-    textarea:focus,input[type="text"]:focus{outline:none;border-color:var(--brand-primary);box-shadow:0 0 0 3px rgba(14,164,75,.2)}
-    .row{display:flex;gap:10px;flex-wrap:wrap}
+    /* Main area */
+    .main{
+      min-width:0;
+      display:flex;flex-direction:column;gap:18px;
+    }
+    .page-head{
+      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
+      padding:16px 18px;display:flex;align-items:center;gap:12px;justify-content:space-between
+    }
+    .page-head .left{display:flex;align-items:center;gap:12px}
+    .page-title{margin:0;font-size:20px}
+    .page-sub{margin:2px 0 0;font-size:13px;color:var(--brand-muted)}
+    .btn{
+      appearance:none;border:none;cursor:pointer;font-weight:700;
+      padding:10px 14px;border-radius:12px;background:var(--brand-primary);color:#fff;box-shadow:var(--shadow)
+    }
+    .btn.ghost{background:#fff;color:var(--brand-text);border:1px solid rgba(0,0,0,.15);box-shadow:none}
+    .btn.secondary{background:var(--brand-accent)}
+    .content{
+      background:#fff;border:var(--border);border-radius:14px;box-shadow:var(--shadow);
+      padding:18px;
+    }
     .panel{display:none}
     .panel.active{display:block}
-    .panel .desc{color:var(--muted);font-size:13px;margin-bottom:8px}
-    .toolbar{display:flex;align-items:center;gap:8px}
-    .spacer{flex:1}
-    .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,"Liberation Mono","Courier New",monospace;
-         font-size:12px;border:1px solid rgba(0,0,0,.2);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:#fff}
-    .footer{color:var(--muted);font-size:12px;text-align:center;margin:18px 0 8px}
+    .panel h2{margin:0 0 6px;font-size:18px}
+    .muted{color:var(--brand-muted);font-size:13px}
+    .actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+    .nav-step{display:flex;gap:8px;margin-left:auto}
+    .footer{margin:18px 0 0;color:var(--brand-muted);font-size:12px;text-align:center}
 
-    @media (max-width: 1024px){
-      .hero{grid-template-columns:1fr}
-      .sidebar{top:68px;height:calc(100vh - 88px)}
+    @media (max-width:980px){
+      .wrap{grid-template-columns:1fr}
+      .sidebar{position:static;height:auto}
     }
   </style>
 </head>
 <body>
-
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-inner">
-      <button id="btn-toggle" class="ghost" title="Ẩn/hiện thanh bước" aria-label="Toggle sidebar">☰</button>
-      <img src="public/brand/logo.png" class="brand-logo" alt="Logo" />
-      <div style="display:flex;flex-direction:column;gap:2px">
-        <div class="brand-title">Năng Lực Y <span class="badge">RCT Wizard</span></div>
-        <div class="sub">Pha 3 – Làm sạch dần & cải thiện nhỏ</div>
+      <img src="public/brand/logo.png" class="brand-logo" alt="Logo">
+      <div>
+        <div class="title">Protocol builder <span class="badge">RCT Wizard</span></div>
+        <div class="tagline">Hỗ trợ xây dựng đề cương RCT trong YHCT</div>
       </div>
-      <div class="spacer"></div>
-      <span class="pill" id="pill-steps">— bước</span>
-      <button class="ghost" title="Tài liệu">Hướng dẫn</button>
-      <button class="ghost" title="Liên hệ">Liên hệ</button>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <a class="btn ghost" href="#" title="Hướng dẫn">Hướng dẫn</a>
+        <a class="btn ghost" href="#" title="Liên hệ">Liên hệ</a>
+      </div>
     </div>
   </header>
 
-  <!-- App shell -->
-  <div class="shell">
-    <div id="app" class="app">
+  <!-- Layout -->
+  <div class="wrap">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head">
+        <div class="side-title">Các bước</div>
+        <button class="side-btn" id="btn-collapse">Thu gọn</button>
+      </div>
+      <ul class="step-list" id="steps">
+        <!-- items được render bởi JS dưới -->
+      </ul>
+    </aside>
 
-      <!-- Sidebar -->
-      <aside class="sidebar" id="sidebar">
-        <div class="side-head">
-          <strong>Các bước</strong>
-          <div class="side-actions">
-            <button id="btn-collapse" class="btn ghost sm">Thu gọn</button>
-            <button id="btn-expand" class="btn ghost sm" style="display:none">Mở ra</button>
-          </div>
+    <!-- Main -->
+    <main class="main">
+      <div class="page-head">
+        <div class="left">
+          <h1 class="page-title" id="page-title">Bước 0 · Mở đầu</h1>
+          <p class="page-sub" id="page-sub">Bắt đầu quy trình, mở/tạo hồ sơ.</p>
         </div>
-        <ul id="steps" class="steps" role="tablist" aria-label="Danh sách bước"></ul>
-        <div class="sub" style="margin-top:8px">
-          Phím tắt: <span class="kbd">J</span>/<span class="kbd">K</span> hoặc <span class="kbd">←</span>/<span class="kbd">→</span> để chuyển bước.
+        <div class="nav-step">
+          <button class="btn ghost" id="btn-prev">← Trước</button>
+          <button class="btn" id="btn-next">Tiếp →</button>
         </div>
-      </aside>
+      </div>
 
-      <!-- Content -->
       <section class="content">
-
-        <!-- Hero -->
-        <div class="hero">
-          <div class="card">
-            <h1>Tiếp tục hoàn thiện đề cương</h1>
-            <p class="sub">Chuẩn hoá nội dung, làm sạch chuỗi, và kiểm tra tính nhất quán giữa PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.</p>
-            <div class="row">
-              <button id="btn-check-logic" class="btn">Kiểm tra logic</button>
-              <button id="btn-open-storage" class="btn secondary">Mở hồ sơ</button>
-              <button id="btn-save-storage" class="btn ghost">Lưu hồ sơ</button>
-            </div>
-          </div>
-          <div class="card">
-            <h2>Thương hiệu</h2>
-            <div class="row" style="align-items:center">
-              <img src="public/brand/logo.png" alt="Logo" style="width:72px;height:72px;border-radius:12px;border:1px solid rgba(0,0,0,.06);object-fit:contain">
-              <div>
-                <div style="font-weight:700">Năng Lực Y</div>
-                <div class="sub">Chủ đạo: <span class="pill"><span style="width:12px;height:12px;background:var(--brand-primary);border-radius:999px;display:inline-block"></span> #0EA44B</span></div>
-                <div class="sub">Phụ: <span class="pill"><span style="width:12px;height:12px;background:var(--brand-secondary);border-radius:999px;display:inline-block"></span> #F5C518</span> · Nhấn: <span class="pill"><span style="width:12px;height:12px;background:var(--brand-accent);border-radius:999px;display:inline-block"></span> #0EA5E9</span></div>
-              </div>
-            </div>
+        <!-- Panels for each step -->
+        <!-- 0 -->
+        <div class="panel active" id="panel-0">
+          <h2>Bước 0 – Mở đầu</h2>
+          <p class="muted">Bắt đầu quy trình; mở hoặc tạo hồ sơ làm việc.</p>
+          <div class="actions">
+            <button class="btn" id="btn-open-storage">Mở hồ sơ</button>
+            <button class="btn ghost" id="btn-save-storage">Lưu hồ sơ</button>
+            <button class="btn secondary">GPT gợi ý / đánh giá</button>
           </div>
         </div>
 
-        <!-- Panels mount -->
-        <div id="panels"></div>
-
-        <!-- Logic & Clean utilities -->
-        <div class="row">
-          <div class="card" style="flex:1 1 520px">
-            <h2>Kết quả kiểm tra logic (tổng hợp)</h2>
-            <div class="sub">Bản tóm tắt & gợi ý chỉnh sửa</div>
-            <textarea id="logic-result" rows="14" placeholder="Kết quả sẽ hiển thị tại đây…"></textarea>
-          </div>
-          <div class="card" style="flex:1 1 420px">
-            <h2>Tiện ích làm sạch</h2>
-            <div class="sub">Giữ xuống dòng, gom khoảng trắng, chuẩn hoá CRLF → LF.</div>
-            <div class="row">
-              <button id="btn-clean" class="btn">Làm sạch</button>
-              <button id="btn-copy" class="btn ghost">Sao chép</button>
-            </div>
-            <label for="clean-input" class="sub" style="margin-top:8px">Chuỗi cần làm sạch</label>
-            <textarea id="clean-input" rows="6" placeholder="Dán nội dung cần chuẩn hoá…"></textarea>
-            <label for="clean-output" class="sub" style="margin-top:8px">Kết quả</label>
-            <textarea id="clean-output" rows="6" placeholder="Kết quả làm sạch…" readonly></textarea>
+        <!-- 1..16: placeholders gọn gàng -->
+        <div class="panel" id="panel-1">
+          <h2>Bước 1 – PICO</h2>
+          <p class="muted">Dân số, can thiệp, so sánh, kết cục.</p>
+          <div class="actions">
+            <button class="btn">Mở form</button>
+            <button class="btn secondary">GPT gợi ý / đánh giá</button>
           </div>
         </div>
 
-        <p class="footer">© Năng Lực Y · RCT Wizard. Tích hợp: API Client · Lưu trữ cục bộ.</p>
+        <div class="panel" id="panel-2">
+          <h2>Bước 2 – Câu hỏi</h2>
+          <p class="muted">Chuyển PICO thành câu hỏi nghiên cứu.</p>
+          <div class="actions">
+            <button class="btn">Mở form</button>
+            <button class="btn secondary">GPT gợi ý / đánh giá</button>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-3">
+          <h2>Bước 3 – Mục tiêu</h2>
+          <p class="muted">Mục tiêu chính và phụ có đo lường.</p>
+          <div class="actions">
+            <button class="btn">Mở form</button>
+            <button class="btn secondary">GPT gợi ý / đánh giá</button>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-4">
+          <h2>Bước 4 – Mở đầu (Introduction · CaRS)</h2>
+          <p class="muted">Bối cảnh, khoảng trống tri thức, mục tiêu nghiên cứu.</p>
+          <div class="actions">
+            <button class="btn">Mở form</button>
+            <button class="btn secondary">GPT gợi ý / đánh giá</button>
+          </div>
+        </div>
+
+        <div class="panel" id="panel-5">
+          <h2>Bước 5 – Tổng quan tài liệu</h2>
+          <p class="muted">Các tiểu mục tổng quan & bằng chứng.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-6">
+          <h2>Bước 6 – Thiết kế</h2>
+          <p class="muted">Loại thiết kế, khung thời gian.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-7">
+          <h2>Bước 7 – Cỡ mẫu</h2>
+          <p class="muted">Công thức, giả định, mất mẫu.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-8">
+          <h2>Bước 8 – Tiêu chí</h2>
+          <p class="muted">Tiêu chí chọn và loại trừ.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-9">
+          <h2>Bước 9 – Ngẫu nhiên</h2>
+          <p class="muted">Phân bổ ngẫu nhiên & che giấu.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-10">
+          <h2>Bước 10 – Can thiệp</h2>
+          <p class="muted">Mô tả chi tiết từng nhánh.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-11">
+          <h2>Bước 11 – Biến số</h2>
+          <p class="muted">Kết cục chính/phụ, nền, nhiễu…</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-12">
+          <h2>Bước 12 – Thu thập</h2>
+          <p class="muted">Kế hoạch thu thập và quản lý dữ liệu.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-13">
+          <h2>Bước 13 – Phân tích số liệu</h2>
+          <p class="muted">Chiến lược phân tích (tựa SAP).</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-14">
+          <h2>Bước 14 – Đạo đức nghiên cứu</h2>
+          <p class="muted">Các cân nhắc đạo đức và phê duyệt.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
+
+        <div class="panel" id="panel-15">
+          <h2>Bước 15 – Kiểm tra logic tổng thể</h2>
+          <p class="muted">Kiểm tra tính nhất quán PICO – Mục tiêu – Số nhánh – Biến số – Phân tích – Đạo đức.</p>
+          <div class="actions">
+            <button class="btn" id="btn-check-logic">Kiểm tra logic</button>
+            <button class="btn ghost" id="btn-copy-logic">Sao chép kết quả</button>
+          </div>
+          <textarea id="logic-result" rows="12" style="width:100%;margin-top:10px;border-radius:12px;border:1px solid rgba(0,0,0,.15);padding:12px;" placeholder="Kết quả kiểm tra sẽ hiển thị tại đây…"></textarea>
+        </div>
+
+        <div class="panel" id="panel-16">
+          <h2>Bước 16 – Sơ đồ nghiên cứu (CONSORT)</h2>
+          <p class="muted">Vẽ sơ đồ CONSORT dựa trên các bước trước và cho phép xuất PNG.</p>
+          <div class="actions"><button class="btn">Mở form</button><button class="btn secondary">GPT gợi ý / đánh giá</button></div>
+        </div>
       </section>
-    </div>
+
+      <p class="footer">© Protocol builder · RCT Wizard</p>
+    </main>
   </div>
 
-  <!-- JS modules của bạn (đặt sau body để chắc chắn DOM sẵn sàng) -->
-  <script src="public/assets/js/utils.js" defer></script>
-  <script src="public/assets/js/wizard-storage.js" defer></script>
-  <script src="public/assets/js/prompt-builder.js" defer></script>
-  <script src="public/assets/js/api-client.js" defer></script>
-  <script src="public/assets/js/check-logic.js" defer></script>
+  <!-- JS: đường dẫn đúng theo repo tĩnh -->
+  <script src="assets/js/utils.js" defer></script>
+  <script src="assets/js/wizard-storage.js" defer></script>
+  <script src="assets/js/prompt-builder.js" defer></script>
+  <script src="assets/js/api-client.js" defer></script>
+  <script src="assets/js/check-logic.js" defer></script>
 
-  <!-- Bootstrapping -->
+  <!-- Glue JS cho sidebar, điều hướng bước, và gọi checkLogic -->
   <script>
-    document.addEventListener('DOMContentLoaded', function(){
-      const $ = (s)=>document.querySelector(s);
+    (function(){
+      const $ = (s,el=document)=>el.querySelector(s);
+      const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
 
-      // ==== Danh sách bước (đúng yêu cầu: 0 và 15 tồn tại) ====
-      const STEPS = [
-        { id:'0',  label:'Mở đầu',        desc:'Bắt đầu quy trình, mở/tạo hồ sơ.' },
-        { id:'1',  label:'PICO',          desc:'Dân số, can thiệp, so sánh, kết cục.' },
-        { id:'2',  label:'Câu hỏi',       desc:'Chuyển PICO → câu hỏi nghiên cứu.' },
-        { id:'3',  label:'Mục tiêu',      desc:'Mục tiêu chính & phụ có đo lường.' },
-        { id:'4',  label:'Mở đầu',        desc:'CaRS: bối cảnh, khoảng trống tri thức.' },
-        { id:'5',  label:'Tổng quan',     desc:'Các tiểu phần tổng quan & bằng chứng.' },
-        { id:'6',  label:'Thiết kế',      desc:'Loại thiết kế, khung thời gian.' },
-        { id:'7',  label:'Cỡ mẫu',        desc:'Công thức, giả định, mất mẫu.' },
-        { id:'8',  label:'Tiêu chí',      desc:'Chọn/loại & định nghĩa vận hành.' },
-        { id:'9',  label:'Ngẫu nhiên',    desc:'Số nhánh, ẩn phân bổ, làm mù.' },
-        { id:'10', label:'Can thiệp',     desc:'Mô tả chi tiết từng nhánh.' },
-        { id:'11', label:'Biến số',       desc:'Kết cục chính/phụ, nền, nhiễu.' },
-        { id:'12', label:'Thu thập',      desc:'Quy trình, thời điểm, công cụ.' },
-        { id:'13', label:'Phân tích',     desc:'Kế hoạch kiểu SAP.' },
-        { id:'14', label:'Đạo đức',       desc:'Đồng thuận, an toàn, dữ liệu.' },
-        { id:'15', label:'Kiểm tra logic',desc:'Đối chiếu PICO–Mục tiêu–Nhánh–Biến–Phân tích–Đạo đức.' },
-        { id:'16', label:'CONSORT Flow',  desc:'Sơ đồ tiến hành (Mermaid).' },
+      /* --------- Sidebar steps data (0..16) ---------- */
+      const steps = [
+        {i:0, name:'Mở đầu', desc:'Bắt đầu quy trình, mở/tạo hồ sơ.'},
+        {i:1, name:'PICO', desc:'Dân số, can thiệp, so sánh, kết cục.'},
+        {i:2, name:'Câu hỏi', desc:'Chuyển PICO thành câu hỏi nghiên cứu.'},
+        {i:3, name:'Mục tiêu', desc:'Mục tiêu chính & phụ có đo lường.'},
+        {i:4, name:'Mở đầu (CaRS)', desc:'Bối cảnh & khoảng trống tri thức.'},
+        {i:5, name:'Tổng quan', desc:'Các tiểu mục tổng quan & bằng chứng.'},
+        {i:6, name:'Thiết kế', desc:'Loại thiết kế, khung thời gian.'},
+        {i:7, name:'Cỡ mẫu', desc:'Công thức, giả định, mất mẫu.'},
+        {i:8, name:'Tiêu chí', desc:'Chọn / loại trừ.'},
+        {i:9, name:'Ngẫu nhiên', desc:'Phân bổ & che giấu.'},
+        {i:10, name:'Can thiệp', desc:'Mô tả chi tiết các nhánh.'},
+        {i:11, name:'Biến số', desc:'Kết cục, nền, nhiễu…'},
+        {i:12, name:'Thu thập', desc:'Quy trình thu thập dữ liệu.'},
+        {i:13, name:'Phân tích', desc:'Chiến lược phân tích (SAP).'},
+        {i:14, name:'Đạo đức', desc:'Các cân nhắc & phê duyệt.'},
+        {i:15, name:'Kiểm tra logic', desc:'Nhất quán toàn bộ đề cương.'},
+        {i:16, name:'CONSORT', desc:'Sơ đồ tiến hành nghiên cứu.'},
       ];
 
-      // Hiển thị số bước
-      $('#pill-steps').textContent = STEPS.length + ' bước';
+      /* --------- Render sidebar ---------- */
+      const ul = $('#steps');
+      ul.innerHTML = steps.map(s=>`
+        <li class="step-item" data-step="${s.i}">
+          <span class="step-idx">${s.i}</span>
+          <span class="step-text">
+            <span class="step-name">${s.name}</span>
+            <span class="step-desc">${s.desc}</span>
+          </span>
+        </li>
+      `).join('');
 
-      const LS_ACTIVE = 'rctWizard.activeStepId';
-      const app = $('#app');
-      const sidebar = $('#sidebar');
-      const stepsEl = $('#steps');
-      const panelsEl = $('#panels');
-
-      // ==== Sidebar toggle ====
-      function setCollapsed(v){
-        app.classList.toggle('collapsed', v);
-        $('#btn-collapse').style.display = v ? 'none' : '';
-        $('#btn-expand').style.display   = v ? '' : 'none';
-        localStorage.setItem('rctWizard.sidebarCollapsed', v ? '1' : '0');
+      /* --------- Routing by hash ---------- */
+      function getStepFromHash(){
+        const m = location.hash.match(/step=(\d{1,2})/);
+        const n = m ? parseInt(m[1],10) : 0;
+        return isNaN(n) ? 0 : Math.min(Math.max(n,0),16);
       }
-      $('#btn-toggle').addEventListener('click', ()=> setCollapsed(!app.classList.contains('collapsed')));
-      $('#btn-collapse').addEventListener('click', ()=> setCollapsed(true));
-      $('#btn-expand').addEventListener('click', ()=> setCollapsed(false));
-      setCollapsed(localStorage.getItem('rctWizard.sidebarCollapsed') === '1');
+      function setHash(step){ location.hash = `#step=${step}`; }
 
-      // ==== Render Steps ====
-      function renderSteps(activeId){
-        stepsEl.innerHTML = '';
-        for(const s of STEPS){
-          const li = document.createElement('li');
-          li.className = 'step' + (s.id===activeId?' active':'');
-          li.dataset.step = s.id;
-          li.setAttribute('role','tab');
-          li.innerHTML = `
-            <span class="num">${s.id}</span>
-            <div><div class="label">${s.label}</div><div class="sub">${s.desc}</div></div>
-          `;
-          li.addEventListener('click', ()=> activateStep(s.id));
-          stepsEl.appendChild(li);
-        }
-      }
+      function activate(step){
+        // sidebar
+        $$('.step-item', ul).forEach(li=>{
+          li.classList.toggle('active', parseInt(li.dataset.step,10)===step);
+        });
+        // panels
+        $$('.panel').forEach(p=>p.classList.remove('active'));
+        const panel = document.getElementById('panel-'+step);
+        if(panel) panel.classList.add('active');
 
-      // ==== Render Panels (tạo đủ 17 panel: 0..16) ====
-      function renderPanels(){
-        panelsEl.innerHTML = '';
-        for(const s of STEPS){
-          const p = document.createElement('section');
-          p.id = 'panel-'+s.id;
-          p.className = 'card panel';
-          // Panel 15 có khối kiểm tra logic riêng để bạn thấy "chức năng bước" hiển thị
-          const isLogic = s.id === '15';
-          p.innerHTML = `
-            <div class="toolbar">
-              <h2 style="margin:0">Bước ${s.id} · ${s.label}</h2>
-              <div class="spacer"></div>
-              <button class="btn ghost" data-prev="${s.id}">← Trước</button>
-              <button class="btn" data-next="${s.id}">Tiếp →</button>
-            </div>
-            <div class="desc" style="margin-top:6px">${s.desc}</div>
+        // head
+        const meta = steps.find(x=>x.i===step) || steps[0];
+        $('#page-title').textContent = `Bước ${meta.i} · ${meta.name}`;
+        $('#page-sub').textContent   = meta.desc;
 
-            <div class="row" style="margin:8px 0 12px">
-              <button class="btn secondary" data-open="${s.id}">Mở form bước này</button>
-              <button class="btn ghost" data-gpt="${s.id}">GPT gợi ý / đánh giá</button>
-              ${isLogic ? '<button class="btn" data-run-logic="1">Chạy kiểm tra logic</button>' : ''}
-            </div>
-
-            ${isLogic ? `
-              <label class="sub">Kết quả kiểm tra logic (bước 15)</label>
-              <textarea id="logic-result-15" rows="12" placeholder="Kết quả tại bước 15…"></textarea>
-            ` : `
-              <div class="sub">Placeholder: nhúng form/bảng của bạn cho bước ${s.id}…</div>
-            `}
-          `;
-          panelsEl.appendChild(p);
-        }
+        // nav buttons
+        $('#btn-prev').disabled = step<=0;
+        $('#btn-next').disabled = step>=16;
       }
 
-      function updateActiveUI(activeId){
-        for(const li of stepsEl.querySelectorAll('.step')){
-          li.classList.toggle('active', li.dataset.step===activeId);
-        }
-        for(const pe of panelsEl.querySelectorAll('.panel')){
-          pe.classList.toggle('active', pe.id === 'panel-'+activeId);
-        }
-      }
+      // Initial
+      let current = getStepFromHash();
+      activate(current);
 
-      function activateStep(id){
-        localStorage.setItem(LS_ACTIVE, id);
-        updateActiveUI(id);
-      }
+      // Click on sidebar
+      $$('.step-item', ul).forEach(li=>{
+        li.addEventListener('click', ()=>{
+          const idx = parseInt(li.dataset.step,10);
+          current = idx; setHash(current); activate(current);
+        });
+      });
+
+      // Hash change
+      window.addEventListener('hashchange', ()=>{
+        current = getStepFromHash(); activate(current);
+      });
 
       // Prev/Next
-      function idxOf(id){ return STEPS.findIndex(x=>x.id===id); }
-      function goPrev(id){ const i=idxOf(id); if(i>0) activateStep(STEPS[i-1].id); }
-      function goNext(id){ const i=idxOf(id); if(i>=0 && i<STEPS.length-1) activateStep(STEPS[i+1].id); }
+      $('#btn-prev').addEventListener('click', ()=>{ if(current>0){ current--; setHash(current); activate(current);} });
+      $('#btn-next').addEventListener('click', ()=>{ if(current<16){ current++; setHash(current); activate(current);} });
 
-      // Wire panel toolbar + logic runner on step 15
-      panelsEl.addEventListener('click',(e)=>{
-        const t = e.target;
-        if(!(t instanceof HTMLElement)) return;
-        if(t.dataset.prev) goPrev(t.dataset.prev);
-        if(t.dataset.next) goNext(t.dataset.next);
-        if(t.dataset.open){
-          const id = t.dataset.open;
-          window.dispatchEvent(new CustomEvent('open-step',{detail:{id}}));
-        }
-        if(t.dataset.gpt){
-          const id = t.dataset.gpt;
-          window.dispatchEvent(new CustomEvent('request-gpt',{detail:{id}}));
-        }
-        if(t.dataset.runLogic){
-          runCheck(true); // hiển thị vào ô riêng của bước 15
-        }
+      // Collapse sidebar
+      $('#btn-collapse').addEventListener('click', ()=>{
+        $('#sidebar').classList.toggle('collapsed');
       });
-
-      // Keyboard: J/K hoặc ←/→; S để ẩn/hiện sidebar
-      window.addEventListener('keydown', (e)=>{
-        const curr = localStorage.getItem(LS_ACTIVE) || STEPS[0].id;
-        if(['ArrowRight','k','K'].includes(e.key)){ e.preventDefault(); goNext(curr); }
-        if(['ArrowLeft','j','J'].includes(e.key)){ e.preventDefault(); goPrev(curr); }
-        if(e.key.toLowerCase()==='s'){ setCollapsed(!app.classList.contains('collapsed')); }
-      });
-
-      // Clean utils
-      function doClean(){
-        const i = document.getElementById('clean-input').value || '';
-        try{
-          const has = window.App && window.App.Utils;
-          const out = has ? window.App.Utils.collapseWsKeepNl(i) : String(i).trim();
-          document.getElementById('clean-output').value = out;
-        }catch(err){
-          document.getElementById('clean-output').value = 'Lỗi làm sạch: ' + (err?.message||err);
-        }
-      }
-      function copyOut(){
-        const out = document.getElementById('clean-output');
-        out.select(); document.execCommand('copy');
-      }
-      document.getElementById('btn-clean').addEventListener('click', doClean);
-      document.getElementById('btn-copy').addEventListener('click', copyOut);
-
-      // Logic checker (nút ở hero + ở bước 15)
-      const logicBox = document.getElementById('logic-result');
-      async function runCheck(writeToStep15){
-        const targetBox = writeToStep15 ? document.getElementById('logic-result-15') : logicBox;
-        if(!targetBox) return;
-        targetBox.value = 'Đang kiểm tra logic…';
-        try{
-          if(typeof checkLogic === 'function'){
-            const r = await checkLogic();
-            targetBox.value = typeof r === 'string' ? r : (r?.summary || JSON.stringify(r,null,2));
-          } else if (window.App?.CheckLogic?.run){
-            const r = await window.App.CheckLogic.run();
-            targetBox.value = typeof r === 'string' ? r : JSON.stringify(r,null,2);
-          } else {
-            targetBox.value = 'Không tìm thấy checkLogic(). Kiểm tra public/assets/js/check-logic.js';
-          }
-        }catch(err){
-          console.error(err);
-          targetBox.value = 'Lỗi khi kiểm tra: ' + (err?.message||err);
-        }
-      }
-      document.getElementById('btn-check-logic').addEventListener('click', ()=> runCheck(false));
 
       // Storage quick actions (nếu có App.Storage)
-      const S = window.App && window.App.Storage;
-      document.getElementById('btn-open-storage')?.addEventListener('click', ()=> S?.open?.());
-      document.getElementById('btn-save-storage')?.addEventListener('click', ()=> S?.save?.());
+      const S = (window.App && window.App.Storage) ? window.App.Storage : null;
+      const openBtn = document.getElementById('btn-open-storage');
+      const saveBtn = document.getElementById('btn-save-storage');
+      if (S && openBtn) openBtn.addEventListener('click', ()=> S.open && S.open());
+      if (S && saveBtn) saveBtn.addEventListener('click', ()=> S.save && S.save());
 
-      // Init render
-      const initial = localStorage.getItem(LS_ACTIVE) || '0'; // mở đầu là bước 0
-      renderSteps(initial);
-      renderPanels();
-      updateActiveUI(initial);
-    });
+      // Step 15 – Check logic
+      const out = document.getElementById('logic-result');
+      const btnCheck = document.getElementById('btn-check-logic');
+      const btnCopy  = document.getElementById('btn-copy-logic');
+      if (btnCheck) btnCheck.addEventListener('click', async ()=>{
+        if (!out) return;
+        out.value = 'Đang kiểm tra logic…';
+        try{
+          if (typeof window.checkLogic === 'function'){
+            const r = await window.checkLogic();
+            out.value = typeof r === 'string' ? r : JSON.stringify(r,null,2);
+          }else if (window.App && window.App.CheckLogic && typeof window.App.CheckLogic.run === 'function'){
+            const r = await window.App.CheckLogic.run();
+            out.value = typeof r === 'string' ? r : JSON.stringify(r,null,2);
+          }else{
+            out.value = 'Không tìm thấy checkLogic(). Kiểm tra file assets/js/check-logic.js';
+          }
+        }catch(e){ out.value = 'Lỗi khi kiểm tra logic: ' + (e?.message || e); }
+      });
+      if (btnCopy && out) btnCopy.addEventListener('click', ()=>{ out.select(); document.execCommand('copy'); });
+
+    })();
   </script>
 </body>
 </html>
