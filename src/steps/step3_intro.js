@@ -1,6 +1,6 @@
 // src/steps/step3_intro.js
 // Step 3 – Mở đầu (CaRS: Territory, Niche, Occupy)
-// Yêu cầu ctx: get/save/toast, callGPT(prompt), extractTextFromPDF(file)
+// Cần ctx: get/save/toast, callGPT(prompt), extractTextFromPDF(file)
 
 export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
@@ -25,19 +25,19 @@ export async function mount(rootEl, ctx) {
     </label>
   </div>
 
-  <!-- Giữ nguyên file input (KHÔNG can thiệp giao diện) -->
-  <div class="card-body" style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-    <div>
+  <!-- Hàng chứa file + nút GPT: full-width cho file, nút đồng bộ brand -->
+  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div style="flex:1;min-width:280px">
       <input id="intro-pdf" type="file" accept="application/pdf" />
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button id="intro-gpt"  class="btn-primary" type="button">GPT gợi ý CaRS</button>
-      <button id="intro-eval" class="btn-outline" type="button">GPT đánh giá CaRS</button>
+      <button id="intro-eval" class="btn-primary" type="button">GPT đánh giá CaRS</button>
     </div>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý (ô text riêng, font đồng bộ) -->
-  <div id="intro-suggest-box" class="card hidden" style="margin:0 16px 12px">
+  <!-- Kết quả GPT – GỢI Ý (ô text riêng) -->
+  <div id="intro-suggest-box" class="card hidden" style="margin-top:12px">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <strong>Kết quả GPT – Gợi ý</strong>
       <div style="display:flex;gap:8px;align-items:center">
@@ -51,8 +51,8 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ (ô text riêng, font đồng bộ) -->
-  <div id="intro-eval-box" class="card hidden" style="margin:0 16px 12px">
+  <!-- Kết quả GPT – ĐÁNH GIÁ (ô text riêng) -->
+  <div id="intro-eval-box" class="card hidden" style="margin-top:12px">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <strong>Kết quả GPT – Đánh giá</strong>
       <div style="display:flex;gap:8px;align-items:center">
@@ -65,7 +65,7 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
-  <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
+  <div class="card-footer">
     <button id="intro-save" class="btn-primary" type="button">Lưu</button>
   </div>
 </div>
@@ -128,7 +128,7 @@ export async function mount(rootEl, ctx) {
       if (f) {
         try {
           pdfText = await ctx.extractTextFromPDF(f);
-          if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\n...[cắt bớt]';
+          if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO/Câu hỏi/Mục tiêu.');
@@ -157,7 +157,7 @@ ${rq || '(chưa có)'}
 Mục tiêu:
 - Chính: ${mainOb || '(chưa có)'}
 - Phụ:
-${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+${subObs && subObs.length ? subObs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : '(chưa có)'}
 
 Trích lược PDF (nếu có):
 ${pdfText || '(không có)'}
@@ -171,10 +171,10 @@ ${pdfText || '(không có)'}
         console.warn('GPT raw reply (step3 suggest):', raw);
       } else {
         sTA.value = [
-          parsed.territory ? `Territory: ${parsed.territory}` : '',
-          parsed.niche     ? `Niche: ${parsed.niche}`         : '',
-          parsed.occupy    ? `Occupy: ${parsed.occupy}`       : '',
-        ].filter(Boolean).join('\n\n');
+          parsed.territory ? \`Territory: \${parsed.territory}\` : '',
+          parsed.niche     ? \`Niche: \${parsed.niche}\`         : '',
+          parsed.occupy    ? \`Occupy: \${parsed.occupy}\`       : '',
+        ].filter(Boolean).join('\\n\\n');
         sBox.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý CaRS.');
       }
@@ -186,7 +186,8 @@ ${pdfText || '(không có)'}
     }
   }
 
-  // Áp dụng nội dung từ ô gợi ý vào 3 ô Territory/Niche/Occupy
+  // Áp dụng nội dung từ ô gợi ý vào 3 ô
+  const sApply = rootEl.querySelector('#intro-apply');
   sApply.addEventListener('click', () => {
     const obj = parseCaRS(sTA.value);
     if (!obj) { ctx.toast('Không nhận diện được định dạng CaRS trong ô gợi ý.'); return; }
@@ -237,7 +238,7 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainOb || '(chưa có)'}
 Mục tiêu phụ:
-${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+${subObs && subObs.length ? subObs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : '(chưa có)'}
 `.trim();
 
       const raw = await ctx.callGPT(prompt);
@@ -271,9 +272,9 @@ ${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(ch�
       // Fallback: đọc từ ô textarea theo nhãn
       const s = String(text || '');
       return {
-        territory: pickSection(s, /territory\s*:\s*/i),
-        niche:     pickSection(s, /niche\s*:\s*/i),
-        occupy:    pickSection(s, /occupy\s*:\s*/i),
+        territory: pickSection(s, /territory\\s*:\\s*/i),
+        niche:     pickSection(s, /niche\\s*:\\s*/i),
+        occupy:    pickSection(s, /occupy\\s*:\\s*/i),
       };
     }
   }
@@ -281,7 +282,7 @@ ${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(ch�
     const m = s.match(rx); if (!m) return '';
     const start = m.index + m[0].length;
     const rest  = s.slice(start);
-    const next  = rest.search(/(?:territory|niche|occupy)\s*:/i);
+    const next  = rest.search(/(?:territory|niche|occupy)\\s*:/i);
     return (next >= 0 ? rest.slice(0, next) : rest).trim();
   }
 
