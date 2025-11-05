@@ -288,39 +288,36 @@ O: ${pico.o || '(chưa có)'}
     ctx.toast(\`Đã chèn gợi ý #\${idx + 1} vào ô câu hỏi.\`);
   }
 
-  // ===== Helpers =====
-  function parseCandidates(text) {
-    const raw = String(text || '');
-    // Thử bắt JSON trong code fence ```json ... ```
-    const fenced = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
-    const candidate = fenced ? fenced[1] : raw;
-    try {
-      const j = JSON.parse(candidate);
-      const arr = Array.isArray(j?.candidates) ? j.candidates : [];
-      return arr.map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
-    } catch { /* ignore */ }
-    // Fallback: tách theo dòng/bullet
-    return raw
-      .split(/\\r?\\n/)
-      .map(s => s.replace(BULLET_RE, '').trim())
-      .filter(Boolean)
-      .slice(0, 3);
-  }
+/* ===== Helpers ===== */
+const BULLET_RE = new RegExp("^\\s*(?:\\d+[.)]|[\\-\\u2013\\u2014\\u2022*])\\s*");
 
-  function copyText(t) {
-    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
-    catch { ctx.toast('Không sao chép được.'); }
-  }
+function parseCandidates(text) {
+  try {
+    const j = JSON.parse(String(text));
+    const arr = Array.isArray(j?.candidates) ? j.candidates : [];
+    return arr.map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
+  } catch {}
+  return String(text || '')
+    .split(/\r?\n/)
+    .map(s => s.replace(BULLET_RE, '').trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
 
-  function toggleBusy(btn, busy, label) {
-    if (!btn) return;
-    if (busy) {
-      btn.disabled = true;
-      btn.dataset.prev = btn.textContent || '';
-      btn.textContent = 'Đang xử lý...';
-    } else {
-      btn.disabled = false;
-      btn.textContent = label || btn.dataset.prev || '';
-    }
+function copyText(t) {
+  try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
+  catch { ctx.toast('Không sao chép được.'); }
+}
+
+function toggleBusy(btn, busy, label) {
+  if (!btn) return;
+  if (busy) {
+    btn.disabled = true;
+    btn.dataset.prev = btn.textContent || '';
+    btn.textContent = 'Đang xử lý...';
+  } else {
+    btn.disabled = false;
+    btn.textContent = label || btn.dataset.prev || '';
   }
+}
 }
