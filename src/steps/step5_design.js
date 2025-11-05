@@ -13,7 +13,6 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
-  <!-- TÓM TẮT (table-kv để đồng bộ style) -->
   <div class="card-body">
     <table class="table-kv" id="dsg-summary">
       <tbody>
@@ -25,7 +24,6 @@ export async function mount(rootEl, ctx) {
     </table>
   </div>
 
-  <!-- FORM CHÍNH -->
   <div class="card-body grid-2">
     <label>Loại thiết kế
       <select id="dsg-type">
@@ -52,7 +50,6 @@ export async function mount(rootEl, ctx) {
     </label>
   </div>
 
-  <!-- TÊN NHÁNH -->
   <div class="card-body">
     <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap">
       <div style="font-weight:600">Tên các nhánh can thiệp</div>
@@ -63,13 +60,11 @@ export async function mount(rootEl, ctx) {
     <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
   </div>
 
-  <!-- NHÓM NÚT GPT (đồng bộ btn + canh đều) -->
   <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
     <button id="dsg-gpt-suggest" class="btn btn-outline" type="button">GPT gợi ý mô tả thiết kế</button>
     <button id="dsg-gpt-eval" class="btn btn-outline" type="button">GPT đánh giá mô tả</button>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý -->
   <div id="dsg-sugg-box" class="card hidden">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Gợi ý</strong>
@@ -85,14 +80,12 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
-  <!-- MÔ TẢ NGẮN -->
   <div class="card-body">
     <label>Mô tả thiết kế (tóm tắt)
-      <textarea id="dsg-desc" class="form-textarea" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
+      <textarea id="dsg-desc" class="form-textarea" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi ..."></textarea>
     </label>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ -->
   <div id="dsg-eval-box" class="card hidden">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Đánh giá</strong>
@@ -102,7 +95,7 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
     <div class="card-body">
-      <textarea id="dsg-eval-ta" class="form-textarea" rows="8" placeholder="(GPT) Nhận xét theo tiêu chí rõ ràng, đủ thành tố, khả thi, rủi ro thiên lệch…"></textarea>
+      <textarea id="dsg-eval-ta" class="form-textarea" rows="8" placeholder="(GPT) Nhận xét theo tiêu chí rõ ràng, đủ thành tố, khả thi, rủi ro thiên lệch..."></textarea>
     </div>
   </div>
 
@@ -121,13 +114,11 @@ export async function mount(rootEl, ctx) {
   const descEl   = rootEl.querySelector('#dsg-desc');
   const ratioHint= rootEl.querySelector('#dsg-alloc-hint');
 
-  // Summary cells
   const sumType  = rootEl.querySelector('#sum-type');
   const sumBlind = rootEl.querySelector('#sum-blind');
   const sumAlloc = rootEl.querySelector('#sum-alloc');
   const sumArms  = rootEl.querySelector('#sum-arms');
 
-  // GPT gợi ý (textarea)
   const suggBox  = rootEl.querySelector('#dsg-sugg-box');
   const sTA      = rootEl.querySelector('#dsg-sugg-ta');
   const applyRep = rootEl.querySelector('#dsg-apply-replace');
@@ -135,7 +126,6 @@ export async function mount(rootEl, ctx) {
   const copySugg = rootEl.querySelector('#dsg-copy-sugg');
   const hideSugg = rootEl.querySelector('#dsg-hide-sugg');
 
-  // GPT đánh giá (textarea)
   const evalBox  = rootEl.querySelector('#dsg-eval-box');
   const eTA      = rootEl.querySelector('#dsg-eval-ta');
   const copyEval = rootEl.querySelector('#dsg-copy-eval');
@@ -151,8 +141,8 @@ export async function mount(rootEl, ctx) {
   const initType  = dsg.type || 'parallel';
   const initBlind = dsg.blinding || 'none';
   const initAlloc = dsg.allocationRatio || '1:1';
-  const initArms  = clampInt(dsg.arms ?? 2, 2, 6);
-  const initNames = Array.isArray(dsg.armNames) && dsg.armNames.length >= 2
+  const initArms  = clampInt(dsg.arms != null ? dsg.arms : 2, 2, 6);
+  const initNames = (Array.isArray(dsg.armNames) && dsg.armNames.length >= 2)
     ? dsg.armNames
     : defaultArmNames(initArms, ctx);
 
@@ -170,18 +160,18 @@ export async function mount(rootEl, ctx) {
   if (oldEval) { eTA.value = String(oldEval); evalBox.classList.remove('hidden'); }
 
   // ------- Events -------
-  typeEl.addEventListener('change', () => {
+  typeEl.addEventListener('change', function () {
     maybeSuggestCrossoverNames();
     updateSummary();
   });
   blindEl.addEventListener('change', updateSummary);
 
-  allocEl.addEventListener('input', () => {
+  allocEl.addEventListener('input', function () {
     updateRatioHint();
     updateSummary();
   });
 
-  armsEl.addEventListener('change', () => {
+  armsEl.addEventListener('change', function () {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     armsEl.value = String(n);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
@@ -196,7 +186,7 @@ export async function mount(rootEl, ctx) {
     updateSummary();
   });
 
-  btnResetName.addEventListener('click', () => {
+  btnResetName.addEventListener('click', function () {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     renderArmInputs(n, defaultArmNames(n, ctx), { force: true });
     ctx.toast('Đã đặt lại tên nhánh mặc định.');
@@ -205,10 +195,10 @@ export async function mount(rootEl, ctx) {
   btnSuggest.addEventListener('click', onSuggest);
   btnEval.addEventListener('click', onEvaluate);
 
-  copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
-  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
-  copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
-  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
+  copySugg.addEventListener('click', function () { copyText(sTA.value || ''); });
+  hideSugg.addEventListener('click', function () { suggBox.classList.add('hidden'); });
+  copyEval.addEventListener('click', function () { copyText(eTA.value || ''); });
+  hideEval.addEventListener('click', function () { evalBox.classList.add('hidden'); });
 
   btnSave.addEventListener('click', onSave);
 
@@ -228,7 +218,7 @@ export async function mount(rootEl, ctx) {
       const armNames = readArmNames();
 
       const prompt = buildSuggestPrompt(pico, rq, mainObj, subObjs, {
-        type: curType, blinding: curBlind, allocationRatio: curAlloc, arms: nArms, armNames
+        type: curType, blinding: curBlind, allocationRatio: curAlloc, arms: nArms, armNames: armNames
       });
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
@@ -239,15 +229,15 @@ export async function mount(rootEl, ctx) {
         suggBox.classList.remove('hidden');
         sTA.value = md;
 
-        applyRep.onclick = () => {
+        applyRep.onclick = function () {
           descEl.value = sTA.value || '';
           ctx.save('design.description', (descEl.value || '').trim());
           ctx.toast('Đã thay thế toàn bộ mô tả thiết kế');
         };
-        applyApp.onclick = () => {
+        applyApp.onclick = function () {
           const cur = descEl.value || '';
           const add = sTA.value || '';
-          descEl.value = cur ? \`\${cur}\\n\\n\${add}\` : add;
+          descEl.value = cur ? (cur + '\\n\\n' + add) : add;
           ctx.save('design.description', (descEl.value || '').trim());
           ctx.toast('Đã chèn thêm gợi ý vào cuối');
         };
@@ -301,26 +291,27 @@ export async function mount(rootEl, ctx) {
       ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.');
     }
 
-    const armNames = padOrTrim(readArmNames(), nArms).map(s => safeText(s) || '');
+    const armNames = padOrTrim(readArmNames(), nArms).map(function (s) { return safeText(s) || ''; });
     const payload = {
       type: typeEl.value,
       blinding: blindEl.value,
       allocationRatio: (allocEl.value || '1:1').trim(),
       arms: nArms,
-      armNames,
-      description: (descEl.value || '').trim(),
+      armNames: armNames,
+      description: (descEl.value || '').trim()
     };
 
     ctx.save('design', payload);
-    ctx.save('interventions', armNames); // Step 10 dùng lại baseline
-    try { localStorage.setItem('num-arms', String(nArms)); } catch {}
+    ctx.save('interventions', armNames);
+    try { localStorage.setItem('num-arms', String(nArms)); } catch (e) {}
 
     updateSummary();
     ctx.toast('Đã lưu thiết kế & tên nhánh');
   }
 
   // ------- helpers -------
-  function renderArmInputs(n, names, opts = {}) {
+  function renderArmInputs(n, names, opts) {
+    opts = opts || {};
     const keepExisting = !opts.force;
     const current = keepExisting ? readArmNames() : [];
     namesBox.innerHTML = '';
@@ -328,11 +319,11 @@ export async function mount(rootEl, ctx) {
 
     for (let i = 0; i < n; i++) {
       const wrap = document.createElement('div');
-      wrap.innerHTML = `
-        <label>Tên nhánh ${i + 1}
-          <input class="form-input" type="text" data-arm-index="\${i}" placeholder="\${defaultName(i)}" />
-        </label>
-      `.trim();
+      wrap.innerHTML = (
+        '<label>Tên nhánh ' + (i + 1) + 
+        '<input class="form-input" type="text" data-arm-index="' + i + '" placeholder="' + defaultName(i) + '" />' +
+        '</label>'
+      );
       const inp = wrap.querySelector('input');
       inp.value = base[i] || '';
       namesBox.appendChild(wrap);
@@ -342,16 +333,21 @@ export async function mount(rootEl, ctx) {
   function mergeNames(oldArr, newArr, n) {
     const out = [];
     for (let i = 0; i < n; i++) {
-      const prev = (oldArr && oldArr[i] || '').trim();
-      const nxt  = (newArr && newArr[i] || '').trim();
+      const prev = (oldArr && oldArr[i] ? String(oldArr[i]) : '').trim();
+      const nxt  = (newArr && newArr[i] ? String(newArr[i]) : '').trim();
       out.push(prev || nxt || defaultName(i));
     }
     return out;
   }
 
   function readArmNames() {
-    return Array.from(namesBox.querySelectorAll('input[data-arm-index]'))
-      .map(inp => (inp.value || '').trim());
+    const inputs = namesBox.querySelectorAll('input[data-arm-index]');
+    const arr = [];
+    for (let i = 0; i < inputs.length; i++) {
+      const v = inputs[i].value || '';
+      arr.push(v.trim());
+    }
+    return arr;
   }
 
   function padOrTrim(arr, n) {
@@ -363,7 +359,7 @@ export async function mount(rootEl, ctx) {
   function defaultName(i) {
     if (i === 0) return 'Nhóm can thiệp';
     if (i === 1) return 'Nhóm chứng';
-    return \`Nhánh \${i + 1}\`;
+    return 'Nhánh ' + (i + 1);
   }
 
   function defaultArmNames(n, ctx_) {
@@ -372,8 +368,8 @@ export async function mount(rootEl, ctx) {
     const I = safeShort(pico.i);
     const C = safeShort(pico.c);
     for (let i = 0; i < n; i++) out.push(defaultName(i));
-    if (I) out[0] = \`Nhóm can thiệp (\${I})\`;
-    if (C) out[1] = \`Nhóm chứng (\${C})\`;
+    if (I) out[0] = 'Nhóm can thiệp (' + I + ')';
+    if (C) out[1] = 'Nhóm chứng (' + C + ')';
     return out;
   }
 
@@ -388,30 +384,31 @@ export async function mount(rootEl, ctx) {
 
     const names = readArmNames();
     const looksDefault =
-      (names[0] || '').toLowerCase().startsWith('nhóm can thiệp') &&
-      (names[1] || '').toLowerCase().startsWith('nhóm chứng');
+      (names[0] || '').toLowerCase().indexOf('nhóm can thiệp') === 0 &&
+      (names[1] || '').toLowerCase().indexOf('nhóm chứng') === 0;
     if (looksDefault) {
-      renderArmInputs(2, [\`Trình tự \${I}→\${C}\`, \`Trình tự \${C}→\${I}\`]);
+      renderArmInputs(2, ['Trình tự ' + I + '->' + C, 'Trình tự ' + C + '->' + I]);
     }
   }
 
   function clampInt(v, min, max) {
-    v = Number.isFinite(v) ? v : min;
+    v = (Number.isFinite(v) ? v : min);
     return Math.min(Math.max(v, min), max);
   }
 
   function safeText(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
+
   function safeShort(s) {
     s = safeText(s);
-    return s.length > 40 ? s.slice(0, 37) + '…' : s;
+    return s.length > 40 ? (s.slice(0, 37) + '...') : s;
   }
 
   function parseRatio(str) {
-    const parts = String(str || '').split(':').map(s => s.trim()).filter(Boolean);
-    const nums  = parts.map(x => Number(x));
-    if (nums.length === 0 || nums.some(x => !Number.isFinite(x) || x <= 0)) return null;
+    const parts = String(str || '').split(':').map(function (s) { return s.trim(); }).filter(Boolean);
+    const nums  = parts.map(function (x) { return Number(x); });
+    if (nums.length === 0 || nums.some(function (x) { return !Number.isFinite(x) || x <= 0; })) return null;
     return nums;
   }
 
@@ -425,32 +422,34 @@ export async function mount(rootEl, ctx) {
   function ratioToPercents(str) {
     const arr = parseRatio(str);
     if (!arr) return null;
-    const sum = arr.reduce((a,b) => a + b, 0);
+    const sum = arr.reduce(function (a, b) { return a + b; }, 0);
     if (!sum) return null;
-    return arr.map(x => Math.round((x / sum) * 1000) / 10);
+    return arr.map(function (x) { return Math.round((x / sum) * 1000) / 10; });
   }
 
   function updateRatioHint() {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
     if (fixed.changed) {
-      ratioHint.textContent = \`Tỷ lệ hiện không khớp \${n} nhánh → gợi ý: \${fixed.ratio}\`;
+      ratioHint.textContent = 'Tỷ lệ hiện không khớp ' + n + ' nhánh \u2192 gợi ý: ' + fixed.ratio;
       return;
     }
     const per = ratioToPercents(allocEl.value || '');
-    ratioHint.textContent = per ? \`Tương ứng ≈ \${per.map(x => x + '%').join(' : ')}\` : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
+    ratioHint.textContent = per ? ('Tương ứng ≈ ' + per.map(function (x) { return x + '%'; }).join(' : ')) : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
   }
 
   function updateSummary() {
-    sumType.textContent  = typeEl.options[typeEl.selectedIndex]?.text || '—';
-    sumBlind.textContent = blindEl.options[blindEl.selectedIndex]?.text || '—';
+    var typeOpt = typeEl.options[typeEl.selectedIndex];
+    var blindOpt= blindEl.options[blindEl.selectedIndex];
+    sumType.textContent  = typeOpt ? typeOpt.text : '—';
+    sumBlind.textContent = blindOpt ? blindOpt.text : '—';
     sumAlloc.textContent = (allocEl.value || '—');
     sumArms.textContent  = (armsEl.value || '—');
   }
 
   function copyText(t) {
-    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
-    catch { ctx.toast('Không sao chép được.'); }
+    try { if (navigator.clipboard) { navigator.clipboard.writeText(t); ctx.toast('Đã sao chép.'); } }
+    catch (e) { ctx.toast('Không sao chép được.'); }
   }
 
   function toggleBusy(btn, busy, label) {
@@ -460,52 +459,53 @@ export async function mount(rootEl, ctx) {
   }
 
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
-    return `
-Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.
-Yêu cầu:
-- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.
-- Trả về **MARKDOWN** thuần, không thêm tài liệu tham khảo.
-
-Bối cảnh:
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
-
-Lựa chọn hiện có:
-- Loại thiết kế: ${cur.type}
-- Blinding: ${cur.blinding}
-- Tỷ lệ phân bổ: ${cur.allocationRatio}
-- Số nhánh: ${cur.arms}
-- Tên nhánh: ${cur.armNames && cur.armNames.length ? cur.armNames.join(', ') : '(chưa có)'}
-`.trim();
+    const list = (Array.isArray(subObjs) && subObjs.length)
+      ? subObjs.map(function (s, i) { return (i + 1) + '. ' + s; }).join('\\n')
+      : '(chưa có)';
+    const names = (cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)';
+    return (
+'Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.\\n' +
+'Yêu cầu:\\n' +
+'- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.\\n' +
+'- Trả về **MARKDOWN** thuần, không thêm tài liệu tham khảo.\\n\\n' +
+'Bối cảnh:\\n' +
+'P: ' + (pico.p || '(chưa có)') + '\\n' +
+'I: ' + (pico.i || '(chưa có)') + '\\n' +
+'C: ' + (pico.c || '(chưa có)') + '\\n' +
+'O: ' + (pico.o || '(chưa có)') + '\\n' +
+'Câu hỏi nghiên cứu: ' + (rq || '(chưa có)') + '\\n' +
+'Mục tiêu chính: ' + (mainObj || '(chưa có)') + '\\n' +
+'Mục tiêu phụ:\\n' + list + '\\n\\n' +
+'Lựa chọn hiện có:\\n' +
+'- Loại thiết kế: ' + cur.type + '\\n' +
+'- Blinding: ' + cur.blinding + '\\n' +
+'- Tỷ lệ phân bổ: ' + cur.allocationRatio + '\\n' +
+'- Số nhánh: ' + cur.arms + '\\n' +
+'- Tên nhánh: ' + names
+    );
   }
 
   function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
-    return `
-Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:
-- Tính phù hợp với PICO/câu hỏi/mục tiêu
-- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)
-- Tính khả thi và rủi ro thiên lệch có thể phát sinh
-- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)
-Trả về **MARKDOWN**.
-
---- MÔ TẢ CẦN ĐÁNH GIÁ ---
-${content}
-
---- THAM CHIẾU BỐI CẢNH ---
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
-`.trim();
+    const list = (Array.isArray(subObjs) && subObjs.length)
+      ? subObjs.map(function (s, i) { return (i + 1) + '. ' + s; }).join('\\n')
+      : '(chưa có)';
+    return (
+'Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:\\n' +
+'- Tính phù hợp với PICO/câu hỏi/mục tiêu\\n' +
+'- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)\\n' +
+'- Tính khả thi và rủi ro thiên lệch có thể phát sinh\\n' +
+'- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)\\n' +
+'Trả về **MARKDOWN**.\\n\\n' +
+'--- MÔ TẢ CẦN ĐÁNH GIÁ ---\\n' +
+content + '\\n\\n' +
+'--- THAM CHIẾU BỐI CẢNH ---\\n' +
+'P: ' + (pico.p || '(chưa có)') + '\\n' +
+'I: ' + (pico.i || '(chưa có)') + '\\n' +
+'C: ' + (pico.c || '(chưa có)') + '\\n' +
+'O: ' + (pico.o || '(chưa có)') + '\\n' +
+'Câu hỏi nghiên cứu: ' + (rq || '(chưa có)') + '\\n' +
+'Mục tiêu chính: ' + (mainObj || '(chưa có)') + '\\n' +
+'Mục tiêu phụ:\\n' + list
+    );
   }
 }
