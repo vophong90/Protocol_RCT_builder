@@ -48,24 +48,40 @@ export async function mount(rootEl, ctx) {
     <button id="dsg-gpt-eval" class="btn-outline">GPT đánh giá mô tả</button>
   </div>
 
-  <div class="card-body" id="dsg-sugg-wrap" style="display:none">
-    <div style="font-weight:600;margin-bottom:.5rem">Gợi ý từ GPT:</div>
-    <div id="dsg-sugg" class="prose"></div>
-    <div style="margin-top:.75rem;display:flex;gap:8px;flex-wrap:wrap">
-      <button id="dsg-apply-replace" class="btn-secondary">Thay thế toàn bộ</button>
-      <button id="dsg-apply-append"  class="btn-secondary">Chèn thêm vào cuối</button>
+  <!-- Kết quả GPT – GỢI Ý (textarea brand) -->
+  <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Gợi ý</strong>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="dsg-apply-replace" class="btn-primary" type="button">Thay thế toàn bộ</button>
+        <button id="dsg-apply-append"  class="btn-outline" type="button">Chèn thêm vào cuối</button>
+        <button id="dsg-copy-sugg"      class="btn-ghost"   type="button">Sao chép</button>
+        <button id="dsg-hide-sugg"      class="btn-ghost"   type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="dsg-sugg-ta" class="form-textarea" rows="8" placeholder="(GPT) Mô tả thiết kế gợi ý bằng Markdown…"></textarea>
     </div>
   </div>
 
   <div class="card-body">
     <label>Mô tả thiết kế (tóm tắt)
-      <textarea id="dsg-desc" rows="7" placeholder="Ví dụ: Nghiên cứu RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi ..."></textarea>
+      <textarea id="dsg-desc" class="form-textarea" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
     </label>
   </div>
 
-  <div class="card-body" id="dsg-eval-wrap" style="display:none">
-    <div style="font-weight:600;margin-bottom:.5rem">Đánh giá:</div>
-    <div id="dsg-eval-out" class="prose"></div>
+  <!-- Kết quả GPT – ĐÁNH GIÁ (textarea brand) -->
+  <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Đánh giá</strong>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="dsg-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+        <button id="dsg-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="dsg-eval-ta" class="form-textarea" rows="8" placeholder="(GPT) Nhận xét theo tiêu chí rõ ràng, đủ thành tố, khả thi, rủi ro thiên lệch…"></textarea>
+    </div>
   </div>
 
   <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
@@ -82,13 +98,19 @@ export async function mount(rootEl, ctx) {
   const namesBox = rootEl.querySelector('#dsg-armnames');
   const descEl   = rootEl.querySelector('#dsg-desc');
 
-  const suggWrap = rootEl.querySelector('#dsg-sugg-wrap');
-  const suggEl   = rootEl.querySelector('#dsg-sugg');
+  // GPT gợi ý (textarea)
+  const suggBox  = rootEl.querySelector('#dsg-sugg-box');
+  const sTA      = rootEl.querySelector('#dsg-sugg-ta');
   const applyRep = rootEl.querySelector('#dsg-apply-replace');
   const applyApp = rootEl.querySelector('#dsg-apply-append');
+  const copySugg = rootEl.querySelector('#dsg-copy-sugg');
+  const hideSugg = rootEl.querySelector('#dsg-hide-sugg');
 
-  const evalWrap = rootEl.querySelector('#dsg-eval-wrap');
-  const evalOut  = rootEl.querySelector('#dsg-eval-out');
+  // GPT đánh giá (textarea)
+  const evalBox  = rootEl.querySelector('#dsg-eval-box');
+  const eTA      = rootEl.querySelector('#dsg-eval-ta');
+  const copyEval = rootEl.querySelector('#dsg-copy-eval');
+  const hideEval = rootEl.querySelector('#dsg-hide-eval');
 
   const btnSuggest = rootEl.querySelector('#dsg-gpt-suggest');
   const btnEval    = rootEl.querySelector('#dsg-gpt-eval');
@@ -96,11 +118,11 @@ export async function mount(rootEl, ctx) {
 
   // ------- Load state -------
   const dsg = ctx.get('design', {}) || {};
-  const initType     = dsg.type || 'parallel';
-  const initBlind    = dsg.blinding || 'none';
-  const initAlloc    = dsg.allocationRatio || '1:1';
-  const initArms     = clampInt(dsg.arms ?? 2, 2, 6);
-  const initNames    = Array.isArray(dsg.armNames) && dsg.armNames.length >= 2
+  const initType  = dsg.type || 'parallel';
+  const initBlind = dsg.blinding || 'none';
+  const initAlloc = dsg.allocationRatio || '1:1';
+  const initArms  = clampInt(dsg.arms ?? 2, 2, 6);
+  const initNames = Array.isArray(dsg.armNames) && dsg.armNames.length >= 2
     ? dsg.armNames
     : defaultArmNames(initArms);
 
@@ -110,7 +132,6 @@ export async function mount(rootEl, ctx) {
   armsEl.value  = String(initArms);
   descEl.value  = dsg.description || '';
 
-  // Render inputs for arm names
   renderArmInputs(initArms, initNames);
 
   // ------- Events -------
@@ -130,10 +151,10 @@ export async function mount(rootEl, ctx) {
       const prev = btnSuggest.textContent;
       btnSuggest.textContent = 'Đang gọi GPT...';
 
-      const pico = ctx.get('pico', {}) || {};
-      const rq   = ctx.get('researchQuestion', '') || '';
-      const mainObj = ctx.get('mainObjective', '') || '';
-      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+      const pico   = ctx.get('pico', {}) || {};
+      const rq     = ctx.get('researchQuestion', '') || '';
+      const mainObj= ctx.get('mainObjective', '') || '';
+      const subObjs= Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
 
       const curType  = typeEl.value;
       const curBlind = blindEl.value;
@@ -150,17 +171,18 @@ export async function mount(rootEl, ctx) {
       if (!md) {
         ctx.toast('GPT không trả về gợi ý.');
       } else {
-        suggWrap.style.display = '';
-        suggEl.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
+        suggBox.classList.remove('hidden');
+        sTA.value = md;
 
         applyRep.onclick = () => {
-          descEl.value = md;
+          descEl.value = sTA.value || '';
           ctx.save('design.description', (descEl.value || '').trim());
           ctx.toast('Đã thay thế toàn bộ mô tả thiết kế');
         };
         applyApp.onclick = () => {
           const cur = descEl.value || '';
-          descEl.value = cur ? `${cur}\n\n${md}` : md;
+          const add = sTA.value || '';
+          descEl.value = cur ? `${cur}\n\n${add}` : add;
           ctx.save('design.description', (descEl.value || '').trim());
           ctx.toast('Đã chèn thêm gợi ý vào cuối');
         };
@@ -187,10 +209,10 @@ export async function mount(rootEl, ctx) {
       const prev = btnEval.textContent;
       btnEval.textContent = 'Đang đánh giá...';
 
-      const pico = ctx.get('pico', {}) || {};
-      const rq   = ctx.get('researchQuestion', '') || '';
-      const mainObj = ctx.get('mainObjective', '') || '';
-      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+      const pico   = ctx.get('pico', {}) || {};
+      const rq     = ctx.get('researchQuestion', '') || '';
+      const mainObj= ctx.get('mainObjective', '') || '';
+      const subObjs= Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
 
       const prompt = buildEvaluatePrompt(content, pico, rq, mainObj, subObjs);
       const raw = await ctx.callGPT(prompt);
@@ -199,8 +221,8 @@ export async function mount(rootEl, ctx) {
       if (!md) {
         ctx.toast('GPT không trả về đánh giá.');
       } else {
-        evalWrap.style.display = '';
-        evalOut.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
+        evalBox.classList.remove('hidden');
+        eTA.value = md;
         ctx.save('design.evaluation', md);
         ctx.toast('Đã cập nhật đánh giá');
       }
@@ -214,6 +236,12 @@ export async function mount(rootEl, ctx) {
       btnEval.textContent = 'GPT đánh giá mô tả';
     }
   });
+
+  // copy / hide for GPT boxes
+  copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
+  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
+  copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
+  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
 
   btnSave.addEventListener('click', () => {
     const nArms = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
@@ -229,7 +257,7 @@ export async function mount(rootEl, ctx) {
     };
 
     ctx.save('design', payload);
-    ctx.save('interventions', armNames); // để Step 10 dùng lại đúng baseline
+    ctx.save('interventions', armNames); // Step 10 dùng lại baseline
     try { localStorage.setItem('num-arms', String(nArms)); } catch {}
 
     ctx.toast('Đã lưu thiết kế & tên nhánh');
@@ -267,7 +295,7 @@ export async function mount(rootEl, ctx) {
     if (i === 0) return 'Nhóm can thiệp';
     if (i === 1) return 'Nhóm chứng';
     return `Nhánh ${i + 1}`;
-    }
+  }
   function defaultArmNames(n) {
     const out = [];
     for (let i = 0; i < n; i++) out.push(defaultName(i));
@@ -283,11 +311,9 @@ export async function mount(rootEl, ctx) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
 
-  function toHtmlSafe(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-      .replace(/'/g,'&#39;');
+  function copyText(t) {
+    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
+    catch { ctx.toast('Không sao chép được.'); }
   }
 
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
@@ -305,7 +331,7 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainObj || '(chưa có)'}
 Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
 
 Lựa chọn hiện có:
 - Loại thiết kế: ${cur.type}
@@ -336,7 +362,7 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainObj || '(chưa có)'}
 Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
+${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
 `.trim();
   }
 }
