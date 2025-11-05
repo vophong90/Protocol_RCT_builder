@@ -1,10 +1,5 @@
 // src/steps/step5_design.js
-// Step 5 – Thiết kế nghiên cứu (parallel/crossover + blinding + allocation + arms)
-// Phù hợp index.html mới: rootEl đã là .card, dùng grid-2, btn, v.v.
-// Lưu vào state.design và state.interventions; set localStorage 'num-arms'.
-
 export async function mount(rootEl, ctx) {
-  // KHÔNG tạo .card lồng nhau
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Thiết kế nghiên cứu</h3>
@@ -14,26 +9,16 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <style>
-      /* Scoped helpers cho step này */
       #dsg .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      #dsg .hidden { display: none !important; }
-      #dsg .pill { 
-        display:inline-flex; align-items:center; padding:.25rem .6rem; 
-        border-radius:999px; background: var(--muted); color:#fff; 
-        font:600 12.5px/1.1 Inter, ui-sans-serif; border: none;
-      }
-      #dsg .form-input {
-        width: 100%;
-        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-        background: #fff; border: 1px solid var(--border); border-radius: 10px;
-        padding: .6rem .75rem; outline: 0;
-      }
-      #dsg .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-      @media (max-width: 900px){ #dsg .grid-2{ grid-template-columns: 1fr; } }
+      #dsg .hidden { display:none !important; }
+      #dsg .pill{display:inline-flex;align-items:center;padding:.25rem .6rem;border-radius:999px;background:var(--muted);color:var(--muted-foreground);font:600 12.5px/1.1 Inter,ui-sans-serif;border:0}
+      #dsg .form-input{width:100%;font:500 15px/1.4 Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;background:#fff;border:1px solid var(--border);border-radius:10px;padding:.6rem .75rem;outline:0}
+      #dsg .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      #dsg .full-span{grid-column:1 / -1}
+      @media (max-width:900px){ #dsg .grid-2{grid-template-columns:1fr} }
     </style>
 
     <div id="dsg">
-      <!-- Tóm tắt nhanh -->
       <div class="card-body">
         <div class="inline-row" id="dsg-summary">
           <span class="pill" id="sum-type">Thiết kế: —</span>
@@ -62,15 +47,16 @@ export async function mount(rootEl, ctx) {
 
         <label>Tỷ lệ phân bổ (allocation ratio)
           <input id="dsg-alloc" class="form-input" type="text" placeholder="1:1" />
-          <div id="dsg-alloc-hint" class="muted">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
         </label>
 
         <label>Số nhánh (2–6)
           <input id="dsg-arms" class="form-input" type="number" min="2" max="6" step="1" />
         </label>
+
+        <!-- Hint span 2 cột để không làm lệch hàng -->
+        <div id="dsg-alloc-hint" class="muted full-span">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
       </div>
 
-      <!-- Tên nhánh -->
       <div class="card-body">
         <div class="inline-row" style="justify-content:space-between">
           <div style="font-weight:700">Tên các nhánh can thiệp</div>
@@ -81,13 +67,11 @@ export async function mount(rootEl, ctx) {
         <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
       </div>
 
-      <!-- GPT cụm nút -->
       <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button id="dsg-gpt-suggest" class="btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
         <button id="dsg-gpt-eval"    class="btn-primary" type="button">GPT đánh giá mô tả</button>
       </div>
 
-      <!-- Kết quả GPT – GỢI Ý -->
       <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Gợi ý</strong>
@@ -104,14 +88,12 @@ export async function mount(rootEl, ctx) {
         </div>
       </div>
 
-      <!-- Mô tả thiết kế do người dùng soạn -->
       <div class="card-body">
         <label>Mô tả thiết kế (tóm tắt)
           <textarea id="dsg-desc" class="form-input" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
         </label>
       </div>
 
-      <!-- Kết quả GPT – ĐÁNH GIÁ -->
       <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Đánh giá</strong>
@@ -183,30 +165,19 @@ export async function mount(rootEl, ctx) {
   updateSummary();
   maybeSuggestCrossoverNames();
 
-  // Hiện lại đánh giá nếu có
   const oldEval = dsgState.evaluation || '';
   if (oldEval) { eTA.value = String(oldEval); evalBox.classList.remove('hidden'); }
 
   // ------- Events -------
-  typeEl.addEventListener('change', () => {
-    maybeSuggestCrossoverNames();
-    updateSummary();
-  });
+  typeEl.addEventListener('change', () => { maybeSuggestCrossoverNames(); updateSummary(); });
   blindEl.addEventListener('change', updateSummary);
-
-  allocEl.addEventListener('input', () => {
-    updateRatioHint();
-    updateSummary();
-  });
+  allocEl.addEventListener('input', () => { updateRatioHint(); updateSummary(); });
 
   armsEl.addEventListener('change', () => {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     armsEl.value = String(n);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
-    if (fixed.changed) {
-      allocEl.value = fixed.ratio;
-      ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.');
-    }
+    if (fixed.changed) { allocEl.value = fixed.ratio; ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.'); }
     const curNames = readArmNames();
     renderArmInputs(n, curNames);
     maybeSuggestCrossoverNames();
@@ -222,16 +193,14 @@ export async function mount(rootEl, ctx) {
 
   btnSuggest.addEventListener('click', onSuggest);
   btnEval.addEventListener('click', onEvaluate);
-
   copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
   hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
   copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
   hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
-
   btnSave.addEventListener('click', onSave);
 
   // ------- Handlers -------
-  async function onSuggest() {
+  async function onSuggest() { /* giữ nguyên logic cũ ... */ 
     try {
       toggleBusy(btnSuggest, true, 'Đang gọi GPT...');
       const pico    = ctx.get('pico', {}) || {};
@@ -250,94 +219,44 @@ export async function mount(rootEl, ctx) {
       });
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
-
-      if (!md) {
-        ctx.toast('GPT không trả về gợi ý.');
-      } else {
-        suggBox.classList.remove('hidden');
-        sTA.value = md;
-
-        applyRep.onclick = () => {
-          descEl.value = sTA.value || '';
-          const cur = ctx.get('design', {}) || {};
-          ctx.save('design', { ...cur, description: (descEl.value || '').trim() });
-          ctx.toast('Đã thay thế toàn bộ mô tả thiết kế');
-        };
-        applyApp.onclick = () => {
-          const curStr = descEl.value || '';
-          const addStr = sTA.value || '';
-          descEl.value = curStr ? (curStr + '\n\n' + addStr) : addStr;
-          const cur = ctx.get('design', {}) || {};
-          ctx.save('design', { ...cur, description: (descEl.value || '').trim() });
-          ctx.toast('Đã chèn thêm gợi ý vào cuối');
-        };
+      if (!md) { ctx.toast('GPT không trả về gợi ý.'); }
+      else {
+        suggBox.classList.remove('hidden'); sTA.value = md;
+        applyRep.onclick = () => { descEl.value = sTA.value || ''; const cur = ctx.get('design', {}) || {}; ctx.save('design', { ...cur, description: (descEl.value || '').trim() }); ctx.toast('Đã thay thế toàn bộ mô tả thiết kế'); };
+        applyApp.onclick = () => { const curStr = descEl.value || ''; const addStr = sTA.value || ''; descEl.value = curStr ? (curStr + '\\n\\n' + addStr) : addStr; const cur = ctx.get('design', {}) || {}; ctx.save('design', { ...cur, description: (descEl.value || '').trim() }); ctx.toast('Đã chèn thêm gợi ý vào cuối'); };
       }
-    } catch (e) {
-      console.error(e);
-      ctx.toast('Lỗi khi gọi GPT gợi ý.');
-    } finally {
-      toggleBusy(btnSuggest, false, 'GPT gợi ý mô tả thiết kế');
-    }
+    } catch(e){ console.error(e); ctx.toast('Lỗi khi gọi GPT gợi ý.'); }
+    finally { toggleBusy(btnSuggest, false, 'GPT gợi ý mô tả thiết kế'); }
   }
 
-  async function onEvaluate() {
+  async function onEvaluate() { /* giữ nguyên logic cũ ... */ 
     const content = (descEl.value || '').trim();
-    if (!content) {
-      ctx.toast('Chưa có mô tả để đánh giá.');
-      return;
-    }
+    if (!content) { ctx.toast('Chưa có mô tả để đánh giá.'); return; }
     try {
       toggleBusy(btnEval, true, 'Đang đánh giá...');
       const pico    = ctx.get('pico', {}) || {};
       const rq      = ctx.get('researchQuestion', '') || '';
       const mainObj = ctx.get('mainObjective', '') || '';
       const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
-
       const prompt = buildEvaluatePrompt(content, pico, rq, mainObj, subObjs);
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
-
-      if (!md) {
-        ctx.toast('GPT không trả về đánh giá.');
-      } else {
-        evalBox.classList.remove('hidden');
-        eTA.value = md;
-        const cur = ctx.get('design', {}) || {};
-        ctx.save('design', { ...cur, evaluation: md, lastEvaluatedAt: new Date().toISOString() });
-        ctx.toast('Đã cập nhật đánh giá');
-      }
-    } catch (e) {
-      console.error(e);
-      ctx.toast('Lỗi khi gọi GPT đánh giá.');
-    } finally {
-      toggleBusy(btnEval, false, 'GPT đánh giá mô tả');
-    }
+      if (!md) { ctx.toast('GPT không trả về đánh giá.'); }
+      else { evalBox.classList.remove('hidden'); eTA.value = md; const cur = ctx.get('design', {}) || {}; ctx.save('design', { ...cur, evaluation: md, lastEvaluatedAt: new Date().toISOString() }); ctx.toast('Đã cập nhật đánh giá'); }
+    } catch(e){ console.error(e); ctx.toast('Lỗi khi gọi GPT đánh giá.'); }
+    finally { toggleBusy(btnEval, false, 'GPT đánh giá mô tả'); }
   }
 
   function onSave() {
     const nArms  = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed  = ensureRatioLength(nArms, allocEl.value || '1:1');
-    if (fixed.changed) {
-      allocEl.value = fixed.ratio;
-      ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.');
-    }
-
+    if (fixed.changed) { allocEl.value = fixed.ratio; ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.'); }
     const armNames = padOrTrim(readArmNames(), nArms).map(s => safeText(s) || '');
-    const payload = {
-      type: typeEl.value,
-      blinding: blindEl.value,
-      allocationRatio: (allocEl.value || '1:1').trim(),
-      arms: nArms,
-      armNames,
-      description: (descEl.value || '').trim(),
-    };
-
+    const payload = { type: typeEl.value, blinding: blindEl.value, allocationRatio: (allocEl.value || '1:1').trim(), arms: nArms, armNames, description: (descEl.value || '').trim() };
     ctx.save('design', { ...(ctx.get('design', {}) || {}), ...payload });
-    ctx.save('interventions', armNames); // Step 10 dùng lại baseline
+    ctx.save('interventions', armNames);
     try { localStorage.setItem('num-arms', String(nArms)); } catch {}
-
-    updateSummary();
-    ctx.toast('Đã lưu thiết kế & tên nhánh');
+    updateSummary(); ctx.toast('Đã lưu thiết kế & tên nhánh');
   }
 
   // ------- helpers -------
@@ -346,144 +265,30 @@ export async function mount(rootEl, ctx) {
     const current = keepExisting ? readArmNames() : [];
     namesBox.innerHTML = '';
     const base = padOrTrim(keepExisting ? mergeNames(current, names, n) : padOrTrim(names || [], n), n);
-
-    for (let i = 0; i < n; i++) {
+    for (let i=0;i<n;i++){
       const wrap = document.createElement('div');
-      wrap.innerHTML = `
-        <label>Tên nhánh ${i + 1}
-          <input class="form-input" type="text" data-arm-index="${i}" placeholder="${defaultName(i)}" />
-        </label>
-      `.trim();
-      const inp = wrap.querySelector('input');
-      inp.value = base[i] || '';
+      wrap.innerHTML = `<label>Tên nhánh ${i+1}<input class="form-input" type="text" data-arm-index="${i}" placeholder="${defaultName(i)}"/></label>`;
+      wrap.querySelector('input').value = base[i] || '';
       namesBox.appendChild(wrap);
     }
   }
-
-  function mergeNames(oldArr, newArr, n) {
-    const out = [];
-    for (let i = 0; i < n; i++) {
-      const prev = ((oldArr && oldArr[i]) || '').trim();
-      const nxt  = ((newArr && newArr[i]) || '').trim();
-      out.push(prev || nxt || defaultName(i));
-    }
-    return out;
-  }
-
-  function readArmNames() {
-    return Array.from(namesBox.querySelectorAll('input[data-arm-index]'))
-      .map(inp => (inp.value || '').trim());
-  }
-
-  function padOrTrim(arr, n) {
-    const out = (arr || []).slice(0, n);
-    while (out.length < n) out.push(defaultName(out.length));
-    return out;
-  }
-
-  function defaultName(i) {
-    if (i === 0) return 'Nhóm can thiệp';
-    if (i === 1) return 'Nhóm chứng';
-    return 'Nhánh ' + (i + 1);
-  }
-
-  function defaultArmNames(n, ctx_) {
-    const out = [];
-    const pico = ctx_.get('pico', {}) || {};
-    const I = safeShort(pico.i);
-    const C = safeShort(pico.c);
-    for (let i = 0; i < n; i++) out.push(defaultName(i));
-    if (I) out[0] = `Nhóm can thiệp (${I})`;
-    if (C) out[1] = `Nhóm chứng (${C})`;
-    return out;
-  }
-
-  function maybeSuggestCrossoverNames() {
-    const t = typeEl.value;
-    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
-    if (t !== 'crossover' || n !== 2) return;
-    const pico = ctx.get('pico', {}) || {};
-    const I = safeShort(pico.i);
-    const C = safeShort(pico.c);
-    if (!I || !C) return;
-
-    const names = readArmNames();
-    const looksDefault =
-      (names[0] || '').toLowerCase().startsWith('nhóm can thiệp') &&
-      (names[1] || '').toLowerCase().startsWith('nhóm chứng');
-    if (looksDefault) {
-      renderArmInputs(2, [`Trình tự ${I}→${C}`, `Trình tự ${C}→${I}`]);
-    }
-  }
-
-  function clampInt(v, min, max) {
-    v = Number.isFinite(v) ? v : min;
-    return Math.min(Math.max(v, min), max);
-  }
-
-  function safeText(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
-  }
-  function safeShort(s) {
-    s = safeText(s);
-    return s.length > 40 ? (s.slice(0, 37) + '…') : s;
-    }
-
-  function parseRatio(str) {
-    const parts = String(str || '').split(':').map(s => s.trim()).filter(Boolean);
-    const nums  = parts.map(x => Number(x));
-    if (nums.length === 0 || nums.some(x => !Number.isFinite(x) || x <= 0)) return null;
-    return nums;
-  }
-
-  function ensureRatioLength(n, ratioStr) {
-    const arr = parseRatio(ratioStr);
-    if (!arr) return { changed: true, ratio: new Array(n).fill(1).join(':') };
-    if (arr.length === n) return { changed: false, ratio: ratioStr };
-    return { changed: true, ratio: new Array(n).fill(1).join(':') };
-  }
-
-  function ratioToPercents(str) {
-    const arr = parseRatio(str);
-    if (!arr) return null;
-    const sum = arr.reduce((a,b) => a + b, 0);
-    if (!sum) return null;
-    return arr.map(x => Math.round((x / sum) * 1000) / 10);
-  }
-
-  function updateRatioHint() {
-    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
-    const fixed = ensureRatioLength(n, allocEl.value || '1:1');
-    if (fixed.changed) {
-      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
-      return;
-    }
-    const per = ratioToPercents(allocEl.value || '');
-    ratioHint.textContent = per ? ('Tương ứng ≈ ' + per.map(x => x + '%').join(' : ')) : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
-  }
-
-  function updateSummary() {
-    const typeTxt  = typeEl.options[typeEl.selectedIndex]?.text || '—';
-    const blindTxt = blindEl.options[blindEl.selectedIndex]?.text || '—';
-    sumType.textContent  = 'Thiết kế: ' + typeTxt;
-    sumBlind.textContent = 'Blinding: ' + blindTxt;
-    sumAlloc.textContent = 'Tỷ lệ: ' + (allocEl.value || '—');
-    sumArms.textContent  = 'Số nhánh: ' + (armsEl.value || '—');
-  }
-
-  function copyText(t) {
-    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
-    catch { ctx.toast('Không sao chép được.'); }
-  }
-
-  function toggleBusy(btn, busy, label) {
-    if (!btn) return;
-    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
-    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
-  }
-
-  function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
-    return (
+  function mergeNames(oldArr,newArr,n){ const out=[]; for(let i=0;i<n;i++){const prev=((oldArr&&oldArr[i])||'').trim();const nxt=((newArr&&newArr[i])||'').trim(); out.push(prev||nxt||defaultName(i));} return out;}
+  function readArmNames(){ return Array.from(namesBox.querySelectorAll('input[data-arm-index]')).map(inp => (inp.value||'').trim()); }
+  function padOrTrim(arr,n){ const out=(arr||[]).slice(0,n); while(out.length<n) out.push(defaultName(out.length)); return out; }
+  function defaultName(i){ if(i===0) return 'Nhóm can thiệp'; if(i===1) return 'Nhóm chứng'; return 'Nhánh '+(i+1); }
+  function defaultArmNames(n,ctx_){ const out=[]; const pico=ctx_.get('pico',{})||{}; const I=safeShort(pico.i); const C=safeShort(pico.c); for(let i=0;i<n;i++) out.push(defaultName(i)); if(I) out[0]=\`Nhóm can thiệp (\${I})\`; if(C) out[1]=\`Nhóm chứng (\${C})\`; return out; }
+  function maybeSuggestCrossoverNames(){ const t=typeEl.value; const n=clampInt(parseInt(armsEl.value||'2',10),2,6); if(t!=='crossover'||n!==2) return; const pico=ctx.get('pico',{})||{}; const I=safeShort(pico.i); const C=safeShort(pico.c); if(!I||!C) return; const names=readArmNames(); const looksDefault=(names[0]||'').toLowerCase().startsWith('nhóm can thiệp') && (names[1]||'').toLowerCase().startsWith('nhóm chứng'); if(looksDefault){ renderArmInputs(2,[\`Trình tự \${I}→\${C}\`,\`Trình tự \${C}→\${I}\`]); } }
+  function clampInt(v,min,max){ v=Number.isFinite(v)?v:min; return Math.min(Math.max(v,min),max); }
+  function safeText(s){ return String(s||'').replace(/\s+/g,' ').trim(); }
+  function safeShort(s){ s=safeText(s); return s.length>40 ? (s.slice(0,37)+'…') : s; }
+  function parseRatio(str){ const parts=String(str||'').split(':').map(s=>s.trim()).filter(Boolean); const nums=parts.map(x=>Number(x)); if(nums.length===0||nums.some(x=>!Number.isFinite(x)||x<=0)) return null; return nums; }
+  function ensureRatioLength(n,ratioStr){ const arr=parseRatio(ratioStr); if(!arr) return {changed:true,ratio:new Array(n).fill(1).join(':')}; if(arr.length===n) return {changed:false,ratio:ratioStr}; return {changed:true,ratio:new Array(n).fill(1).join(':')}; }
+  function ratioToPercents(str){ const arr=parseRatio(str); if(!arr) return null; const sum=arr.reduce((a,b)=>a+b,0); if(!sum) return null; return arr.map(x=>Math.round((x/sum)*1000)/10); }
+  function updateRatioHint(){ const n=clampInt(parseInt(armsEl.value||'2',10),2,6); const fixed=ensureRatioLength(n,allocEl.value||'1:1'); if(fixed.changed){ ratioHint.textContent=\`Tỷ lệ hiện không khớp \${n} nhánh → gợi ý: \${fixed.ratio}\`; return; } const per=ratioToPercents(allocEl.value||''); ratioHint.textContent = per ? ('Tương ứng ≈ ' + per.map(x => x + '%').join(' : ')) : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)'; }
+  function updateSummary(){ const typeTxt=typeEl.options[typeEl.selectedIndex]?.text||'—'; const blindTxt=blindEl.options[blindEl.selectedIndex]?.text||'—'; sumType.textContent='Thiết kế: '+typeTxt; sumBlind.textContent='Blinding: '+blindTxt; sumAlloc.textContent='Tỷ lệ: '+(allocEl.value||'—'); sumArms.textContent='Số nhánh: '+(armsEl.value||'—'); }
+  function copyText(t){ try{ navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }catch{ ctx.toast('Không sao chép được.'); } }
+  function toggleBusy(btn,busy,label){ if(!btn) return; if(busy){ btn.disabled=true; btn.dataset.prev=btn.textContent||''; btn.textContent='Đang xử lý...'; } else { btn.disabled=false; btn.textContent=label||btn.dataset.prev||''; } }
+  function buildSuggestPrompt(pico,rq,mainObj,subObjs,cur){ return (
 `Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.
 Yêu cầu:
 - Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.
@@ -497,7 +302,7 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainObj || '(chưa có)'}
 Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\\n') : '(chưa có)'}
+${Array.isArray(subObjs)&&subObjs.length?subObjs.map((s,i)=>(i+1)+'. '+s).join('\\n'):'(chưa có)'}
 
 Lựa chọn hiện có:
 - Loại thiết kế: ${cur.type}
@@ -505,11 +310,8 @@ Lựa chọn hiện có:
 - Tỷ lệ phân bổ: ${cur.allocationRatio}
 - Số nhánh: ${cur.arms}
 - Tên nhánh: ${cur.armNames && cur.armNames.length ? cur.armNames.join(', ') : '(chưa có)'}`
-    );
-  }
-
-  function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
-    return (
+    ); }
+  function buildEvaluatePrompt(content,pico,rq,mainObj,subObjs){ return (
 `Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:
 - Tính phù hợp với PICO/câu hỏi/mục tiêu
 - Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)
@@ -528,7 +330,6 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainObj || '(chưa có)'}
 Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\\n') : '(chưa có)'}`
-    );
-  }
+${Array.isArray(subObjs)&&subObjs.length?subObjs.map((s,i)=>(i+1)+'. '+s).join('\\n'):'(chưa có)'}`
+    ); }
 }
