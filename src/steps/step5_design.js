@@ -22,6 +22,7 @@ export async function mount(rootEl, ctx) {
       border:1px solid var(--border); background:#fff; border-radius:999px;
       padding:.35rem .7rem; font-weight:600;
     }
+    .form-input{ width:100%; border:1px solid var(--border); border-radius:10px; padding:.5rem .7rem; background:#fff }
   </style>
 
   <!-- Tóm tắt nhanh tự cập nhật -->
@@ -36,14 +37,14 @@ export async function mount(rootEl, ctx) {
 
   <div class="card-body grid-2">
     <label>Loại thiết kế
-      <select id="dsg-type">
+      <select id="dsg-type" class="form-input">
         <option value="parallel">Song song (parallel)</option>
         <option value="crossover">Chéo (cross-over)</option>
       </select>
     </label>
 
     <label>Blinding
-      <select id="dsg-blinding">
+      <select id="dsg-blinding" class="form-input">
         <option value="none">Không che giấu</option>
         <option value="single">Đơn mù (single-blind)</option>
         <option value="double">Đôi mù (double-blind)</option>
@@ -51,12 +52,12 @@ export async function mount(rootEl, ctx) {
     </label>
 
     <label>Tỷ lệ phân bổ (allocation ratio)
-      <input id="dsg-alloc" type="text" placeholder="1:1" />
+      <input id="dsg-alloc" class="form-input" type="text" placeholder="1:1" />
       <div id="dsg-alloc-hint" class="mini-hint">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
     </label>
 
     <label>Số nhánh (2–6)
-      <input id="dsg-arms" type="number" min="2" max="6" step="1" />
+      <input id="dsg-arms" class="form-input" type="number" min="2" max="6" step="1" />
     </label>
   </div>
 
@@ -257,7 +258,7 @@ export async function mount(rootEl, ctx) {
         applyApp.onclick = () => {
           const cur = descEl.value || '';
           const add = sTA.value || '';
-          descEl.value = cur ? `${cur}\n\n${add}` : add;
+          descEl.value = cur ? (cur + '\\n\\n' + add) : add;
           ctx.save('design.description', (descEl.value || '').trim());
           ctx.toast('Đã chèn thêm gợi ý vào cuối');
         };
@@ -449,11 +450,11 @@ export async function mount(rootEl, ctx) {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
     if (fixed.changed) {
-      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
+      ratioHint.textContent = 'Tỷ lệ hiện không khớp ' + n + ' nhánh → gợi ý: ' + fixed.ratio;
       return;
     }
     const per = ratioToPercents(allocEl.value || '');
-    ratioHint.textContent = per ? `Tương ứng ≈ ${per.map(x => x + '%').join(' : ')}` : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
+    ratioHint.textContent = per ? ('Tương ứng ≈ ' + per.map(x => x + '%').join(' : ')) : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
   }
 
   function updateSummary() {
@@ -474,53 +475,54 @@ export async function mount(rootEl, ctx) {
     else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
+  /* ===== Prompts: ASCII-only, nối chuỗi để tránh lỗi token ===== */
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
-    return `
-Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.
-Yêu cầu:
-- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.
-- Trả về **MARKDOWN** thuần, không thêm tài liệu tham khảo.
-
-Bối cảnh:
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
-
-Lựa chọn hiện có:
-- Loại thiết kế: ${cur.type}
-- Blinding: ${cur.blinding}
-- Tỷ lệ phân bổ: ${cur.allocationRatio}
-- Số nhánh: ${cur.arms}
-- Tên nhánh: ${cur.armNames && cur.armNames.length ? cur.armNames.join(', ') : '(chưa có)'}
-`.trim();
+    const subs = Array.isArray(subObjs) && subObjs.length
+      ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\\n')
+      : '(chua co)';
+    return (
+      'Ban la tro ly hoc thuat. Hay goi y mo ta thiet ke RCT ngan gon (2-4 doan), dua tren PICO, Cau hoi, Muc tieu va cac lua chon hien co.\\n' +
+      'Yeu cau:\\n' +
+      '- Neu ro loai thiet ke (song song/cheo), blinding, ty le phan bo, so nhanh va ten cac nhanh (theo dau vao), thoi gian theo doi (neu suy luan duoc), khung danh gia chinh.\\n' +
+      '- Tra ve MARKDOWN thuan, khong them tai lieu tham khao.\\n\\n' +
+      'Boi canh:\\n' +
+      'P: ' + (pico && pico.p || '(chua co)') + '\\n' +
+      'I: ' + (pico && pico.i || '(chua co)') + '\\n' +
+      'C: ' + (pico && pico.c || '(chua co)') + '\\n' +
+      'O: ' + (pico && pico.o || '(chua co)') + '\\n' +
+      'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\\n' +
+      'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\\n' +
+      'Muc tieu phu:\\n' + subs + '\\n\\n' +
+      'Lua chon hien co:\\n' +
+      '- Loai thiet ke: ' + (cur.type || '') + '\\n' +
+      '- Blinding: ' + (cur.blinding || '') + '\\n' +
+      '- Ty le phan bo: ' + (cur.allocationRatio || '') + '\\n' +
+      '- So nhanh: ' + (cur.arms != null ? String(cur.arms) : '') + '\\n' +
+      '- Ten nhanh: ' + ((cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chua co)')
+    );
   }
 
   function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
-    return `
-Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:
-- Tính phù hợp với PICO/câu hỏi/mục tiêu
-- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)
-- Tính khả thi và rủi ro thiên lệch có thể phát sinh
-- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)
-Trả về **MARKDOWN**.
-
---- MÔ TẢ CẦN ĐÁNH GIÁ ---
-${content}
-
---- THAM CHIẾU BỐI CẢNH ---
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n') : '(chưa có)'}
-`.trim();
+    const subs = Array.isArray(subObjs) && subObjs.length
+      ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\\n')
+      : '(chua co)';
+    return (
+      'Ban la phan bien khoa hoc. Hay DANH GIA mo ta thiet ke RCT sau theo cac tieu chi:\\n' +
+      '- Tinh phu hop voi PICO/cau hoi/muc tieu\\n' +
+      '- Ro rang va du cac thanh to (loai thiet ke, blinding, allocation, arms, theo doi, tieu chi chinh)\\n' +
+      '- Tinh kha thi va rui ro thien lech co the phat sinh\\n' +
+      '- Goi y chinh sua trong tam (bullet ngan gon)\\n' +
+      'Tra ve MARKDOWN.\\n\\n' +
+      '--- MO TA CAN DANH GIA ---\\n' +
+      (content || '') + '\\n\\n' +
+      '--- THAM CHIEU BOI CANH ---\\n' +
+      'P: ' + (pico && pico.p || '(chua co)') + '\\n' +
+      'I: ' + (pico && pico.i || '(chua co)') + '\\n' +
+      'C: ' + (pico && pico.c || '(chua co)') + '\\n' +
+      'O: ' + (pico && pico.o || '(chua co)') + '\\n' +
+      'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\\n' +
+      'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\\n' +
+      'Muc tieu phu:\\n' + subs
+    );
   }
 }
