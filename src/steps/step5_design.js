@@ -11,25 +11,46 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <style>
-      /* Scoped cho step này để không ảnh hưởng chỗ khác */
-      #dsg .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      #dsg .hidden { display:none !important; }
-      #dsg .pill {
-        display:inline-flex; align-items:center; padding:.25rem .6rem;
-        border-radius:999px; background: var(--muted); color: #fff;
-        font:600 12.5px/1.1 Inter, ui-sans-serif; border:0;
-      }
-      #dsg .form-input{
-        width:100%;
-        font:500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-        background:#fff; border:1px solid var(--border); border-radius:10px;
-        padding:.6rem .75rem; outline:0;
-      }
-      #dsg .grid-2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-      #dsg .full-span{ grid-column:1 / -1; }
-      @media (max-width:900px){ #dsg .grid-2{ grid-template-columns:1fr; } }
-    </style>
+<style>
+#dsg .hidden { display:none !important; }
+#dsg .pill{
+display:inline-flex; align-items:center; padding:.25rem .6rem;
+border-radius:999px; background:var(--muted); color:#fff;
+font:600 12.5px/1.1 Inter,ui-sans-serif; border:0;
+}
+
+#dsg .grid-2{
+display:grid;
+grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+gap:12px;
+align-items:start;
+}
+#dsg .grid-2 > *{ min-width:0; }        
+#dsg .full-span{ grid-column:1 / -1; }
+
+#dsg .grid-2 > label{
+display:flex;
+flex-direction:column;
+gap:6px;
+line-height:1.2;
+}
+#dsg .form-input{
+box-sizing:border-box;
+width:100%;
+font:500 15px/1.4 Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+background:#fff; border:1px solid var(--border); border-radius:10px;
+padding:.6rem .75rem; outline:0;
+}
+#dsg input.form-input,
+#dsg select.form-input{ height:44px; }
+#dsg textarea.form-input{ resize:vertical; min-height:112px; }
+
+#dsg .inline-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+@media (max-width:900px){
+#dsg .grid-2{ grid-template-columns:1fr; }
+}
+</style>
 
     <div id="dsg">
       <!-- Tóm tắt nhanh -->
