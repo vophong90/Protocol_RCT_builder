@@ -1,9 +1,5 @@
 // src/steps/step4_literature.js
-// Step 4 – Tổng quan tài liệu (9 tiểu mục), mỗi mục có:
-// - Upload PDF riêng (tùy chọn)
-// - GPT gợi ý nội dung (dựa vào PICO + Câu hỏi + Mục tiêu + PDF trích lược)
-// - GPT đánh giá nội dung đã viết
-// - Lưu vào state: literature.sections[slug]; đánh giá: literatureEval[slug]
+// Step 4 – Tổng quan tài liệu (9 tiểu mục)
 
 export async function mount(rootEl, ctx) {
   const sections = [
@@ -32,11 +28,7 @@ export async function mount(rootEl, ctx) {
 `.trim();
 
   const wrap = rootEl.querySelector('#lit-wrap');
-
-  // Render từng mục
-  for (const sec of sections) {
-    wrap.appendChild(renderSectionCard(sec, ctx));
-  }
+  sections.forEach(sec => wrap.appendChild(renderSectionCard(sec, ctx)));
 
   function renderSectionCard(sec, ctx) {
     const card = document.createElement('div');
@@ -47,63 +39,83 @@ export async function mount(rootEl, ctx) {
     <h4 class="card-title">${toHtmlSafe(sec.title)}</h4>
   </div>
 
-  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <input id="pdf-${sec.slug}" type="file" accept="application/pdf" />
-    <button id="gpt-${sec.slug}" class="btn-outline">GPT gợi ý (kết hợp PICO/Question/Objectives/PDF)</button>
-    <small style="opacity:.8">Chọn PDF (tuỳ chọn) rồi bấm GPT để gợi ý.</small>
-  </div>
-
-  <div class="card-body" id="sugg-wrap-${sec.slug}" style="display:none">
-    <div style="font-weight:600;margin-bottom:.5rem">Gợi ý từ GPT:</div>
-    <div id="sugg-${sec.slug}" class="prose"></div>
-    <div style="margin-top:.75rem;display:flex;gap:8px;flex-wrap:wrap">
-      <button id="apply-replace-${sec.slug}" class="btn-secondary">Thay thế toàn bộ</button>
-      <button id="apply-append-${sec.slug}"  class="btn-secondary">Chèn thêm vào cuối</button>
+  <!-- File + nút GPT (đồng bộ brand) -->
+  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+    <div>
+      <input id="pdf-${sec.slug}" type="file" accept="application/pdf" />
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button id="gpt-${sec.slug}"  class="btn-primary" type="button">GPT gợi ý nội dung</button>
+      <button id="eval-${sec.slug}" class="btn-outline" type="button">GPT đánh giá mục này</button>
     </div>
   </div>
 
+  <!-- KẾT QUẢ GPT – GỢI Ý (textarea riêng, font đồng bộ) -->
+  <div id="sugg-box-${sec.slug}" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Gợi ý</strong>
+      <div style="display:flex;gap:8px">
+        <button id="apply-replace-${sec.slug}" class="btn-primary"  type="button">Thay thế toàn bộ</button>
+        <button id="apply-append-${sec.slug}"  class="btn-secondary" type="button">Chèn thêm vào cuối</button>
+        <button id="copy-sugg-${sec.slug}"     class="btn-ghost"     type="button">Sao chép</button>
+        <button id="hide-sugg-${sec.slug}"     class="btn-ghost"     type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="sugg-ta-${sec.slug}" class="form-textarea" rows="10" placeholder="Gợi ý từ GPT (Markdown)…"></textarea>
+    </div>
+  </div>
+
+  <!-- Ô nhập nội dung chính -->
   <div class="card-body">
     <label>Nội dung ${toHtmlSafe(sec.title)}
-      <textarea id="txt-${sec.slug}" rows="10" placeholder="Viết/hiệu chỉnh nội dung ở đây (Markdown được hỗ trợ)"></textarea>
+      <textarea id="txt-${sec.slug}" class="form-textarea" rows="10" placeholder="Viết/hiệu chỉnh nội dung ở đây (Markdown được hỗ trợ)"></textarea>
     </label>
   </div>
 
-  <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="eval-${sec.slug}" class="btn-outline">GPT đánh giá mục này</button>
-  </div>
-
-  <div class="card-body" id="eval-wrap-${sec.slug}" style="display:none">
-    <div style="font-weight:600;margin-bottom:.5rem">Đánh giá:</div>
-    <div id="eval-${sec.slug}-out" class="prose"></div>
+  <!-- KẾT QUẢ GPT – ĐÁNH GIÁ (textarea riêng, font đồng bộ) -->
+  <div id="eval-box-${sec.slug}" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Đánh giá</strong>
+      <div style="display:flex;gap:8px">
+        <button id="copy-eval-${sec.slug}" class="btn-ghost" type="button">Sao chép</button>
+        <button id="hide-eval-${sec.slug}" class="btn-ghost" type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="eval-ta-${sec.slug}" class="form-textarea" rows="10" placeholder="Đánh giá của GPT (bullet/markdown)…"></textarea>
+    </div>
   </div>
 
   <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="save-${sec.slug}" class="btn-primary">Lưu mục này</button>
+    <button id="save-${sec.slug}" class="btn-primary" type="button">Lưu mục này</button>
   </div>
 `.trim();
 
     // Elements
-    const pdfEl      = card.querySelector(`#pdf-${sec.slug}`);
-    const gptBtn     = card.querySelector(`#gpt-${sec.slug}`);
-    const suggWrap   = card.querySelector(`#sugg-wrap-${sec.slug}`);
-    const suggBox    = card.querySelector(`#sugg-${sec.slug}`);
-    const applyRep   = card.querySelector(`#apply-replace-${sec.slug}`);
-    const applyApp   = card.querySelector(`#apply-append-${sec.slug}`);
-    const textEl     = card.querySelector(`#txt-${sec.slug}`);
-    const evalBtn    = card.querySelector(`#eval-${sec.slug}`);
-    const evalWrap   = card.querySelector(`#eval-wrap-${sec.slug}`);
-    const evalOutEl  = card.querySelector(`#eval-${sec.slug}-out`);
-    const saveBtn    = card.querySelector(`#save-${sec.slug}`);
+    const pdfEl     = card.querySelector(`#pdf-${sec.slug}`);
+    const gptBtn    = card.querySelector(`#gpt-${sec.slug}`);
+    const evalBtn   = card.querySelector(`#eval-${sec.slug}`);
+    const saveBtn   = card.querySelector(`#save-${sec.slug}`);
+
+    const textEl    = card.querySelector(`#txt-${sec.slug}`);
+
+    const suggBox   = card.querySelector(`#sugg-box-${sec.slug}`);
+    const suggTA    = card.querySelector(`#sugg-ta-${sec.slug}`);
+    const applyRep  = card.querySelector(`#apply-replace-${sec.slug}`);
+    const applyApp  = card.querySelector(`#apply-append-${sec.slug}`);
+    const copySugg  = card.querySelector(`#copy-sugg-${sec.slug}`);
+    const hideSugg  = card.querySelector(`#hide-sugg-${sec.slug}`);
+
+    const evalBox   = card.querySelector(`#eval-box-${sec.slug}`);
+    const evalTA    = card.querySelector(`#eval-ta-${sec.slug}`);
+    const copyEval  = card.querySelector(`#copy-eval-${sec.slug}`);
+    const hideEval  = card.querySelector(`#hide-eval-${sec.slug}`);
 
     // Load state
-    const initText = ctx.get(`literature.sections.${sec.slug}`, '') || '';
-    textEl.value = initText;
-
+    textEl.value = ctx.get(`literature.sections.${sec.slug}`, '') || '';
     const initEval = ctx.get(`literatureEval.${sec.slug}`, '');
-    if (initEval) {
-      evalWrap.style.display = '';
-      evalOutEl.innerHTML = toHtmlSafe(initEval).replace(/\n/g,'<br/>');
-    }
+    if (initEval) { evalTA.value = String(initEval); evalBox.classList.remove('hidden'); }
 
     // Save
     saveBtn.addEventListener('click', () => {
@@ -114,10 +126,7 @@ export async function mount(rootEl, ctx) {
     // GPT gợi ý
     gptBtn.addEventListener('click', async () => {
       try {
-        gptBtn.disabled = true;
-        const prev = gptBtn.textContent;
-        gptBtn.textContent = 'Đang gọi GPT...';
-
+        toggleBusy(gptBtn, true, 'Đang gợi ý...');
         const pico = ctx.get('pico', {}) || {};
         const rq   = ctx.get('researchQuestion', '') || '';
         const mainObj = ctx.get('mainObjective', '') || '';
@@ -142,46 +151,39 @@ export async function mount(rootEl, ctx) {
         if (!md) {
           ctx.toast('GPT không trả về gợi ý.');
         } else {
-          suggWrap.style.display = '';
-          // preview (không tự động thay thế để bạn kiểm soát)
-          suggBox.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
-
-          // Gán handler áp dụng
-          applyRep.onclick = () => {
-            textEl.value = md;
-            ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
-            ctx.toast('Đã thay thế toàn bộ nội dung bằng gợi ý');
-          };
-          applyApp.onclick = () => {
-            const cur = textEl.value || '';
-            textEl.value = cur ? `${cur}\n\n${md}` : md;
-            ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
-            ctx.toast('Đã chèn thêm gợi ý vào cuối');
-          };
+          suggTA.value = md;                 // hiển thị trong textarea (font đồng bộ)
+          suggBox.classList.remove('hidden');
         }
-
-        gptBtn.textContent = prev;
-        gptBtn.disabled = false;
       } catch (e) {
         console.error(e);
         ctx.toast('Lỗi khi gọi GPT gợi ý.');
-        gptBtn.disabled = false;
-        gptBtn.textContent = 'GPT gợi ý (kết hợp PICO/Question/Objectives/PDF)';
+      } finally {
+        toggleBusy(gptBtn, false, 'GPT gợi ý nội dung');
       }
     });
+
+    // Áp dụng gợi ý
+    applyRep.addEventListener('click', () => {
+      textEl.value = suggTA.value || '';
+      ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
+      ctx.toast('Đã thay thế toàn bộ nội dung bằng gợi ý');
+    });
+    applyApp.addEventListener('click', () => {
+      const cur = textEl.value || '';
+      const add = suggTA.value || '';
+      textEl.value = cur ? `${cur}\n\n${add}` : add;
+      ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
+      ctx.toast('Đã chèn thêm gợi ý vào cuối');
+    });
+    copySugg.addEventListener('click', () => copyText(suggTA.value || ''));
+    hideSugg.addEventListener('click', () => suggBox.classList.add('hidden'));
 
     // GPT đánh giá
     evalBtn.addEventListener('click', async () => {
       const content = (textEl.value || '').trim();
-      if (!content) {
-        ctx.toast('Chưa có nội dung để đánh giá.');
-        return;
-      }
+      if (!content) return ctx.toast('Chưa có nội dung để đánh giá.');
       try {
-        evalBtn.disabled = true;
-        const prev = evalBtn.textContent;
-        evalBtn.textContent = 'Đang đánh giá...';
-
+        toggleBusy(evalBtn, true, 'Đang đánh giá...');
         const pico = ctx.get('pico', {}) || {};
         const rq   = ctx.get('researchQuestion', '') || '';
         const mainObj = ctx.get('mainObjective', '') || '';
@@ -194,21 +196,21 @@ export async function mount(rootEl, ctx) {
         if (!md) {
           ctx.toast('GPT không trả về đánh giá.');
         } else {
-          evalWrap.style.display = '';
-          evalOutEl.innerHTML = toHtmlSafe(md).replace(/\n/g,'<br/>');
+          evalTA.value = md;                 // hiển thị trong textarea (font đồng bộ)
+          evalBox.classList.remove('hidden');
           ctx.save(`literatureEval.${sec.slug}`, md);
           ctx.toast('Đã cập nhật đánh giá');
         }
-
-        evalBtn.textContent = prev;
-        evalBtn.disabled = false;
       } catch (e) {
         console.error(e);
         ctx.toast('Lỗi khi gọi GPT đánh giá.');
-        evalBtn.disabled = false;
-        evalBtn.textContent = 'GPT đánh giá mục này';
+      } finally {
+        toggleBusy(evalBtn, false, 'GPT đánh giá mục này');
       }
     });
+
+    copyEval.addEventListener('click', () => copyText(evalTA.value || ''));
+    hideEval.addEventListener('click', () => evalBox.classList.add('hidden'));
 
     return card;
   }
@@ -266,5 +268,14 @@ ${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=>`${i+1}. ${s}`).
       .replace(/&/g,'&amp;').replace(/</g,'&lt;')
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
       .replace(/'/g,'&#39;');
+  }
+  function copyText(t) {
+    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
+    catch { ctx.toast('Không sao chép được.'); }
+  }
+  function toggleBusy(btn, busy, label) {
+    if (!btn) return;
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
+    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 }
