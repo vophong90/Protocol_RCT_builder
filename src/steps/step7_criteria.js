@@ -1,8 +1,9 @@
 // src/steps/step7_criteria.js
 // Step 7 – Tiêu chí vào/loại (aligned with new index.html)
-// - Không tạo .card mới (rootEl đã là .card)
-// - File input full-width (form-input), cụm GPT có 2 box (Gợi ý / Đánh giá) với copy/hide
-// - Lưu: state.criteria { inclusion:[], exclusion:[], notes, sources, evaluation? }
+// - rootEl đã là .card (không tạo .card lồng nhau)
+// - File input full-width theo .form-input (ghi đè CSS global của index.html)
+// - Hai box GPT (Gợi ý / Đánh giá) có nút copy / hide
+// - Lưu state: criteria { inclusion:[], exclusion:[], notes, sources, evaluation? }
 
 export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
@@ -14,12 +15,12 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <style>
-      /* Scoped helpers */
+      /* Scoped helpers (ưu tiên so với CSS global) */
       #crit .hidden { display: none !important; }
       #crit .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
       #crit .form-input {
         width: 100%;
-        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+        font: 500 15px/1.45 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
         background: #fff;
         border: 1px solid var(--border);
         border-radius: 10px;
@@ -38,7 +39,7 @@ export async function mount(rootEl, ctx) {
         <label>Tải PDF hỗ trợ
           <input id="crit-pdf" class="form-input" type="file" accept="application/pdf" />
         </label>
-        <button id="crit-readpdf" class="btn-secondary" style="align-self:end">Đọc PDF</button>
+        <button id="crit-readpdf" class="btn-secondary" style="align-self:end" type="button">Đọc PDF</button>
         <div class="muted" id="crit-pdfhint" style="align-self:end">Chưa có nội dung PDF</div>
       </div>
 
@@ -64,7 +65,7 @@ export async function mount(rootEl, ctx) {
         </label>
       </div>
 
-      <!-- GPT buttons -->
+      <!-- Actions -->
       <div class="card-body inline-row">
         <button id="crit-suggest" class="btn-primary" type="button">GPT gợi ý tiêu chí</button>
         <button id="crit-eval"    class="btn-primary" type="button">GPT đánh giá tiêu chí hiện có</button>
@@ -136,6 +137,10 @@ export async function mount(rootEl, ctx) {
   let pdfContext = st.sources || '';
   if (pdfContext && pdfContext.length > 0) {
     hintEl.textContent = `Đã nạp PDF (${pdfContext.length.toLocaleString()} ký tự)`;
+  }
+  if (st.evaluation) {
+    eTA.value = st.evaluation;
+    evalBox.classList.remove('hidden');
   }
 
   // ---- helpers
@@ -257,7 +262,7 @@ YÊU CẦU ĐẦU RA (JSON, không kèm giải thích):
   // ---- GPT eval
   evalBtn.addEventListener('click', async () => {
     try {
-      toggleBusy(evalBtn, true, 'GPT đánh giá');
+      toggleBusy(evalBtn, true, 'GPT đánh giá tiêu chí hiện có');
 
       const pico   = ctx.get('pico', {}) || {};
       const design = ctx.get('design', {}) || {};
@@ -296,7 +301,11 @@ YÊU CẦU: Trả về các mục:
 
       eTA.value = text;
       evalBox.classList.remove('hidden');
-      ctx.save('criteria.evaluation', text);
+
+      // Gộp vào state, không mất các trường khác
+      const current = ctx.get('criteria', {}) || {};
+      ctx.save('criteria', { ...current, evaluation: text, lastEvaluatedAt: new Date().toISOString() });
+
       ctx.toast('Đã nhận đánh giá tiêu chí.');
     } catch (e) {
       console.error(e);
@@ -313,8 +322,10 @@ YÊU CẦU: Trả về các mục:
   saveBtn.addEventListener('click', () => {
     const inclusion = linesToArray(incTA.value);
     const exclusion = linesToArray(excTA.value);
+    const current   = ctx.get('criteria', {}) || {};
 
     ctx.save('criteria', {
+      ...current, // giữ evaluation nếu đã có
       inclusion,
       exclusion,
       notes: (notesTA.value || '').trim(),
@@ -322,6 +333,6 @@ YÊU CẦU: Trả về các mục:
       savedAt: new Date().toISOString(),
     });
 
-    ctx.toast('Đã lưu tiêu chí vào/loại');
+    ctx.toast('Đã lưu tiêu chí vào/loại.');
   });
 }
