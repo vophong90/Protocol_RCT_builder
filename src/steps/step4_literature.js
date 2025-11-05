@@ -53,9 +53,9 @@ export async function mount(rootEl, ctx) {
     <div style="flex:1;min-width:280px">
       <input id="pdf-${sec.slug}" type="file" accept="application/pdf" />
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button id="gpt-${sec.slug}"  class="btn-primary" type="button">GPT gợi ý nội dung</button>
-      <button id="eval-${sec.slug}" class="btn-outline" type="button">GPT đánh giá mục này</button>
+      <button id="eval-${sec.slug}" class="btn-primary" type="button">GPT đánh giá mục này</button>
     </div>
   </div>
 
