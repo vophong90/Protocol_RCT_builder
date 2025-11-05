@@ -263,6 +263,23 @@ input[type="file"]::file-selector-button:hover { background: #f9fafb; }
       .menuBtn{display:inline-flex}
     }
     .menuBtn{display:none; border:1px solid var(--border); background:#fff; border-radius:.6rem; padding:.35rem .6rem; cursor:pointer; gap:.5rem; align-items:center}
+
+    /* ===== Added utilities & overrides (đặt CUỐI để thắng các rule trên) ===== */
+    .control-row{
+      display:flex; gap:12px; align-items:center; flex-wrap:wrap;
+    }
+    .row-spaced{ margin-top:10px; }
+
+    /* Ghi đè width:100% ở block form controls phía trên cho file input */
+    input[type="file"]{
+      width:auto;                 /* <-- quan trọng để không full hàng */
+      display:inline-block;
+      padding:.45rem .6rem;       /* cao gần bằng .btn */
+      vertical-align:middle;
+    }
+    input[type="file"]::file-selector-button{
+      padding:.45rem .8rem;       /* đồng bộ chiều cao với .btn */
+    }
   </style>
 </head>
 <body>
@@ -364,4 +381,3 @@ input[type="file"]::file-selector-button:hover { background: #f9fafb; }
   </script>
 </body>
 </html>
-
