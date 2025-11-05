@@ -13,6 +13,27 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
+  <style>
+    /* Chỉ phạm vi Step 5 */
+    .mini-hint{ font-size:.85rem; color:var(--muted); margin-top:4px }
+    .inline-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .summary-pill{
+      display:inline-flex; gap:8px; align-items:center;
+      border:1px solid var(--border); background:#fff; border-radius:999px;
+      padding:.35rem .7rem; font-weight:600;
+    }
+  </style>
+
+  <!-- Tóm tắt nhanh tự cập nhật -->
+  <div class="card-body">
+    <div class="inline-row" id="dsg-summary">
+      <span class="summary-pill" id="sum-type">Thiết kế: —</span>
+      <span class="summary-pill" id="sum-blind">Blinding: —</span>
+      <span class="summary-pill" id="sum-alloc">Tỷ lệ: —</span>
+      <span class="summary-pill" id="sum-arms">Số nhánh: —</span>
+    </div>
+  </div>
+
   <div class="card-body grid-2">
     <label>Loại thiết kế
       <select id="dsg-type">
@@ -31,6 +52,7 @@ export async function mount(rootEl, ctx) {
 
     <label>Tỷ lệ phân bổ (allocation ratio)
       <input id="dsg-alloc" type="text" placeholder="1:1" />
+      <div id="dsg-alloc-hint" class="mini-hint">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
     </label>
 
     <label>Số nhánh (2–6)
@@ -39,8 +61,13 @@ export async function mount(rootEl, ctx) {
   </div>
 
   <div class="card-body">
-    <div style="font-weight:600;margin-bottom:8px">Tên các nhánh can thiệp</div>
-    <div id="dsg-armnames" class="grid-2"></div>
+    <div class="inline-row" style="justify-content:space-between">
+      <div style="font-weight:600">Tên các nhánh can thiệp</div>
+      <div class="inline-row">
+        <button id="dsg-reset-names" class="btn-ghost" type="button">Đặt lại tên mặc định</button>
+      </div>
+    </div>
+    <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
   </div>
 
   <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
@@ -48,7 +75,7 @@ export async function mount(rootEl, ctx) {
     <button id="dsg-gpt-eval" class="btn-outline">GPT đánh giá mô tả</button>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý (textarea brand) -->
+  <!-- Kết quả GPT – GỢI Ý -->
   <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Gợi ý</strong>
@@ -70,7 +97,7 @@ export async function mount(rootEl, ctx) {
     </label>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ (textarea brand) -->
+  <!-- Kết quả GPT – ĐÁNH GIÁ -->
   <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Đánh giá</strong>
@@ -98,6 +125,14 @@ export async function mount(rootEl, ctx) {
   const namesBox = rootEl.querySelector('#dsg-armnames');
   const descEl   = rootEl.querySelector('#dsg-desc');
 
+  const ratioHint= rootEl.querySelector('#dsg-alloc-hint');
+
+  // Summary pills
+  const sumType  = rootEl.querySelector('#sum-type');
+  const sumBlind = rootEl.querySelector('#sum-blind');
+  const sumAlloc = rootEl.querySelector('#sum-alloc');
+  const sumArms  = rootEl.querySelector('#sum-arms');
+
   // GPT gợi ý (textarea)
   const suggBox  = rootEl.querySelector('#dsg-sugg-box');
   const sTA      = rootEl.querySelector('#dsg-sugg-ta');
@@ -112,9 +147,10 @@ export async function mount(rootEl, ctx) {
   const copyEval = rootEl.querySelector('#dsg-copy-eval');
   const hideEval = rootEl.querySelector('#dsg-hide-eval');
 
-  const btnSuggest = rootEl.querySelector('#dsg-gpt-suggest');
-  const btnEval    = rootEl.querySelector('#dsg-gpt-eval');
-  const btnSave    = rootEl.querySelector('#dsg-save');
+  const btnSuggest   = rootEl.querySelector('#dsg-gpt-suggest');
+  const btnEval      = rootEl.querySelector('#dsg-gpt-eval');
+  const btnSave      = rootEl.querySelector('#dsg-save');
+  const btnResetName = rootEl.querySelector('#dsg-reset-names');
 
   // ------- Load state -------
   const dsg = ctx.get('design', {}) || {};
@@ -124,7 +160,7 @@ export async function mount(rootEl, ctx) {
   const initArms  = clampInt(dsg.arms ?? 2, 2, 6);
   const initNames = Array.isArray(dsg.armNames) && dsg.armNames.length >= 2
     ? dsg.armNames
-    : defaultArmNames(initArms);
+    : defaultArmNames(initArms, ctx);
 
   typeEl.value  = initType;
   blindEl.value = initBlind;
@@ -132,25 +168,64 @@ export async function mount(rootEl, ctx) {
   armsEl.value  = String(initArms);
   descEl.value  = dsg.description || '';
 
-  renderArmInputs(initArms, initNames);
+  renderArmInputs(initArms, initNames, { force: true });
+  updateRatioHint();
+  updateSummary();
+
+  // Load đánh giá cũ nếu có
+  const oldEval = ctx.get('design.evaluation', '');
+  if (oldEval) { eTA.value = String(oldEval); evalBox.classList.remove('hidden'); }
 
   // ------- Events -------
+  typeEl.addEventListener('change', () => {
+    maybeSuggestCrossoverNames();
+    updateSummary();
+  });
+  blindEl.addEventListener('change', updateSummary);
+
+  allocEl.addEventListener('input', () => {
+    updateRatioHint();
+    updateSummary();
+  });
+
   armsEl.addEventListener('change', () => {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     armsEl.value = String(n);
+    // Cập nhật ratio nếu không khớp chiều dài
+    const fixed = ensureRatioLength(n, allocEl.value || '1:1');
+    if (fixed.changed) {
+      allocEl.value = fixed.ratio;
+      ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.');
+    }
+    // Giữ tên đã nhập, chỉ điền phần trống
     const curNames = readArmNames();
-    const next = (curNames.length === n)
-      ? curNames
-      : padOrTrim(curNames.length ? curNames : defaultArmNames(n), n);
-    renderArmInputs(n, next);
+    renderArmInputs(n, curNames);
+    maybeSuggestCrossoverNames();
+    updateRatioHint();
+    updateSummary();
   });
 
-  btnSuggest.addEventListener('click', async () => {
-    try {
-      btnSuggest.disabled = true;
-      const prev = btnSuggest.textContent;
-      btnSuggest.textContent = 'Đang gọi GPT...';
+  btnResetName.addEventListener('click', () => {
+    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    renderArmInputs(n, defaultArmNames(n, ctx), { force: true });
+    ctx.toast('Đã đặt lại tên nhánh mặc định.');
+  });
 
+  btnSuggest.addEventListener('click', onSuggest);
+  btnEval.addEventListener('click', onEvaluate);
+
+  // copy / hide GPT boxes
+  copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
+  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
+  copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
+  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
+
+  btnSave.addEventListener('click', onSave);
+
+  // ------- Handlers -------
+  async function onSuggest() {
+    try {
+      toggleBusy(btnSuggest, true, 'Đang gọi GPT...');
       const pico   = ctx.get('pico', {}) || {};
       const rq     = ctx.get('researchQuestion', '') || '';
       const mainObj= ctx.get('mainObjective', '') || '';
@@ -187,28 +262,22 @@ export async function mount(rootEl, ctx) {
           ctx.toast('Đã chèn thêm gợi ý vào cuối');
         };
       }
-
-      btnSuggest.textContent = prev;
-      btnSuggest.disabled = false;
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT gợi ý.');
-      btnSuggest.disabled = false;
-      btnSuggest.textContent = 'GPT gợi ý mô tả thiết kế';
+    } finally {
+      toggleBusy(btnSuggest, false, 'GPT gợi ý mô tả thiết kế');
     }
-  });
+  }
 
-  btnEval.addEventListener('click', async () => {
+  async function onEvaluate() {
     const content = (descEl.value || '').trim();
     if (!content) {
       ctx.toast('Chưa có mô tả để đánh giá.');
       return;
     }
     try {
-      btnEval.disabled = true;
-      const prev = btnEval.textContent;
-      btnEval.textContent = 'Đang đánh giá...';
-
+      toggleBusy(btnEval, true, 'Đang đánh giá...');
       const pico   = ctx.get('pico', {}) || {};
       const rq     = ctx.get('researchQuestion', '') || '';
       const mainObj= ctx.get('mainObjective', '') || '';
@@ -226,27 +295,24 @@ export async function mount(rootEl, ctx) {
         ctx.save('design.evaluation', md);
         ctx.toast('Đã cập nhật đánh giá');
       }
-
-      btnEval.textContent = prev;
-      btnEval.disabled = false;
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT đánh giá.');
-      btnEval.disabled = false;
-      btnEval.textContent = 'GPT đánh giá mô tả';
+    } finally {
+      toggleBusy(btnEval, false, 'GPT đánh giá mô tả');
     }
-  });
+  }
 
-  // copy / hide for GPT boxes
-  copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
-  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
-  copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
-  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
+  function onSave() {
+    // Kiểm tra ratio khớp số nhánh
+    const nArms  = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    const fixed  = ensureRatioLength(nArms, allocEl.value || '1:1');
+    if (fixed.changed) {
+      allocEl.value = fixed.ratio;
+      ctx.toast('Đã hiệu chỉnh tỷ lệ phân bổ để khớp số nhánh.');
+    }
 
-  btnSave.addEventListener('click', () => {
-    const nArms = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const armNames = padOrTrim(readArmNames(), nArms).map(s => safeText(s) || '');
-
     const payload = {
       type: typeEl.value,
       blinding: blindEl.value,
@@ -260,24 +326,39 @@ export async function mount(rootEl, ctx) {
     ctx.save('interventions', armNames); // Step 10 dùng lại baseline
     try { localStorage.setItem('num-arms', String(nArms)); } catch {}
 
+    updateSummary();
     ctx.toast('Đã lưu thiết kế & tên nhánh');
-  });
+  }
 
   // ------- helpers -------
-  function renderArmInputs(n, names) {
+  function renderArmInputs(n, names, opts = {}) {
+    const keepExisting = !opts.force;
+    const current = keepExisting ? readArmNames() : [];
     namesBox.innerHTML = '';
-    const list = padOrTrim(names || [], n);
+    const base = padOrTrim(keepExisting ? mergeNames(current, names, n) : padOrTrim(names || [], n), n);
+
     for (let i = 0; i < n; i++) {
       const wrap = document.createElement('div');
       wrap.innerHTML = `
         <label>Tên nhánh ${i + 1}
-          <input type="text" data-arm-index="${i}" placeholder="${i === 0 ? 'Nhóm can thiệp' : i === 1 ? 'Nhóm chứng' : 'Nhánh ' + (i + 1)}" />
+          <input class="form-input" type="text" data-arm-index="${i}" placeholder="${defaultName(i)}" />
         </label>
       `.trim();
       const inp = wrap.querySelector('input');
-      inp.value = list[i] || '';
+      inp.value = base[i] || '';
       namesBox.appendChild(wrap);
     }
+  }
+
+  function mergeNames(oldArr, newArr, n) {
+    // Giữ tên cũ nếu có; chỉ điền phần trống bằng newArr hoặc mặc định
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const prev = (oldArr && oldArr[i] || '').trim();
+      const nxt  = (newArr && newArr[i] || '').trim();
+      out.push(prev || nxt || defaultName(i));
+    }
+    return out;
   }
 
   function readArmNames() {
@@ -296,10 +377,36 @@ export async function mount(rootEl, ctx) {
     if (i === 1) return 'Nhóm chứng';
     return `Nhánh ${i + 1}`;
   }
-  function defaultArmNames(n) {
+
+  function defaultArmNames(n, ctx_) {
     const out = [];
+    const pico = ctx_.get('pico', {}) || {};
+    const I = safeShort(pico.i);
+    const C = safeShort(pico.c);
     for (let i = 0; i < n; i++) out.push(defaultName(i));
+    // Nếu có I/C thì tinh chỉnh tên 2 nhánh đầu
+    if (I) out[0] = `Nhóm can thiệp (${I})`;
+    if (C) out[1] = `Nhóm chứng (${C})`;
     return out;
+  }
+
+  function maybeSuggestCrossoverNames() {
+    const t = typeEl.value;
+    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    if (t !== 'crossover' || n !== 2) return; // chỉ gợi ý khi 2 nhánh
+    const pico = ctx.get('pico', {}) || {};
+    const I = safeShort(pico.i);
+    const C = safeShort(pico.c);
+    if (!I || !C) return;
+
+    const names = readArmNames();
+    // Nếu đang là mặc định thì gợi ý tên theo trình tự
+    const looksDefault =
+      (names[0] || '').toLowerCase().startsWith('nhóm can thiệp') &&
+      (names[1] || '').toLowerCase().startsWith('nhóm chứng');
+    if (looksDefault) {
+      renderArmInputs(2, [`Trình tự ${I}→${C}`, `Trình tự ${C}→${I}`]);
+    }
   }
 
   function clampInt(v, min, max) {
@@ -310,10 +417,61 @@ export async function mount(rootEl, ctx) {
   function safeText(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
+  function safeShort(s) {
+    s = safeText(s);
+    return s.length > 40 ? s.slice(0, 37) + '…' : s;
+  }
+
+  function parseRatio(str) {
+    const parts = String(str || '').split(':').map(s => s.trim()).filter(Boolean);
+    const nums  = parts.map(x => Number(x));
+    if (nums.length === 0 || nums.some(x => !Number.isFinite(x) || x <= 0)) return null;
+    return nums;
+  }
+
+  function ensureRatioLength(n, ratioStr) {
+    const arr = parseRatio(ratioStr);
+    if (!arr) return { changed: true, ratio: new Array(n).fill(1).join(':') };
+    if (arr.length === n) return { changed: false, ratio: ratioStr };
+    // tự căn cho đủ n phần bằng 1
+    return { changed: true, ratio: new Array(n).fill(1).join(':') };
+  }
+
+  function ratioToPercents(str) {
+    const arr = parseRatio(str);
+    if (!arr) return null;
+    const sum = arr.reduce((a,b) => a + b, 0);
+    if (!sum) return null;
+    return arr.map(x => Math.round((x / sum) * 1000) / 10); // 1 chữ số thập phân
+  }
+
+  function updateRatioHint() {
+    const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
+    const fixed = ensureRatioLength(n, allocEl.value || '1:1');
+    if (fixed.changed) {
+      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
+      return;
+    }
+    const per = ratioToPercents(allocEl.value || '');
+    ratioHint.textContent = per ? `Tương ứng ≈ ${per.map(x => x + '%').join(' : ')}` : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
+  }
+
+  function updateSummary() {
+    sumType.textContent  = `Thiết kế: ${typeEl.options[typeEl.selectedIndex]?.text || '—'}`;
+    sumBlind.textContent = `Blinding: ${blindEl.options[blindEl.selectedIndex]?.text || '—'}`;
+    sumAlloc.textContent = `Tỷ lệ: ${(allocEl.value || '—')}`;
+    sumArms.textContent  = `Số nhánh: ${armsEl.value || '—'}`;
+  }
 
   function copyText(t) {
     try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
+  }
+
+  function toggleBusy(btn, busy, label) {
+    if (!btn) return;
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
+    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
