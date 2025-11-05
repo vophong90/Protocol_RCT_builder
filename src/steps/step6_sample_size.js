@@ -1,7 +1,9 @@
 // src/steps/step6_sample_size.js
-// Step 6 – Cỡ mẫu (baseline)
-// Công thức minh bạch, không dùng GPT để tính. Có bù rớt mẫu và cảnh báo nhập sai.
-// Lưu kết quả vào state.sampleSize { method, inputs, result }.
+// Step 6 – Co mau (baseline) + GPT goi y & danh gia
+// - Tinh theo cong thuc minh bach, co bu rot mau va canh bao.
+// - Luu ket qua vao state.sampleSize { method, inputs, result }.
+// - Them GPT goi y cong thuc phu hop (dua vao muc tieu + thiet ke Buoc 5)
+// - Them GPT danh gia dau vao: doi chieu voi y van, de xuat tai lieu/PMID/DOI (neu tin cay)
 
 export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
@@ -53,6 +55,39 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
+  <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+    <button id="ss-gpt-suggest" class="btn-outline">GPT gợi ý công thức</button>
+    <button id="ss-gpt-eval" class="btn-outline">GPT đánh giá đầu vào (đối chiếu y văn)</button>
+  </div>
+
+  <!-- GPT Suggestion -->
+  <div id="ss-sugg-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Gợi ý công thức</strong>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="ss-copy-sugg" class="btn-ghost" type="button">Sao chép</button>
+        <button id="ss-hide-sugg" class="btn-ghost" type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="ss-sugg-ta" class="form-textarea" rows="8" placeholder="GPT sẽ đề xuất 1–3 công thức phù hợp, kèm lý do, input cần thiết, gợi ý giá trị ban đầu…"></textarea>
+    </div>
+  </div>
+
+  <!-- GPT Evaluation -->
+  <div id="ss-eval-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+      <strong>Kết quả GPT – Đánh giá đầu vào (đối chiếu y văn)</strong>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button id="ss-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+        <button id="ss-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <textarea id="ss-eval-ta" class="form-textarea" rows="8" placeholder="GPT sẽ đối chiếu giả định (SD, Δ, p1, p2, f, w, R2…) với y văn, gợi ý DOI/PMID nếu chắc chắn, hoặc từ khóa tra cứu…"></textarea>
+    </div>
+  </div>
+
   <div class="card-footer" style="display:flex;gap:10px;flex-wrap:wrap">
     <button id="ss-calc" class="btn-primary">Tính cỡ mẫu</button>
     <button id="ss-save" class="btn-secondary">Lưu vào đề cương</button>
@@ -77,6 +112,20 @@ export async function mount(rootEl, ctx) {
   const btnSave  = rootEl.querySelector('#ss-save');
   const outWrap  = rootEl.querySelector('#ss-out');
   const outHtml  = rootEl.querySelector('#ss-out-html');
+
+  // GPT UI
+  const btnSuggest = rootEl.querySelector('#ss-gpt-suggest');
+  const btnEval    = rootEl.querySelector('#ss-gpt-eval');
+
+  const suggBox = rootEl.querySelector('#ss-sugg-box');
+  const sTA     = rootEl.querySelector('#ss-sugg-ta');
+  const sCopy   = rootEl.querySelector('#ss-copy-sugg');
+  const sHide   = rootEl.querySelector('#ss-hide-sugg');
+
+  const evalBox = rootEl.querySelector('#ss-eval-box');
+  const eTA     = rootEl.querySelector('#ss-eval-ta');
+  const eCopy   = rootEl.querySelector('#ss-copy-eval');
+  const eHide   = rootEl.querySelector('#ss-hide-eval');
 
   // ---- init arms from design/localStorage
   const design = ctx.get('design', {}) || {};
@@ -239,7 +288,6 @@ export async function mount(rootEl, ctx) {
       setIf('#ac-r2', ip.r2);
       setIf('#ac-sided', ip.sided);
     } else {
-      // sensible defaults from design arms
       if (m === 'anova') setIf('#a-k', parseInt(armsEl.value || '3', 10));
     }
   }
@@ -252,6 +300,101 @@ export async function mount(rootEl, ctx) {
   methodEl.addEventListener('change', renderMethodInputs);
   renderMethodInputs();
 
+  // ===== GPT actions =====
+  sCopy.addEventListener('click', () => copyText(sTA.value || ''));
+  sHide.addEventListener('click', () => suggBox.classList.add('hidden'));
+  eCopy.addEventListener('click', () => copyText(eTA.value || ''));
+  eHide.addEventListener('click', () => evalBox.classList.add('hidden'));
+
+  btnSuggest.addEventListener('click', onSuggest);
+  btnEval.addEventListener('click', onEvaluate);
+
+  async function onSuggest() {
+    try {
+      toggleBusy(btnSuggest, true, 'Dang goi GPT...');
+      const pico    = ctx.get('pico', {}) || {};
+      const rq      = ctx.get('researchQuestion', '') || '';
+      const mainObj = ctx.get('mainObjective', '') || '';
+      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+      const dsg     = ctx.get('design', {}) || {};
+
+      const prompt = buildSuggestPrompt({ pico, rq, mainObj, subObjs, dsg });
+      const raw    = await ctx.callGPT(prompt);
+      const md     = String(raw || '').trim();
+      if (!md) {
+        ctx.toast('GPT khong tra ve goi y.');
+        return;
+      }
+      sTA.value = md;
+      suggBox.classList.remove('hidden');
+      ctx.toast('Da nhan goi y tu GPT.');
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Loi khi goi GPT goi y.');
+    } finally {
+      toggleBusy(btnSuggest, false, 'GPT gợi ý công thức');
+    }
+  }
+
+  async function onEvaluate() {
+    try {
+      toggleBusy(btnEval, true, 'Dang danh gia...');
+      const pico    = ctx.get('pico', {}) || {};
+      const rq      = ctx.get('researchQuestion', '') || '';
+      const mainObj = ctx.get('mainObjective', '') || '';
+      const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+      const dsg     = ctx.get('design', {}) || {};
+
+      const curInputs = readCurrentInputs();
+      const prompt = buildEvaluatePrompt({ pico, rq, mainObj, subObjs, dsg, curInputs });
+      const raw    = await ctx.callGPT(prompt);
+      const md     = String(raw || '').trim();
+      if (!md) {
+        ctx.toast('GPT khong tra ve ket qua danh gia.');
+        return;
+      }
+      eTA.value = md;
+      evalBox.classList.remove('hidden');
+      ctx.toast('Da nhan danh gia tu GPT.');
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Loi khi goi GPT danh gia.');
+    } finally {
+      toggleBusy(btnEval, false, 'GPT đánh giá đầu vào (đối chiếu y văn)');
+    }
+  }
+
+  function readCurrentInputs() {
+    const m = methodEl.value;
+    const pack = {
+      method: m,
+      alpha: num(alphaEl.value),
+      power: num(powerEl.value),
+      dropout: num(dropEl.value),
+      k: parseInt(armsEl.value || '2', 10),
+      params: {}
+    };
+    const get = (sel) => num(optsBox.querySelector(sel)?.value);
+    const getSel = (sel) => (optsBox.querySelector(sel)?.value || '');
+    if (m === 'means') {
+      pack.params = { sd: get('#m-sd'), delta: get('#m-delta'), sided: getSel('#m-sided') };
+    } else if (m === 'proportions') {
+      pack.params = { p1: get('#p-p1'), p2: get('#p-p2'), sided: getSel('#p-sided') };
+    } else if (m === 'ni_proportions') {
+      pack.params = { p1: get('#ni-p1'), p2: get('#ni-p2'), margin: get('#ni-delta') };
+    } else if (m === 'crossover') {
+      pack.params = { sd_within: get('#x-sdw'), delta: get('#x-delta'), sided: getSel('#x-sided') };
+    } else if (m === 'anova') {
+      pack.params = { f: get('#a-f'), k: num(optsBox.querySelector('#a-k')?.value || armsEl.value) };
+    } else if (m === 'chisq') {
+      pack.params = { w: get('#c-w') };
+    } else if (m === 'ancova') {
+      pack.params = { sd: get('#ac-sd'), delta: get('#ac-delta'), r2: get('#ac-r2'), sided: getSel('#ac-sided') };
+    }
+    return pack;
+  }
+
+  // ===== compute & save =====
   btnCalc.addEventListener('click', () => {
     const res = compute();
     if (!res.ok) {
@@ -277,7 +420,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu cỡ mẫu vào đề cương');
   });
 
-  // -------- core compute
+  // -------- core compute (giữ nguyên baseline)
   function compute() {
     const method = methodEl.value;
     const alpha  = num(alphaEl.value);
@@ -305,7 +448,6 @@ export async function mount(rootEl, ctx) {
       if (!sd || !delta) return bad('Thiếu SD hoặc Δ.');
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
-      // n mỗi nhóm (equal allocation): 2 * (zA + zB)^2 * sd^2 / delta^2
       nPerGroup = 2 * sq(zAlpha + zBeta) * sq(sd) / sq(delta);
       nPerGroup = Math.ceil(nPerGroup);
       nTotal = 2 * nPerGroup;
@@ -335,7 +477,6 @@ export async function mount(rootEl, ctx) {
       const delta = prop(optsBox, '#ni-delta');
       if (!isProp(p1) || !isProp(p2) || !(delta > 0 && delta < 0.5)) return bad('Giá trị p1/p2/δ không hợp lệ.');
 
-      // One-sided non-inferiority (xấp xỉ): denominator = ( (p1 - p2) + δ )^2
       const zAlpha = Z(1 - alpha);    // one-sided
       const zBeta  = Z(power);
       const nume   = zAlpha * Math.sqrt(2 * p2 * (1 - p2)) + zBeta * Math.sqrt(p1*(1-p1) + p2*(1-p2));
@@ -355,7 +496,6 @@ export async function mount(rootEl, ctx) {
       if (!sdw || !delta) return bad('Thiếu SD within hoặc Δ.');
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
-      // Tổng số đối tượng: (zA + zB)^2 * 2 * sdw^2 / delta^2
       nTotal = sq(zAlpha + zBeta) * 2 * sq(sdw) / sq(delta);
       nTotal = Math.ceil(nTotal);
       nPerGroup = Math.ceil(nTotal / 2); // 2 sequence
@@ -369,9 +509,8 @@ export async function mount(rootEl, ctx) {
       if (!f) return bad('Thiếu hiệu ứng f.');
       if (!k) k = kInput;
 
-      const zAlpha = Z(1 - alpha); // xấp xỉ một phía cho F
+      const zAlpha = Z(1 - alpha);
       const zBeta  = Z(power);
-      // Xấp xỉ: N ≈ (zAlpha + zBeta)^2 / f^2 + (k - 1)
       let N = sq(zAlpha + zBeta) / sq(f) + (k - 1);
       N = Math.ceil(N);
       nPerGroup = Math.ceil(N / k);
@@ -385,7 +524,6 @@ export async function mount(rootEl, ctx) {
       if (!w) return bad('Thiếu hiệu ứng w.');
       const zAlpha = Z(1 - alpha);
       const zBeta  = Z(power);
-      // N ≈ (zAlpha + zBeta)^2 / w^2
       nTotal = sq(zAlpha + zBeta) / sq(w);
       nTotal = Math.ceil(nTotal);
       nPerGroup = null;
@@ -402,9 +540,7 @@ export async function mount(rootEl, ctx) {
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
 
-      // Bước 1: n 2 nhóm (means) = 2*(zA+zB)^2*sd^2/delta^2
       let nBase = 2 * sq(zAlpha + zBeta) * sq(sd) / sq(delta);
-      // Bước 2: điều chỉnh theo (1 - R^2): n_adj = nBase * (1 - r2)
       nPerGroup = Math.ceil(nBase * (1 - r2));
       nTotal = 2 * nPerGroup;
 
@@ -431,7 +567,6 @@ export async function mount(rootEl, ctx) {
     rows.push(`<tr><td>Power</td><td>${fmt(inputs.power)}</td></tr>`);
     if ('k' in inputs && inputs.k) rows.push(`<tr><td>Số nhánh k</td><td>${inputs.k}</td></tr>`);
 
-    // method-specific echo
     const echo = (k, v) => rows.push(`<tr><td>${k}</td><td>${v}</td></tr>`);
 
     if (method === 'means') {
@@ -508,10 +643,83 @@ export async function mount(rootEl, ctx) {
     if (!Number.isFinite(x)) return String(x);
     return (Math.abs(x) >= 1000 || x % 1 === 0) ? String(x) : String(+x.toFixed(4));
   }
+  function copyText(t) {
+    try { navigator.clipboard?.writeText(t); ctx.toast('Da sao chep.'); }
+    catch { ctx.toast('Khong sao chep duoc.'); }
+  }
+  function toggleBusy(btn, busy, label) {
+    if (!btn) return;
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Dang xu ly...'; }
+    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
+  }
+
+  // ===== Prompts (ASCII + string concat to avoid token errors)
+  function buildSuggestPrompt({ pico, rq, mainObj, subObjs, dsg }) {
+    const subs = Array.isArray(subObjs) && subObjs.length
+      ? subObjs.map((s,i)=> (i+1) + '. ' + String(s)).join('\\n')
+      : '(chua co)';
+    const designLine =
+      'Loai thiet ke: ' + (dsg?.type || '(chua chon)') +
+      '; Blinding: ' + (dsg?.blinding || '(chua chon)') +
+      '; Arms: ' + (dsg?.arms != null ? String(dsg.arms) : '(?)') +
+      '; Allocation: ' + (dsg?.allocationRatio || '(?)');
+
+    return (
+      'Ban la tro ly hoc thuat. Nhiem vu: GOI Y cong thuc tinh co mau phu hop cho RCT dua tren muc tieu/nghien cuu va thiet ke hien co.\\n' +
+      'Hay de xuat 1-3 phuong an (chon trong cac cong thuc co san: means, proportions, ni_proportions, crossover, anova, chisq, ancova).\\n' +
+      'Moi phuong an: neu ro LY DO chon, KHI NAO dung, CAC THAM SO can nhap (ten, y nghia, goi y khoang gia tri ban dau, nguon tham khao thong thuong nhu MCID, SD, baseline p, R2).\\n' +
+      'Tra ve MARKDOWN ngan gon, co tieu de, bullet ro rang. Khong tinh co mau, chi goi y cong thuc va input can co.\\n\\n' +
+      '--- BOI CANH ---\\n' +
+      'P: ' + (pico?.p || '(chua co)') + '\\n' +
+      'I: ' + (pico?.i || '(chua co)') + '\\n' +
+      'C: ' + (pico?.c || '(chua co)') + '\\n' +
+      'O: ' + (pico?.o || '(chua co)') + '\\n' +
+      'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\\n' +
+      'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\\n' +
+      'Muc tieu phu:\\n' + subs + '\\n' +
+      designLine + '\\n' +
+      '--- HUONG DAN ---\\n' +
+      '- Neu muc tieu/ket cuc co tinh lien tuc: uu tien means / ancova / crossover (neu cheo).\\n' +
+      '- Neu ket cuc la ti le: uu tien proportions / ni_proportions.\\n' +
+      '- Neu nhieu nhom (k>2) so sanh trung binh: anova, neu ti le nhieu nhom: co the chi ra giai phap khac (ngoai pham vi tinh toan).\\n' +
+      '- De xuat so lieu ban dau theo y van/chuan thong dung (neu khong chac, ghi ro can tim tai lieu nao).'
+    );
+  }
+
+  function buildEvaluatePrompt({ pico, rq, mainObj, subObjs, dsg, curInputs }) {
+    const subs = Array.isArray(subObjs) && subObjs.length
+      ? subObjs.map((s,i)=> (i+1) + '. ' + String(s)).join('\\n')
+      : '(chua co)';
+    const designLine =
+      'Loai thiet ke: ' + (dsg?.type || '(chua chon)') +
+      '; Blinding: ' + (dsg?.blinding || '(chua chon)') +
+      '; Arms: ' + (dsg?.arms != null ? String(dsg.arms) : '(?)') +
+      '; Allocation: ' + (dsg?.allocationRatio || '(?)');
+
+    // Dong goi input hien tai de GPT doi chieu
+    const now = JSON.stringify(curInputs);
+
+    return (
+      'Ban la chuyen gia phuong phap. Nhiem vu: DANH GIA do hop ly cua CAC GIA DINH co mau (SD, Delta, p1, p2, f, w, R2, alpha, power, k...) so voi y van hien hanh.\\n' +
+      'Hay: (1) chi ra thong so nao co ve lech/chua thuyet phuc, (2) goi y khoang gia tri thuong gap, (3) neu tin cay thi cho DOI/PMID/nam; neu khong chac thi dua tu khoa tim kiem va loai tai lieu can tim.\\n' +
+      'Tra ve MARKDOWN ngan gon: muc TONG QUAN, KHOANG THAM KHAO thong thuong, DOI CHIEU VOI INPUT, DE XUAT DIEU CHINH, TAI LIEU/GOI Y TIM KIEM.\\n' +
+      'Tuyet doi KHONG tu y tinh co mau; chi danh gia hop ly input.\\n\\n' +
+      '--- BOI CANH ---\\n' +
+      'P: ' + (pico?.p || '(chua co)') + '\\n' +
+      'I: ' + (pico?.i || '(chua co)') + '\\n' +
+      'C: ' + (pico?.c || '(chua co)') + '\\n' +
+      'O: ' + (pico?.o || '(chua co)') + '\\n' +
+      'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\\n' +
+      'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\\n' +
+      'Muc tieu phu:\\n' + subs + '\\n' +
+      designLine + '\\n\\n' +
+      '--- INPUT DANG CHON ---\\n' + now + '\\n\\n' +
+      'Luu y: Neu khong truy cap duoc Internet, hay chi ro tu khoa, nguon (PubMed, Cochrane, huong dan Hoi chuyen mon...), va canh bao ve do tin cay.'
+    );
+  }
 
   // Chuẩn ngược xấp xỉ (Acklam)
   function zQuantile(p) {
-    // clamp
     if (p <= 0) return -Infinity;
     if (p >= 1) return Infinity;
     const a1 = -3.969683028665376e+01;
