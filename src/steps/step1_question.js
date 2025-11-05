@@ -158,7 +158,9 @@ export async function mount(rootEl, ctx) {
   const eTA         = rootEl.querySelector('#rq-eval-ta');
   const eCopy       = rootEl.querySelector('#rq-copy-eval');
   const eHide       = rootEl.querySelector('#rq-hide-eval');
-  const BULLET_RE   = /^\s*(?:\d+[.)]|[-–—•*])\s*/;
+
+  // ⚠️ Chỉ 1 hằng BULLET_RE, dùng \uXXXX để tránh lỗi encoding/regex
+  const BULLET_RE = new RegExp("^\\s*(?:\\d+[.)]|[\\-\\u2013\\u2014\\u2022*])\\s*");
 
   // ===== Load state =====
   rqEl.value = ctx.get('researchQuestion', '') || '';
@@ -196,7 +198,7 @@ export async function mount(rootEl, ctx) {
       if (f) {
         try {
           pdfText = await ctx.extractTextFromPDF(f);
-          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\\n...[cắt bớt]';
+          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO hiện có.');
@@ -225,7 +227,7 @@ ${pdfText || '(không có)'}
         ctx.toast('GPT không trả về gợi ý hợp lệ.');
         console.warn('GPT raw reply (step1 suggest):', raw);
       } else {
-        sTA.value = arr.map((x, i) => `${i + 1}) ${x}`).join('\\n');
+        sTA.value = arr.map((x, i) => `${i + 1}) ${x}`).join('\n');
         sBox.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý từ GPT.');
       }
@@ -279,45 +281,43 @@ O: ${pico.o || '(chưa có)'}
     // lấy chỉ số 1..3
     const idx = Math.max(1, Math.min(3, parseInt(sApplyWhich.value || '1', 10))) - 1;
     const lines = (sTA.value || '')
-      .split(/\\r?\\n/)
+      .split(/\r?\n/)
       .map(s => s.replace(BULLET_RE, '').trim())
       .filter(Boolean);
     if (!lines[idx]) { ctx.toast('Không tìm thấy gợi ý để chèn.'); return; }
     rqEl.value = lines[idx];
     ctx.save('researchQuestion', (rqEl.value || '').trim());
-    ctx.toast(\`Đã chèn gợi ý #\${idx + 1} vào ô câu hỏi.\`);
+    ctx.toast(`Đã chèn gợi ý #${idx + 1} vào ô câu hỏi.`);
   }
 
-/* ===== Helpers ===== */
-const BULLET_RE = new RegExp("^\\s*(?:\\d+[.)]|[\\-\\u2013\\u2014\\u2022*])\\s*");
-
-function parseCandidates(text) {
-  try {
-    const j = JSON.parse(String(text));
-    const arr = Array.isArray(j?.candidates) ? j.candidates : [];
-    return arr.map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
-  } catch {}
-  return String(text || '')
-    .split(/\r?\n/)
-    .map(s => s.replace(BULLET_RE, '').trim())
-    .filter(Boolean)
-    .slice(0, 3);
-}
-
-function copyText(t) {
-  try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
-  catch { ctx.toast('Không sao chép được.'); }
-}
-
-function toggleBusy(btn, busy, label) {
-  if (!btn) return;
-  if (busy) {
-    btn.disabled = true;
-    btn.dataset.prev = btn.textContent || '';
-    btn.textContent = 'Đang xử lý...';
-  } else {
-    btn.disabled = false;
-    btn.textContent = label || btn.dataset.prev || '';
+  /* ===== Helpers ===== */
+  function parseCandidates(text) {
+    try {
+      const j = JSON.parse(String(text));
+      const arr = Array.isArray(j?.candidates) ? j.candidates : [];
+      return arr.map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
+    } catch {}
+    return String(text || '')
+      .split(/\r?\n/)
+      .map(s => s.replace(BULLET_RE, '').trim())
+      .filter(Boolean)
+      .slice(0, 3);
   }
-}
+
+  function copyText(t) {
+    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
+    catch { ctx.toast('Không sao chép được.'); }
+  }
+
+  function toggleBusy(btn, busy, label) {
+    if (!btn) return;
+    if (busy) {
+      btn.disabled = true;
+      btn.dataset.prev = btn.textContent || '';
+      btn.textContent = 'Đang xử lý...';
+    } else {
+      btn.disabled = false;
+      btn.textContent = label || btn.dataset.prev || '';
+    }
+  }
 }
