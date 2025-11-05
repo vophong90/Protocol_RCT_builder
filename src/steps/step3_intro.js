@@ -4,7 +4,7 @@
 
 export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
-<div class="card">
+<div id="intro-card" class="card">
   <div class="card-header">
     <h3 class="card-title">Mở đầu (CaRS)</h3>
     <div class="card-subtitle">
@@ -12,6 +12,67 @@ export async function mount(rootEl, ctx) {
       <strong>Niche</strong> (khoảng trống), <strong>Occupy</strong> (cách nghiên cứu lấp khoảng trống).
     </div>
   </div>
+
+  <style>
+    /* ===== Chỉ áp dụng trong card này ===== */
+    #intro-card .card-title { font-weight: 600; }
+    #intro-card label { font-weight: 500; color: #111827; }
+
+    /* Textarea chuẩn (đồng bộ Step 0–2) */
+    #intro-card .form-textarea {
+      width: 100%;
+      font: 500 15.5px/1.6 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .9rem 1rem;
+      outline: 0;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+      min-height: 110px; resize: vertical;
+    }
+    #intro-card .form-textarea::placeholder { color: #9aa3af; }
+
+    /* File input + tên file */
+    #intro-card .filebar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    #intro-card .file-wrap { flex:1; min-width: 280px; max-width: 560px; }
+    #intro-card input[type="file"] {
+      width: 100%;
+      font: 500 14.5px/1 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .5rem .6rem;
+      background: #fff;
+    }
+    #intro-card input[type="file"]::file-selector-button {
+      margin-right: .6rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: .5rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #intro-card input[type="file"]::file-selector-button:hover { background: #f9fafb; }
+    #intro-card .file-note { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+
+    /* Khung kết quả GPT */
+    #intro-card .section { margin-top: 12px; }
+    #intro-card .result-area {
+      width:100%; min-height:170px; max-height:42vh; resize:vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:14px; line-height:1.55;
+      padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+      white-space: pre-wrap;
+    }
+    #intro-card .result-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    #intro-card .btn-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
+    /* Nút đồng bộ */
+    #intro-card .btn { min-height: 38px; }
+
+    /* Ẩn/hiện */
+    .hidden { display: none !important; }
+  </style>
 
   <div class="card-body grid-2">
     <label>Territory (Bối cảnh – tầm quan trọng)
@@ -25,48 +86,49 @@ export async function mount(rootEl, ctx) {
     </label>
   </div>
 
-  <!-- Hàng chứa file + nút GPT: full-width cho file, nút đồng bộ brand -->
-  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <div style="flex:1;min-width:280px">
+  <!-- File + nút GPT -->
+  <div class="card-body filebar">
+    <div class="file-wrap">
       <input id="intro-pdf" type="file" accept="application/pdf" />
+      <div id="intro-fname" class="file-note">Chưa chọn tệp PDF</div>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <button id="intro-gpt"  class="btn-primary" type="button">GPT gợi ý CaRS</button>
-      <button id="intro-eval" class="btn-primary" type="button">GPT đánh giá CaRS</button>
+      <button id="intro-gpt"  class="btn btn-primary"   type="button">GPT gợi ý CaRS</button>
+      <button id="intro-eval" class="btn btn-secondary" type="button">GPT đánh giá CaRS</button>
     </div>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý (ô text riêng) -->
-  <div id="intro-suggest-box" class="card hidden" style="margin-top:12px">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <!-- Kết quả GPT – GỢI Ý -->
+  <div id="intro-suggest-box" class="card section hidden">
+    <div class="card-header result-head">
       <strong>Kết quả GPT – Gợi ý</strong>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="intro-apply" class="btn-primary" type="button">Chèn vào 3 ô</button>
-        <button id="intro-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
-        <button id="intro-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
+      <div class="btn-row">
+        <button id="intro-apply" class="btn btn-primary" type="button">Chèn vào 3 ô</button>
+        <button id="intro-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="intro-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="intro-suggest-ta" class="form-textarea" rows="10" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …"></textarea>
+      <textarea id="intro-suggest-ta" class="result-area" rows="10" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …"></textarea>
     </div>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ (ô text riêng) -->
-  <div id="intro-eval-box" class="card hidden" style="margin-top:12px">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <!-- Kết quả GPT – ĐÁNH GIÁ -->
+  <div id="intro-eval-box" class="card section hidden">
+    <div class="card-header result-head">
       <strong>Kết quả GPT – Đánh giá</strong>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button id="intro-copy-eval" class="btn-ghost" type="button">Sao chép</button>
-        <button id="intro-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+      <div class="btn-row">
+        <button id="intro-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="intro-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="intro-eval-ta" class="form-textarea" rows="10" placeholder="Nhận xét mạch lạc CaRS (bullet ngắn theo tiêu chí)…"></textarea>
+      <textarea id="intro-eval-ta" class="result-area" rows="10" placeholder="Nhận xét mạch lạc CaRS (bullet ngắn theo tiêu chí)…"></textarea>
     </div>
   </div>
 
-  <div class="card-footer">
-    <button id="intro-save" class="btn-primary" type="button">Lưu</button>
+  <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
+    <button id="intro-save" class="btn btn-primary" type="button">Lưu</button>
   </div>
 </div>
 `.trim();
@@ -77,6 +139,7 @@ export async function mount(rootEl, ctx) {
   const occupyEl = rootEl.querySelector('#intro-occupy');
 
   const pdfEl    = rootEl.querySelector('#intro-pdf');
+  const fnameEl  = rootEl.querySelector('#intro-fname');
   const gptBtn   = rootEl.querySelector('#intro-gpt');
   const evalBtn  = rootEl.querySelector('#intro-eval');
 
@@ -110,6 +173,12 @@ export async function mount(rootEl, ctx) {
       occupy:    (occupyEl.value || '').trim(),
     });
     ctx.toast('Đã lưu phần Mở đầu (CaRS)');
+  });
+
+  // Hiển thị tên tệp PDF
+  pdfEl.addEventListener('change', () => {
+    const f = pdfEl.files?.[0];
+    fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
   });
 
   // ===== GPT: Gợi ý CaRS =====
@@ -187,7 +256,6 @@ ${pdfText || '(không có)'}
   }
 
   // Áp dụng nội dung từ ô gợi ý vào 3 ô
-  const sApply = rootEl.querySelector('#intro-apply');
   sApply.addEventListener('click', () => {
     const obj = parseCaRS(sTA.value);
     if (!obj) { ctx.toast('Không nhận diện được định dạng CaRS trong ô gợi ý.'); return; }
@@ -260,29 +328,36 @@ ${subObs && subObs.length ? subObs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : 
 
   // ===== Helpers =====
   function parseCaRS(text) {
-    // Ưu tiên JSON {"territory": "...", "niche":"...", "occupy":"..."}
+    const raw = String(text || '');
+    // Ưu tiên code-fence ```json
+    const fenced = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
+    const candidate = fenced ? fenced[1] : raw;
+
+    // JSON {"territory":"...","niche":"...","occupy":"..."}
     try {
-      const j = JSON.parse(String(text));
+      const j = JSON.parse(candidate);
       const t = String(j?.territory || '').trim();
       const n = String(j?.niche || '').trim();
       const o = String(j?.occupy || '').trim();
       if (!t && !n && !o) return null;
       return { territory: t, niche: n, occupy: o };
-    } catch (_) {
-      // Fallback: đọc từ ô textarea theo nhãn
-      const s = String(text || '');
-      return {
-        territory: pickSection(s, /territory\\s*:\\s*/i),
-        niche:     pickSection(s, /niche\\s*:\\s*/i),
-        occupy:    pickSection(s, /occupy\\s*:\\s*/i),
-      };
-    }
+    } catch { /* ignore */ }
+
+    // Fallback: quét theo nhãn Territory/Niche/Occupy
+    const s = candidate;
+    return {
+      territory: pickSection(s, /territory\\s*:\\s*/i),
+      niche:     pickSection(s, /niche\\s*:\\s*/i),
+      occupy:    pickSection(s, /occupy\\s*:\\s*/i),
+    };
   }
+
   function pickSection(s, rx) {
-    const m = s.match(rx); if (!m) return '';
+    const m = s.match(rx);
+    if (!m) return '';
     const start = m.index + m[0].length;
     const rest  = s.slice(start);
-    const next  = rest.search(/(?:territory|niche|occupy)\\s*:/i);
+    const next  = rest.search(/(?:^|\\n)\\s*(territory|niche|occupy)\\s*:/i);
     return (next >= 0 ? rest.slice(0, next) : rest).trim();
   }
 
