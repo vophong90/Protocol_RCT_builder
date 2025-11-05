@@ -288,48 +288,59 @@ export async function mount(rootEl, ctx) {
   function updateSummary(){ const typeTxt=typeEl.options[typeEl.selectedIndex]?.text||'—'; const blindTxt=blindEl.options[blindEl.selectedIndex]?.text||'—'; sumType.textContent='Thiết kế: '+typeTxt; sumBlind.textContent='Blinding: '+blindTxt; sumAlloc.textContent='Tỷ lệ: '+(allocEl.value||'—'); sumArms.textContent='Số nhánh: '+(armsEl.value||'—'); }
   function copyText(t){ try{ navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }catch{ ctx.toast('Không sao chép được.'); } }
   function toggleBusy(btn,busy,label){ if(!btn) return; if(busy){ btn.disabled=true; btn.dataset.prev=btn.textContent||''; btn.textContent='Đang xử lý...'; } else { btn.disabled=false; btn.textContent=label||btn.dataset.prev||''; } }
-  function buildSuggestPrompt(pico,rq,mainObj,subObjs,cur){ return (
-`Bạn là trợ lý học thuật. Hãy gợi ý **mô tả thiết kế RCT** ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.
-Yêu cầu:
-- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.
-- Trả về **MARKDOWN** thuần, không thêm tài liệu tham khảo.
 
-Bối cảnh:
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs)&&subObjs.length?subObjs.map((s,i)=>(i+1)+'. '+s).join('\\n'):'(chưa có)'}
+  function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
+  const sub = (Array.isArray(subObjs) && subObjs.length)
+    ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+    : '(chưa có)';
+  return [
+    'Bạn là trợ lý học thuật. Hãy gợi ý mô tả thiết kế RCT ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.',
+    'Yêu cầu:',
+    '- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.',
+    '- Trả về MARKDOWN thuần, không thêm tài liệu tham khảo.',
+    '',
+    'Bối cảnh:',
+    `P: ${pico.p || '(chưa có)'}`,
+    `I: ${pico.i || '(chưa có)'}`,
+    `C: ${pico.c || '(chưa có)'}`,
+    `O: ${pico.o || '(chưa có)'}`,
+    `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+    `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+    'Mục tiêu phụ:',
+    sub,
+    '',
+    'Lựa chọn hiện có:',
+    `- Loại thiết kế: ${cur.type}`,
+    `- Blinding: ${cur.blinding}`,
+    `- Tỷ lệ phân bổ: ${cur.allocationRatio}`,
+    `- Số nhánh: ${cur.arms}`,
+    `- Tên nhánh: ${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}`
+  ].join('\n');
+}
 
-Lựa chọn hiện có:
-- Loại thiết kế: ${cur.type}
-- Blinding: ${cur.blinding}
-- Tỷ lệ phân bổ: ${cur.allocationRatio}
-- Số nhánh: ${cur.arms}
-- Tên nhánh: ${cur.armNames && cur.armNames.length ? cur.armNames.join(', ') : '(chưa có)'}`
-    ); }
-  function buildEvaluatePrompt(content,pico,rq,mainObj,subObjs){ return (
-`Bạn là phản biện khoa học. Hãy **đánh giá mô tả thiết kế RCT** sau theo các tiêu chí:
-- Tính phù hợp với PICO/câu hỏi/mục tiêu
-- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)
-- Tính khả thi và rủi ro thiên lệch có thể phát sinh
-- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)
-Trả về **MARKDOWN**.
-
---- MÔ TẢ CẦN ĐÁNH GIÁ ---
-${content}
-
---- THAM CHIẾU BỐI CẢNH ---
-P: ${pico.p || '(chưa có)'}
-I: ${pico.i || '(chưa có)'}
-C: ${pico.c || '(chưa có)'}
-O: ${pico.o || '(chưa có)'}
-Câu hỏi nghiên cứu: ${rq || '(chưa có)'}
-Mục tiêu chính: ${mainObj || '(chưa có)'}
-Mục tiêu phụ:
-${Array.isArray(subObjs)&&subObjs.length?subObjs.map((s,i)=>(i+1)+'. '+s).join('\\n'):'(chưa có)'}`
-    ); }
+function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
+  const sub = (Array.isArray(subObjs) && subObjs.length)
+    ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+    : '(chưa có)';
+  return [
+    'Bạn là phản biện khoa học. Hãy đánh giá mô tả thiết kế RCT sau theo các tiêu chí:',
+    '- Tính phù hợp với PICO/câu hỏi/mục tiêu',
+    '- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)',
+    '- Tính khả thi và rủi ro thiên lệch có thể phát sinh',
+    '- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)',
+    'Trả về MARKDOWN.',
+    '',
+    '--- MÔ TẢ CẦN ĐÁNH GIÁ ---',
+    content,
+    '',
+    '--- THAM CHIẾU BỐI CẢNH ---',
+    `P: ${pico.p || '(chưa có)'}`,
+    `I: ${pico.i || '(chưa có)'}`,
+    `C: ${pico.c || '(chưa có)'}`,
+    `O: ${pico.o || '(chưa có)'}`,
+    `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+    `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+    'Mục tiêu phụ:',
+    sub
+  ].join('\n');
 }
