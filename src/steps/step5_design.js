@@ -4,118 +4,131 @@
 // Đồng thời set localStorage 'num-arms' theo baseline.
 
 export async function mount(rootEl, ctx) {
+  // rootEl đã là .card trong index.html → KHÔNG tạo thêm .card mới
   rootEl.innerHTML = `
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">Thiết kế nghiên cứu</h3>
-    <div class="card-subtitle">
-      Chọn loại thiết kế, mức blinding, tỷ lệ phân bổ và số nhánh can thiệp. Tên nhánh sẽ được sử dụng lại ở Bước 10.
-    </div>
-  </div>
-
-  <style>
-    /* local helpers, giữ tối thiểu & chỉ dùng trong step này */
-    .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .hidden { display: none !important; }
-  </style>
-
-  <!-- Tóm tắt nhanh (pill) -->
-  <div class="card-body">
-    <div class="inline-row" id="dsg-summary">
-      <span class="pill" id="sum-type">Thiết kế: —</span>
-      <span class="pill" id="sum-blind">Blinding: —</span>
-      <span class="pill" id="sum-alloc">Tỷ lệ: —</span>
-      <span class="pill" id="sum-arms">Số nhánh: —</span>
-    </div>
-  </div>
-
-  <!-- Khối chọn tham số -->
-  <div class="card-body grid-2">
-    <label>Loại thiết kế
-      <select id="dsg-type">
-        <option value="parallel">Song song (parallel)</option>
-        <option value="crossover">Chéo (cross-over)</option>
-      </select>
-    </label>
-
-    <label>Blinding
-      <select id="dsg-blinding">
-        <option value="none">Không làm mù</option>
-        <option value="single">Mù đơn (single-blind)</option>
-        <option value="double">Mù đôi (double-blind)</option>
-      </select>
-    </label>
-
-    <label>Tỷ lệ phân bổ (allocation ratio)
-      <input id="dsg-alloc" type="text" placeholder="1:1" />
-      <div id="dsg-alloc-hint" class="muted">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
-    </label>
-
-    <label>Số nhánh (2–6)
-      <input id="dsg-arms" type="number" min="2" max="6" step="1" />
-    </label>
-  </div>
-
-  <!-- Tên nhánh -->
-  <div class="card-body">
-    <div class="inline-row" style="justify-content:space-between">
-      <div style="font-weight:700">Tên các nhánh can thiệp</div>
-      <div class="inline-row">
-        <button id="dsg-reset-names" class="btn btn-ghost" type="button">Đặt lại tên mặc định</button>
+    <div class="card-header">
+      <h3 class="card-title">Thiết kế nghiên cứu</h3>
+      <div class="card-subtitle">
+        Chọn loại thiết kế, mức blinding, tỷ lệ phân bổ và số nhánh can thiệp. Tên nhánh sẽ được sử dụng lại ở Bước 10.
       </div>
     </div>
-    <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
-  </div>
 
-  <!-- Cụm nút GPT (đặt trong body riêng) -->
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
-    <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
-  </div>
+    <style>
+      /* Helpers cục bộ (chỉ cho step này) */
+      #dsg .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+      #dsg .hidden { display: none !important; }
+      #dsg .pill { display:inline-flex; align-items:center; padding:.25rem .6rem; border-radius:999px; background:var(--muted); color:var(--muted-foreground); font:600 12.5px/1.1 Inter, ui-sans-serif; }
+      #dsg .form-input {
+        width: 100%;
+        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .6rem .75rem;
+        outline: 0;
+      }
+      #dsg .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+      @media (max-width: 900px){ #dsg .grid-2{ grid-template-columns: 1fr; } }
+    </style>
 
-  <!-- Kết quả GPT – GỢI Ý -->
-  <div id="dsg-sugg-box" class="card hidden">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <strong>Kết quả GPT – Gợi ý</strong>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="dsg-apply-replace" class="btn btn-primary"  type="button">Thay thế toàn bộ</button>
-        <button id="dsg-apply-append"  class="btn btn-secondary" type="button">Chèn thêm vào cuối</button>
-        <button id="dsg-copy-sugg"     class="btn btn-ghost"     type="button">Sao chép</button>
-        <button id="dsg-hide-sugg"     class="btn btn-ghost"     type="button">Ẩn</button>
+    <div id="dsg">
+      <!-- Tóm tắt nhanh (pill) -->
+      <div class="card-body">
+        <div class="inline-row" id="dsg-summary">
+          <span class="pill" id="sum-type">Thiết kế: —</span>
+          <span class="pill" id="sum-blind">Blinding: —</span>
+          <span class="pill" id="sum-alloc">Tỷ lệ: —</span>
+          <span class="pill" id="sum-arms">Số nhánh: —</span>
+        </div>
+      </div>
+
+      <!-- Khối chọn tham số -->
+      <div class="card-body grid-2">
+        <label>Loại thiết kế
+          <select id="dsg-type" class="form-input">
+            <option value="parallel">Song song (parallel)</option>
+            <option value="crossover">Chéo (cross-over)</option>
+          </select>
+        </label>
+
+        <label>Blinding
+          <select id="dsg-blinding" class="form-input">
+            <option value="none">Không làm mù</option>
+            <option value="single">Mù đơn (single-blind)</option>
+            <option value="double">Mù đôi (double-blind)</option>
+          </select>
+        </label>
+
+        <label>Tỷ lệ phân bổ (allocation ratio)
+          <input id="dsg-alloc" class="form-input" type="text" placeholder="1:1" />
+          <div id="dsg-alloc-hint" class="muted">Ví dụ: 1:1 (2 nhánh), 2:1 (2 nhánh), 1:1:1 (3 nhánh)</div>
+        </label>
+
+        <label>Số nhánh (2–6)
+          <input id="dsg-arms" class="form-input" type="number" min="2" max="6" step="1" />
+        </label>
+      </div>
+
+      <!-- Tên nhánh -->
+      <div class="card-body">
+        <div class="inline-row" style="justify-content:space-between">
+          <div style="font-weight:700">Tên các nhánh can thiệp</div>
+          <div class="inline-row">
+            <button id="dsg-reset-names" class="btn-ghost" type="button">Đặt lại tên mặc định</button>
+          </div>
+        </div>
+        <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
+      </div>
+
+      <!-- Cụm nút GPT -->
+      <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button id="dsg-gpt-suggest" class="btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
+        <button id="dsg-gpt-eval"    class="btn-primary" type="button">GPT đánh giá mô tả</button>
+      </div>
+
+      <!-- Kết quả GPT – GỢI Ý -->
+      <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+          <strong>Kết quả GPT – Gợi ý</strong>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="dsg-apply-replace" class="btn-primary"  type="button">Thay thế toàn bộ</button>
+            <button id="dsg-apply-append"  class="btn-secondary" type="button">Chèn thêm vào cuối</button>
+            <button id="dsg-copy-sugg"     class="btn-ghost"     type="button">Sao chép</button>
+            <button id="dsg-hide-sugg"     class="btn-ghost"     type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="dsg-sugg-ta" class="form-input" rows="8" placeholder="(GPT) Mô tả thiết kế gợi ý bằng Markdown…"></textarea>
+          <div class="muted">Nội dung do GPT sinh dựa trên PICO, Câu hỏi &amp; Mục tiêu.</div>
+        </div>
+      </div>
+
+      <!-- Mô tả thiết kế do người dùng soạn -->
+      <div class="card-body">
+        <label>Mô tả thiết kế (tóm tắt)
+          <textarea id="dsg-desc" class="form-input" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
+        </label>
+      </div>
+
+      <!-- Kết quả GPT – ĐÁNH GIÁ -->
+      <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+          <strong>Kết quả GPT – Đánh giá</strong>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="dsg-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+            <button id="dsg-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="dsg-eval-ta" class="form-input" rows="8" placeholder="(GPT) Nhận xét theo tiêu chí rõ ràng, đủ thành tố, khả thi, rủi ro thiên lệch…"></textarea>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button id="dsg-save" class="btn-primary" type="button">Lưu thiết kế</button>
       </div>
     </div>
-    <div class="card-body">
-      <textarea id="dsg-sugg-ta" rows="8" placeholder="(GPT) Mô tả thiết kế gợi ý bằng Markdown…"></textarea>
-      <div class="muted">Nội dung do GPT sinh dựa trên PICO, Câu hỏi & Mục tiêu.</div>
-    </div>
-  </div>
-
-  <!-- Mô tả thiết kế do người dùng soạn -->
-  <div class="card-body">
-    <label>Mô tả thiết kế (tóm tắt)
-      <textarea id="dsg-desc" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
-    </label>
-  </div>
-
-  <!-- Kết quả GPT – ĐÁNH GIÁ -->
-  <div id="dsg-eval-box" class="card hidden">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <strong>Kết quả GPT – Đánh giá</strong>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button id="dsg-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
-        <button id="dsg-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
-      </div>
-    </div>
-    <div class="card-body">
-      <textarea id="dsg-eval-ta" rows="8" placeholder="(GPT) Nhận xét theo tiêu chí rõ ràng, đủ thành tố, khả thi, rủi ro thiên lệch…"></textarea>
-    </div>
-  </div>
-
-  <div class="card-footer">
-    <button id="dsg-save" class="btn btn-primary" type="button">Lưu thiết kế</button>
-  </div>
-</div>
-`.trim();
+  `.trim();
 
   // ------- Elements -------
   const typeEl   = rootEl.querySelector('#dsg-type');
@@ -124,7 +137,6 @@ export async function mount(rootEl, ctx) {
   const armsEl   = rootEl.querySelector('#dsg-arms');
   const namesBox = rootEl.querySelector('#dsg-armnames');
   const descEl   = rootEl.querySelector('#dsg-desc');
-
   const ratioHint= rootEl.querySelector('#dsg-alloc-hint');
 
   // Summary pills
@@ -341,7 +353,7 @@ export async function mount(rootEl, ctx) {
       const wrap = document.createElement('div');
       wrap.innerHTML = `
         <label>Tên nhánh ${i + 1}
-          <input type="text" data-arm-index="${i}" placeholder="${defaultName(i)}" />
+          <input class="form-input" type="text" data-arm-index="${i}" placeholder="${defaultName(i)}" />
         </label>
       `.trim();
       const inp = wrap.querySelector('input');
@@ -454,8 +466,10 @@ export async function mount(rootEl, ctx) {
   }
 
   function updateSummary() {
-    sumType.textContent  = 'Thiết kế: ' + (typeEl.options[typeEl.selectedIndex]?.text || '—');
-    sumBlind.textContent = 'Blinding: ' + (blindEl.options[blindEl.selectedIndex]?.text || '—');
+    const typeTxt  = typeEl.options[typeEl.selectedIndex]?.text || '—';
+    const blindTxt = blindEl.options[blindEl.selectedIndex]?.text || '—';
+    sumType.textContent  = 'Thiết kế: ' + typeTxt;
+    sumBlind.textContent = 'Blinding: ' + blindTxt;
     sumAlloc.textContent = 'Tỷ lệ: ' + (allocEl.value || '—');
     sumArms.textContent  = 'Số nhánh: ' + (armsEl.value || '—');
   }
