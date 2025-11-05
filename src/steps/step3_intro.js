@@ -13,77 +13,60 @@ export async function mount(rootEl, ctx) {
     </div>
   </div>
 
-  <style>
-    .intro-textarea{
-      width:100%; font:inherit; line-height:1.55;
-      padding:.9rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
-    }
-    .action-bar{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
-    .left-tools,.right-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .section{margin:0 16px 12px}
-    .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
-    .btn-row{display:flex; gap:8px; align-items:center}
-    .result-area{
-      width:100%; min-height:180px; max-height:42vh; resize:vertical;
-      font:inherit; line-height:1.55; padding:.85rem 1rem;
-      border:1px solid var(--border); border-radius:12px; background:#fff;
-    }
-  </style>
-
   <div class="card-body grid-2">
     <label>Territory (Bối cảnh – tầm quan trọng)
-      <textarea id="intro-territory" class="intro-textarea" rows="6" placeholder="Nêu bối cảnh, tầm quan trọng, quy mô vấn đề, gánh nặng..."></textarea>
+      <textarea id="intro-territory" class="form-textarea" rows="6" placeholder="Nêu bối cảnh, tầm quan trọng, quy mô vấn đề, gánh nặng..."></textarea>
     </label>
     <label>Niche (Khoảng trống – vấn đề chưa giải quyết)
-      <textarea id="intro-niche" class="intro-textarea" rows="6" placeholder="Xác định lỗ hổng bằng chứng, hạn chế của nghiên cứu trước..."></textarea>
+      <textarea id="intro-niche" class="form-textarea" rows="6" placeholder="Xác định lỗ hổng bằng chứng, hạn chế của nghiên cứu trước..."></textarea>
     </label>
     <label style="grid-column:1 / -1">Occupy (Cách nghiên cứu này sẽ lấp khoảng trống)
-      <textarea id="intro-occupy" class="intro-textarea" rows="6" placeholder="Mục tiêu/giả thuyết/chọn thiết kế – tại sao, cái gì mới, mong đợi đóng góp..."></textarea>
+      <textarea id="intro-occupy" class="form-textarea" rows="6" placeholder="Mục tiêu/giả thuyết/chọn thiết kế – tại sao, cái gì mới, mong đợi đóng góp..."></textarea>
     </label>
   </div>
 
   <!-- Giữ nguyên file input (KHÔNG can thiệp giao diện) -->
-  <div class="card-body action-bar">
-    <div class="left-tools">
+  <div class="card-body" style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+    <div>
       <input id="intro-pdf" type="file" accept="application/pdf" />
     </div>
-    <div class="right-tools">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button id="intro-gpt"  class="btn-primary" type="button">GPT gợi ý CaRS</button>
       <button id="intro-eval" class="btn-outline" type="button">GPT đánh giá CaRS</button>
     </div>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý (ô text riêng) -->
-  <div id="intro-suggest-box" class="card section hidden">
-    <div class="card-header result-head">
+  <!-- Kết quả GPT – GỢI Ý (ô text riêng, font đồng bộ) -->
+  <div id="intro-suggest-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <strong>Kết quả GPT – Gợi ý</strong>
-      <div class="btn-row">
+      <div style="display:flex;gap:8px;align-items:center">
         <button id="intro-apply" class="btn-primary" type="button">Chèn vào 3 ô</button>
         <button id="intro-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
         <button id="intro-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="intro-suggest-ta" class="result-area" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …"></textarea>
+      <textarea id="intro-suggest-ta" class="form-textarea" rows="10" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …"></textarea>
     </div>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ (ô text riêng) -->
-  <div id="intro-eval-box" class="card section hidden">
-    <div class="card-header result-head">
+  <!-- Kết quả GPT – ĐÁNH GIÁ (ô text riêng, font đồng bộ) -->
+  <div id="intro-eval-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <strong>Kết quả GPT – Đánh giá</strong>
-      <div class="btn-row">
+      <div style="display:flex;gap:8px;align-items:center">
         <button id="intro-copy-eval" class="btn-ghost" type="button">Sao chép</button>
         <button id="intro-hide-eval" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="intro-eval-ta" class="result-area" placeholder="Nhận xét mạch lạc CaRS (bullet ngắn theo tiêu chí)…"></textarea>
+      <textarea id="intro-eval-ta" class="form-textarea" rows="10" placeholder="Nhận xét mạch lạc CaRS (bullet ngắn theo tiêu chí)…"></textarea>
     </div>
   </div>
 
   <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="intro-save" class="btn-primary">Lưu</button>
+    <button id="intro-save" class="btn-primary" type="button">Lưu</button>
   </div>
 </div>
 `.trim();
@@ -145,7 +128,7 @@ export async function mount(rootEl, ctx) {
       if (f) {
         try {
           pdfText = await ctx.extractTextFromPDF(f);
-          if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\\n...[cắt bớt]';
+          if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO/Câu hỏi/Mục tiêu.');
@@ -174,7 +157,7 @@ ${rq || '(chưa có)'}
 Mục tiêu:
 - Chính: ${mainOb || '(chưa có)'}
 - Phụ:
-${subObs && subObs.length ? subObs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : '(chưa có)'}
+${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
 
 Trích lược PDF (nếu có):
 ${pdfText || '(không có)'}
@@ -191,7 +174,7 @@ ${pdfText || '(không có)'}
           parsed.territory ? `Territory: ${parsed.territory}` : '',
           parsed.niche     ? `Niche: ${parsed.niche}`         : '',
           parsed.occupy    ? `Occupy: ${parsed.occupy}`       : '',
-        ].filter(Boolean).join('\\n\\n');
+        ].filter(Boolean).join('\n\n');
         sBox.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý CaRS.');
       }
@@ -254,7 +237,7 @@ O: ${pico.o || '(chưa có)'}
 Câu hỏi: ${rq || '(chưa có)'}
 Mục tiêu chính: ${mainOb || '(chưa có)'}
 Mục tiêu phụ:
-${subObs && subObs.length ? subObs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : '(chưa có)'}
+${subObs && subObs.length ? subObs.map((s,i)=>`${i+1}. ${s}`).join('\n') : '(chưa có)'}
 `.trim();
 
       const raw = await ctx.callGPT(prompt);
