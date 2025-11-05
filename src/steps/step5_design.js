@@ -12,43 +12,58 @@ export async function mount(rootEl, ctx) {
     </div>
 
 <style>
+/* ===== Scoped to #dsg để tránh xung đột với index.html ===== */
 #dsg .hidden { display:none !important; }
+
+/* Pills tóm tắt */
 #dsg .pill{
-display:inline-flex; align-items:center; padding:.25rem .6rem;
-border-radius:999px; background:var(--muted); color:#fff;
-font:600 12.5px/1.1 Inter,ui-sans-serif; border:0;
+  display:inline-flex; align-items:center; padding:.25rem .6rem;
+  border-radius:999px; background:var(--muted); color:#fff;
+  font:600 12.5px/1.1 Inter,ui-sans-serif; border:0;
 }
 
+/* Lưới 2 cột riêng trong step5 */
 #dsg .grid-2{
-display:grid;
-grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-gap:12px;
-align-items:start;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px 16px;
+  align-items:start;
 }
-#dsg .grid-2 > *{ min-width:0; }        
+#dsg .grid-2 > *{ min-width:0; }
+
+/* Ghi đè rule toàn cục gây lệch cột: bỏ margin-top cho con trực tiếp của lưới */
+#dsg .card-body.grid-2 > * { margin-top:0 !important; }
+
+/* Ô span đủ 2 cột */
 #dsg .full-span{ grid-column:1 / -1; }
 
+/* Nhãn & control */
 #dsg .grid-2 > label{
-display:flex;
-flex-direction:column;
-gap:6px;
-line-height:1.2;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  line-height:1.2;
 }
 #dsg .form-input{
-box-sizing:border-box;
-width:100%;
-font:500 15px/1.4 Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
-background:#fff; border:1px solid var(--border); border-radius:10px;
-padding:.6rem .75rem; outline:0;
+  box-sizing:border-box;
+  width:100%;
+  font:500 15px/1.4 Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
+  background:#fff; border:1px solid var(--border); border-radius:10px;
+  padding:.6rem .75rem; outline:0;
 }
 #dsg input.form-input,
 #dsg select.form-input{ height:44px; }
 #dsg textarea.form-input{ resize:vertical; min-height:112px; }
 
+/* Hàng ngang linh hoạt */
 #dsg .inline-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
+/* Grid cho danh sách tên nhánh */
+#dsg #dsg-armnames.grid-2 > * { margin-top:0 !important; }
+
+/* Responsive */
 @media (max-width:900px){
-#dsg .grid-2{ grid-template-columns:1fr; }
+  #dsg .grid-2{ grid-template-columns:1fr; }
 }
 </style>
 
@@ -410,8 +425,8 @@ padding:.6rem .75rem; outline:0;
     const I = safeShort(pico.i);
     const C = safeShort(pico.c);
     for (let i = 0; i < n; i++) out.push(defaultName(i));
-    if (I) out[0] = `Nhóm can thiệp (${I})`;
-    if (C) out[1] = `Nhóm chứng (${C})`;
+    if (I) out[0] = \`Nhóm can thiệp (\${I})\`;
+    if (C) out[1] = \`Nhóm chứng (\${C})\`;
     return out;
   }
 
@@ -429,7 +444,7 @@ padding:.6rem .75rem; outline:0;
       (names[0] || '').toLowerCase().startsWith('nhóm can thiệp') &&
       (names[1] || '').toLowerCase().startsWith('nhóm chứng');
     if (looksDefault) {
-      renderArmInputs(2, [`Trình tự ${I}→${C}`, `Trình tự ${C}→${I}`]);
+      renderArmInputs(2, [\`Trình tự \${I}→\${C}\`, \`Trình tự \${C}→\${I}\`]);
     }
   }
 
@@ -439,7 +454,7 @@ padding:.6rem .75rem; outline:0;
   }
 
   function safeText(s) {
-    return String(s || '').replace(/\s+/g, ' ').trim();
+    return String(s || '').replace(/\\s+/g, ' ').trim();
   }
   function safeShort(s) {
     s = safeText(s);
@@ -472,7 +487,7 @@ padding:.6rem .75rem; outline:0;
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
     if (fixed.changed) {
-      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
+      ratioHint.textContent = \`Tỷ lệ hiện không khớp \${n} nhánh → gợi ý: \${fixed.ratio}\`;
       return;
     }
     const per = ratioToPercents(allocEl.value || '');
@@ -501,10 +516,10 @@ padding:.6rem .75rem; outline:0;
     else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
-  // Prompt builders (dùng join để an toàn ký tự)
+  // Prompt builders
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
     const sub = (Array.isArray(subObjs) && subObjs.length)
-      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+      ? subObjs.map((s,i)=> \`\${i+1}. \${s}\`).join('\\n')
       : '(chưa có)';
     return [
       'Bạn là trợ lý học thuật. Hãy gợi ý mô tả thiết kế RCT ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.',
@@ -513,27 +528,27 @@ padding:.6rem .75rem; outline:0;
       '- Trả về MARKDOWN thuần, không thêm tài liệu tham khảo.',
       '',
       'Bối cảnh:',
-      `P: ${pico.p || '(chưa có)'}`,
-      `I: ${pico.i || '(chưa có)'}`,
-      `C: ${pico.c || '(chưa có)'}`,
-      `O: ${pico.o || '(chưa có)'}`,
-      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
-      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+      \`P: \${pico.p || '(chưa có)'}\`,
+      \`I: \${pico.i || '(chưa có)'}\`,
+      \`C: \${pico.c || '(chưa có)'}\`,
+      \`O: \${pico.o || '(chưa có)'}\`,
+      \`Câu hỏi nghiên cứu: \${rq || '(chưa có)'}\`,
+      \`Mục tiêu chính: \${mainObj || '(chưa có)'}\`,
       'Mục tiêu phụ:',
       sub,
       '',
       'Lựa chọn hiện có:',
-      `- Loại thiết kế: ${cur.type}`,
-      `- Blinding: ${cur.blinding}`,
-      `- Tỷ lệ phân bổ: ${cur.allocationRatio}`,
-      `- Số nhánh: ${cur.arms}`,
-      `- Tên nhánh: ${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}`
-    ].join('\n');
+      \`- Loại thiết kế: \${cur.type}\`,
+      \`- Blinding: \${cur.blinding}\`,
+      \`- Tỷ lệ phân bổ: \${cur.allocationRatio}\`,
+      \`- Số nhánh: \${cur.arms}\`,
+      \`- Tên nhánh: \${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}\`
+    ].join('\\n');
   }
 
   function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
     const sub = (Array.isArray(subObjs) && subObjs.length)
-      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+      ? subObjs.map((s,i)=> \`\${i+1}. \${s}\`).join('\\n')
       : '(chưa có)';
     return [
       'Bạn là phản biện khoa học. Hãy đánh giá mô tả thiết kế RCT sau theo các tiêu chí:',
@@ -547,14 +562,14 @@ padding:.6rem .75rem; outline:0;
       content,
       '',
       '--- THAM CHIẾU BỐI CẢNH ---',
-      `P: ${pico.p || '(chưa có)'}`,
-      `I: ${pico.i || '(chưa có)'}`,
-      `C: ${pico.c || '(chưa có)'}`,
-      `O: ${pico.o || '(chưa có)'}`,
-      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
-      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+      \`P: \${pico.p || '(chưa có)'}\`,
+      \`I: \${pico.i || '(chưa có)'}\`,
+      \`C: \${pico.c || '(chưa có)'}\`,
+      \`O: \${pico.o || '(chưa có)'}\`,
+      \`Câu hỏi nghiên cứu: \${rq || '(chưa có)'}\`,
+      \`Mục tiêu chính: \${mainObj || '(chưa có)'}\`,
       'Mục tiêu phụ:',
       sub
-    ].join('\n');
+    ].join('\\n');
   }
 }
