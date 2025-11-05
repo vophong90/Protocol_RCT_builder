@@ -5,113 +5,128 @@
 // Bổ sung: GPT gợi ý chọn công thức theo Mục tiêu + Thiết kế; GPT đánh giá giả định so với y văn.
 
 export async function mount(rootEl, ctx) {
+  // rootEl đã là .card trong index.html → KHÔNG tạo thêm .card mới
   rootEl.innerHTML = `
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">Cỡ mẫu</h3>
-    <div class="card-subtitle">
-      Chọn công thức và nhập giả định. Hệ thống tính theo công thức minh bạch, có tuỳ chọn bù rớt mẫu.
-    </div>
-  </div>
-
-  <style>
-    .hidden { display: none !important; }
-    .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-    table.ss-kv { width:100%; border-collapse:collapse; }
-    table.ss-kv td { border:1px solid var(--border); padding:.45rem .6rem; vertical-align:top; }
-    table.ss-kv td:first-child { width:38%; color:#374151; font-weight:600; }
-  </style>
-
-  <!-- Hàng chọn tham số chung -->
-  <div class="card-body grid-3">
-    <label>Phương pháp
-      <select id="ss-method">
-        <option value="means">So sánh trung bình 2 nhóm (t-test)</option>
-        <option value="proportions">So sánh tỷ lệ 2 nhóm</option>
-        <option value="ni_proportions">Non-inferiority (tỷ lệ)</option>
-        <option value="crossover">Cross-over (trung bình, σ<sub>w</sub>)</option>
-        <option value="anova">ANOVA (k nhóm, hiệu ứng f)</option>
-        <option value="chisq">Chi-square (hiệu ứng w)</option>
-        <option value="ancova">ANCOVA (2 nhóm, điều chỉnh theo R²)</option>
-      </select>
-    </label>
-
-    <label>Alpha (mức ý nghĩa)
-      <input id="ss-alpha" type="number" step="0.0001" min="0.0001" max="0.2" value="0.05" />
-    </label>
-
-    <label>Power
-      <input id="ss-power" type="number" step="0.01" min="0.5" max="0.99" value="0.8" />
-    </label>
-  </div>
-
-  <!-- Khối input tuỳ theo phương pháp -->
-  <div class="card-body" id="ss-opts"></div>
-
-  <!-- Rớt mẫu + số nhánh -->
-  <div class="card-body grid-3">
-    <label>% rớt mẫu dự kiến
-      <input id="ss-drop" type="number" min="0" max="90" step="1" value="0" />
-    </label>
-
-    <label>Số nhánh (k, nếu cần)
-      <input id="ss-arms" type="number" min="2" max="10" step="1" />
-    </label>
-
-    <div class="muted">
-      Nếu đã chọn thiết kế ở Bước 5, số nhánh sẽ tự gợi ý theo đó.
-    </div>
-  </div>
-
-  <!-- Cụm nút GPT -->
-  <div class="card-body inline-row">
-    <button id="ss-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý công thức</button>
-    <button id="ss-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá giả định</button>
-  </div>
-
-  <!-- Hộp kết quả GPT gợi ý -->
-  <div id="ss-sugg-box" class="card hidden">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-      <strong>Kết quả GPT – Gợi ý công thức</strong>
-      <div class="inline-row">
-        <button id="ss-apply-method" class="btn btn-primary"  type="button">Áp dụng phương pháp gợi ý</button>
-        <button id="ss-copy-sugg"    class="btn btn-ghost"     type="button">Sao chép</button>
-        <button id="ss-hide-sugg"    class="btn btn-ghost"     type="button">Ẩn</button>
+    <div class="card-header">
+      <h3 class="card-title">Cỡ mẫu</h3>
+      <div class="card-subtitle">
+        Chọn công thức và nhập giả định. Hệ thống tính theo công thức minh bạch, có tuỳ chọn bù rớt mẫu.
       </div>
     </div>
-    <div class="card-body">
-      <textarea id="ss-sugg-ta" rows="8" placeholder="(GPT) Lý do chọn công thức, tham số cần nhập, cảnh báo thiên lệch…"></textarea>
-      <div class="muted">Mẹo: Kiểm tra từ khoá trong gợi ý (ANOVA/ANCOVA/t-test/proportions/NI/cross-over…) rồi bấm “Áp dụng”.</div>
-    </div>
-  </div>
 
-  <!-- Hộp kết quả GPT đánh giá -->
-  <div id="ss-eval-box" class="card hidden">
-    <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-      <strong>Kết quả GPT – Đánh giá giả định</strong>
-      <div class="inline-row">
-        <button id="ss-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
-        <button id="ss-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
+    <style>
+      /* Helpers cục bộ (chỉ cho step này) */
+      #ss .hidden { display: none !important; }
+      #ss .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+      #ss .pill { display:inline-flex; align-items:center; padding:.25rem .6rem; border-radius:999px; background:var(--muted); color:var(--muted-foreground); font:600 12.5px/1.1 Inter, ui-sans-serif; }
+      #ss .form-input {
+        width: 100%;
+        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .6rem .75rem;
+        outline: 0;
+      }
+      #ss .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
+      @media (max-width: 1100px){ #ss .grid-3{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      @media (max-width: 780px){ #ss .grid-3{ grid-template-columns: 1fr; } }
+      #ss table.ss-kv { width:100%; border-collapse:collapse; }
+      #ss table.ss-kv td { border:1px solid var(--border); padding:.45rem .6rem; vertical-align:top; }
+      #ss table.ss-kv td:first-child { width:38%; color:#374151; font-weight:600; }
+    </style>
+
+    <div id="ss">
+      <!-- Hàng chọn tham số chung -->
+      <div class="card-body grid-3">
+        <label>Phương pháp
+          <select id="ss-method" class="form-input">
+            <option value="means">So sánh trung bình 2 nhóm (t-test)</option>
+            <option value="proportions">So sánh tỷ lệ 2 nhóm</option>
+            <option value="ni_proportions">Non-inferiority (tỷ lệ)</option>
+            <option value="crossover">Cross-over (trung bình, σ<sub>w</sub>)</option>
+            <option value="anova">ANOVA (k nhóm, hiệu ứng f)</option>
+            <option value="chisq">Chi-square (hiệu ứng w)</option>
+            <option value="ancova">ANCOVA (2 nhóm, điều chỉnh theo R²)</option>
+          </select>
+        </label>
+
+        <label>Alpha (mức ý nghĩa)
+          <input id="ss-alpha" class="form-input" type="number" step="0.0001" min="0.0001" max="0.2" value="0.05" />
+        </label>
+
+        <label>Power
+          <input id="ss-power" class="form-input" type="number" step="0.01" min="0.5" max="0.99" value="0.8" />
+        </label>
+      </div>
+
+      <!-- Khối input tuỳ theo phương pháp -->
+      <div class="card-body" id="ss-opts"></div>
+
+      <!-- Rớt mẫu + số nhánh -->
+      <div class="card-body grid-3">
+        <label>% rớt mẫu dự kiến
+          <input id="ss-drop" class="form-input" type="number" min="0" max="90" step="1" value="0" />
+        </label>
+
+        <label>Số nhánh (k, nếu cần)
+          <input id="ss-arms" class="form-input" type="number" min="2" max="10" step="1" />
+        </label>
+
+        <div class="muted">
+          Nếu đã chọn thiết kế ở Bước 5, số nhánh sẽ tự gợi ý theo đó.
+        </div>
+      </div>
+
+      <!-- Cụm nút GPT -->
+      <div class="card-body inline-row">
+        <button id="ss-gpt-suggest" class="btn-primary" type="button">GPT gợi ý công thức</button>
+        <button id="ss-gpt-eval"    class="btn-primary" type="button">GPT đánh giá giả định</button>
+      </div>
+
+      <!-- Hộp kết quả GPT gợi ý -->
+      <div id="ss-sugg-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Kết quả GPT – Gợi ý công thức</strong>
+          <div class="inline-row">
+            <button id="ss-apply-method" class="btn-primary"  type="button">Áp dụng phương pháp gợi ý</button>
+            <button id="ss-copy-sugg"    class="btn-ghost"     type="button">Sao chép</button>
+            <button id="ss-hide-sugg"    class="btn-ghost"     type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="ss-sugg-ta" class="form-input" rows="8" placeholder="(GPT) Lý do chọn công thức, tham số cần nhập, cảnh báo thiên lệch…"></textarea>
+          <div class="muted">Mẹo: Kiểm tra từ khoá trong gợi ý (ANOVA/ANCOVA/t-test/proportions/NI/cross-over…) rồi bấm “Áp dụng”.</div>
+        </div>
+      </div>
+
+      <!-- Hộp kết quả GPT đánh giá -->
+      <div id="ss-eval-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Kết quả GPT – Đánh giá giả định</strong>
+          <div class="inline-row">
+            <button id="ss-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+            <button id="ss-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="ss-eval-ta" class="form-input" rows="8" placeholder="(GPT) Đối chiếu y văn: SD/tỷ lệ nền/biên NI/hiệu ứng f,w,R²… có hợp lý không? Tham khảo & khuyến nghị."></textarea>
+        </div>
+      </div>
+
+      <!-- Tính & Lưu -->
+      <div class="card-footer">
+        <button id="ss-calc" class="btn-primary"  type="button">Tính cỡ mẫu</button>
+        <button id="ss-save" class="btn-secondary" type="button">Lưu vào đề cương</button>
+      </div>
+
+      <!-- Output kết quả -->
+      <div class="card-body hidden" id="ss-out">
+        <div style="font-weight:700;margin-bottom:.5rem">Kết quả:</div>
+        <div id="ss-out-html"></div>
       </div>
     </div>
-    <div class="card-body">
-      <textarea id="ss-eval-ta" rows="8" placeholder="(GPT) Đối chiếu y văn: SD/tỷ lệ nền/biên NI/hiệu ứng f,w,R²… có hợp lý không? Tham khảo & khuyến nghị."></textarea>
-    </div>
-  </div>
-
-  <!-- Tính & Lưu -->
-  <div class="card-footer">
-    <button id="ss-calc" class="btn btn-primary"  type="button">Tính cỡ mẫu</button>
-    <button id="ss-save" class="btn btn-secondary" type="button">Lưu vào đề cương</button>
-  </div>
-
-  <!-- Output kết quả -->
-  <div class="card-body hidden" id="ss-out">
-    <div style="font-weight:700;margin-bottom:.5rem">Kết quả:</div>
-    <div id="ss-out-html"></div>
-  </div>
-</div>
-`.trim();
+  `.trim();
 
   // ---- elements
   const methodEl = rootEl.querySelector('#ss-method');
@@ -172,13 +187,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Độ lệch chuẩn chung (σ)
-          <input id="m-sd" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 12.0" />
+          <input id="m-sd" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 12.0" />
         </label>
         <label>Hiệu số cần phát hiện (Δ = |μ1−μ2|)
-          <input id="m-delta" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 6.0" />
+          <input id="m-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 6.0" />
         </label>
         <label>Hai phía?
-          <select id="m-sided">
+          <select id="m-sided" class="form-input">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -188,13 +203,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>p1
-          <input id="p-p1" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.30" />
+          <input id="p-p1" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.30" />
         </label>
         <label>p2
-          <input id="p-p2" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.50" />
+          <input id="p-p2" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.50" />
         </label>
         <label>Hai phía?
-          <select id="p-sided">
+          <select id="p-sided" class="form-input">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -204,13 +219,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>p<sub>new</sub>
-          <input id="ni-p1" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
+          <input id="ni-p1" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
         </label>
         <label>p<sub>ctrl</sub>
-          <input id="ni-p2" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
+          <input id="ni-p2" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
         </label>
         <label>Biên không thua kém (δ, tuyệt đối)
-          <input id="ni-delta" type="number" min="0.0001" max="0.5" step="0.0001" placeholder="0.10" />
+          <input id="ni-delta" class="form-input" type="number" min="0.0001" max="0.5" step="0.0001" placeholder="0.10" />
         </label>
         <div class="muted">Kiểm định một phía (one-sided).</div>
       </div>`;
@@ -218,13 +233,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>SD within-subject (σ<sub>w</sub>)
-          <input id="x-sdw" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 8.0" />
+          <input id="x-sdw" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 8.0" />
         </label>
         <label>Hiệu số cần phát hiện (Δ)
-          <input id="x-delta" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 4.0" />
+          <input id="x-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 4.0" />
         </label>
         <label>Hai phía?
-          <select id="x-sided">
+          <select id="x-sided" class="form-input">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -235,10 +250,10 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Hiệu ứng f (Cohen's f)
-          <input id="a-f" type="number" min="0.01" max="2" step="0.01" placeholder="0.25 (vừa)" />
+          <input id="a-f" class="form-input" type="number" min="0.01" max="2" step="0.01" placeholder="0.25 (vừa)" />
         </label>
         <label>Số nhóm k
-          <input id="a-k" type="number" min="3" max="10" step="1" />
+          <input id="a-k" class="form-input" type="number" min="3" max="10" step="1" />
         </label>
         <div class="muted">Xấp xỉ theo f. Trả về n/nhóm và tổng N ≈ k·n.</div>
       </div>`;
@@ -246,7 +261,7 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Hiệu ứng w (Cohen's w)
-          <input id="c-w" type="number" min="0.01" max="1.5" step="0.01" placeholder="0.3 (vừa)" />
+          <input id="c-w" class="form-input" type="number" min="0.01" max="1.5" step="0.01" placeholder="0.3 (vừa)" />
         </label>
         <div></div><div class="muted">Tổng N ≈ ((Z<sub>α</sub>+Z<sub>β</sub>)²)/w².</div>
       </div>`;
@@ -254,16 +269,16 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>SD (σ, chưa điều chỉnh)
-          <input id="ac-sd" type="number" min="0.0001" step="0.0001" placeholder="12.0" />
+          <input id="ac-sd" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="12.0" />
         </label>
         <label>Hiệu số Δ
-          <input id="ac-delta" type="number" min="0.0001" step="0.0001" placeholder="6.0" />
+          <input id="ac-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="6.0" />
         </label>
         <label>R² (giải thích bởi covariate)
-          <input id="ac-r2" type="number" min="0" max="0.9" step="0.01" placeholder="0.3" />
+          <input id="ac-r2" class="form-input" type="number" min="0" max="0.9" step="0.01" placeholder="0.3" />
         </label>
         <label>Hai phía?
-          <select id="ac-sided">
+          <select id="ac-sided" class="form-input">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -425,7 +440,7 @@ export async function mount(rootEl, ctx) {
     const dropout = clamp(num(dropEl.value), 0, 90);
     const kInput = clampInt(parseInt(armsEl.value || '2', 10), 2, 10);
 
-    if (!(alpha > 0 && alpha < 0.2))   return bad('Alpha không hợp lệ.');
+    if (!(alpha > 0 && alpha < 0.2))     return bad('Alpha không hợp lệ.');
     if (!(power > 0.5 && power < 0.999)) return bad('Power không hợp lệ.');
 
     const twoSided = (selId) => {
