@@ -10,34 +10,11 @@ export async function mount(rootEl, ctx) {
     <div class="card-subtitle">Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.</div>
   </div>
 
-  <style>
-    .obj-textarea{
-      width:100%; font:inherit; line-height:1.55;
-      padding:.9rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
-    }
-    .action-bar{display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap}
-    .left-tools,.right-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .file-chip{
-      display:inline-flex; gap:.5rem; align-items:center;
-      background:#fff; border:1px solid var(--border); color:var(--muted);
-      padding:.35rem .7rem; border-radius:999px;
-    }
-    .result-area{
-      width:100%; min-height:160px; max-height:42vh; resize:vertical;
-      font:inherit; line-height:1.55; padding:.85rem 1rem;
-      border:1px solid var(--border); border-radius:12px; background:#fff;
-    }
-    .section{margin:0 16px 12px}
-    .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
-    .btn-row{display:flex; gap:8px; align-items:center}
-    .mini{font-size:.85rem}
-  </style>
-
   <!-- Mục tiêu chính -->
   <div class="card-body">
     <label>
       Mục tiêu chính
-      <textarea id="obj-main" class="obj-textarea" rows="3" placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
+      <textarea id="obj-main" class="form-textarea" rows="3" placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
     </label>
   </div>
 
@@ -45,51 +22,49 @@ export async function mount(rootEl, ctx) {
   <div class="card-body">
     <div style="font-weight:600;margin-bottom:.5rem">Mục tiêu phụ</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:.5rem">
-      <input id="obj-sub-input" type="text" class="obj-textarea" placeholder="Nhập mục tiêu phụ..." style="flex:1;min-width:260px; padding:.6rem .9rem"/>
+      <input id="obj-sub-input" type="text" class="form-input" placeholder="Nhập mục tiêu phụ..." style="flex:1;min-width:260px"/>
       <button id="obj-sub-add" class="btn-secondary" type="button">Thêm</button>
     </div>
     <div id="obj-sub-list" class="list"></div>
   </div>
 
-  <!-- Thanh hành động (file + GPT) -->
-  <div class="card-body action-bar">
-    <div class="left-tools">
-      <input id="obj-pdf" type="file" accept="application/pdf" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
-      <button id="obj-choose" class="btn-outline" type="button">Chọn PDF</button>
-      <span id="obj-fname" class="file-chip">Chưa chọn</span>
+  <!-- File + nút GPT -->
+  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+    <div>
+      <input id="obj-pdf" type="file" accept="application/pdf" />
     </div>
-    <div class="right-tools">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button id="obj-gpt"  class="btn-primary" type="button">GPT gợi ý mục tiêu</button>
       <button id="obj-eval" class="btn-outline" type="button">GPT đánh giá mục tiêu</button>
     </div>
   </div>
 
-  <!-- Kết quả GPT – GỢI Ý (textarea riêng) -->
-  <div id="obj-suggest-box" class="card section hidden">
-    <div class="card-header result-head">
+  <!-- Kết quả GPT – GỢI Ý -->
+  <div id="obj-suggest-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Gợi ý</strong>
-      <div class="btn-row">
+      <div style="display:flex;gap:8px">
         <button id="obj-apply" class="btn-primary" type="button">Chèn vào ô</button>
         <button id="obj-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
         <button id="obj-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="obj-suggest-ta" class="result-area" placeholder="Mục tiêu chính: …&#10;- Mục tiêu phụ 1&#10;- Mục tiêu phụ 2"></textarea>
+      <textarea id="obj-suggest-ta" class="form-textarea" rows="8" placeholder="Mục tiêu chính: …&#10;- Mục tiêu phụ 1&#10;- Mục tiêu phụ 2"></textarea>
     </div>
   </div>
 
-  <!-- Kết quả GPT – ĐÁNH GIÁ (textarea riêng) -->
-  <div id="obj-eval-box" class="card section hidden">
-    <div class="card-header result-head">
+  <!-- Kết quả GPT – ĐÁNH GIÁ -->
+  <div id="obj-eval-box" class="card hidden" style="margin:0 16px 12px">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
       <strong>Kết quả GPT – Đánh giá</strong>
-      <div class="btn-row">
+      <div style="display:flex;gap:8px">
         <button id="obj-copy-eval" class="btn-ghost" type="button">Sao chép</button>
         <button id="obj-hide-eval" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <textarea id="obj-eval-ta" class="result-area" placeholder="Nhận xét theo SMART, bám PICO…"></textarea>
+      <textarea id="obj-eval-ta" class="form-textarea" rows="8" placeholder="Nhận xét theo SMART, bám PICO…"></textarea>
     </div>
   </div>
 
@@ -100,47 +75,48 @@ export async function mount(rootEl, ctx) {
 `.trim();
 
   // ===== Elements =====
-  const mainEl       = rootEl.querySelector('#obj-main');
+  const mainEl     = rootEl.querySelector('#obj-main');
 
-  const subInputEl   = rootEl.querySelector('#obj-sub-input');
-  const subAddBtn    = rootEl.querySelector('#obj-sub-add');
-  const subListEl    = rootEl.querySelector('#obj-sub-list');
+  const subInputEl = rootEl.querySelector('#obj-sub-input');
+  const subAddBtn  = rootEl.querySelector('#obj-sub-add');
+  const subListEl  = rootEl.querySelector('#obj-sub-list');
 
-  const pdfEl        = rootEl.querySelector('#obj-pdf');
-  const chooseBtn    = rootEl.querySelector('#obj-choose');
-  const fnameChip    = rootEl.querySelector('#obj-fname');
+  const pdfEl      = rootEl.querySelector('#obj-pdf');
+  const saveBtn    = rootEl.querySelector('#obj-save');
+  const gptBtn     = rootEl.querySelector('#obj-gpt');
+  const evalBtn    = rootEl.querySelector('#obj-eval');
 
-  const saveBtn      = rootEl.querySelector('#obj-save');
-  const gptBtn       = rootEl.querySelector('#obj-gpt');
-  const evalBtn      = rootEl.querySelector('#obj-eval');
+  const sBox   = rootEl.querySelector('#obj-suggest-box');
+  const sTA    = rootEl.querySelector('#obj-suggest-ta');
+  const sApply = rootEl.querySelector('#obj-apply');
+  const sCopy  = rootEl.querySelector('#obj-copy-suggest');
+  const sHide  = rootEl.querySelector('#obj-hide-suggest');
 
-  const sBox         = rootEl.querySelector('#obj-suggest-box');
-  const sTA          = rootEl.querySelector('#obj-suggest-ta');
-  const sApply       = rootEl.querySelector('#obj-apply');
-  const sCopy        = rootEl.querySelector('#obj-copy-suggest');
-  const sHide        = rootEl.querySelector('#obj-hide-suggest');
-
-  const eBox         = rootEl.querySelector('#obj-eval-box');
-  const eTA          = rootEl.querySelector('#obj-eval-ta');
-  const eCopy        = rootEl.querySelector('#obj-copy-eval');
-  const eHide        = rootEl.querySelector('#obj-hide-eval');
+  const eBox   = rootEl.querySelector('#obj-eval-box');
+  const eTA    = rootEl.querySelector('#obj-eval-ta');
+  const eCopy  = rootEl.querySelector('#obj-copy-eval');
+  const eHide  = rootEl.querySelector('#obj-hide-eval');
 
   // ===== Load state =====
   mainEl.value = ctx.get('mainObjective', '') || '';
-  let subObjectives = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives', []) : [];
+  let subObjectives = Array.isArray(ctx.get('subObjectives', []))
+    ? ctx.get('subObjectives', [])
+    : [];
   renderSubList();
 
   const oldEval = ctx.get('objectivesEval', '');
   if (oldEval) { eTA.value = String(oldEval); eBox.classList.remove('hidden'); }
 
   // ===== Sub objectives =====
-  subAddBtn.addEventListener('click', () => {
-    const v = (subInputEl.value || '').trim();
-    if (!v) return;
-    subObjectives.push(v);
-    subInputEl.value = '';
-    renderSubList();
-  });
+  if (subAddBtn) {
+    subAddBtn.addEventListener('click', () => {
+      const v = (subInputEl.value || '').trim();
+      if (!v) return;
+      subObjectives.push(v);
+      subInputEl.value = '';
+      renderSubList();
+    });
+  }
 
   function renderSubList() {
     subListEl.innerHTML = '';
@@ -192,21 +168,16 @@ export async function mount(rootEl, ctx) {
   }
 
   // ===== Save =====
-  saveBtn.addEventListener('click', () => {
-    ctx.save('mainObjective', (mainEl.value || '').trim());
-    ctx.save('subObjectives', Array.isArray(subObjectives) ? subObjectives : []);
-    ctx.toast('Đã lưu mục tiêu');
-  });
-
-  // ===== File choose =====
-  chooseBtn.addEventListener('click', () => pdfEl.click());
-  pdfEl.addEventListener('change', () => {
-    const f = pdfEl.files?.[0];
-    fnameChip.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn';
-  });
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      ctx.save('mainObjective', (mainEl.value || '').trim());
+      ctx.save('subObjectives', Array.isArray(subObjectives) ? subObjectives : []);
+      ctx.toast('Đã lưu mục tiêu');
+    });
+  }
 
   // ===== GPT Suggest =====
-  gptBtn.addEventListener('click', onSuggest);
+  if (gptBtn) gptBtn.addEventListener('click', onSuggest);
 
   async function onSuggest() {
     try {
@@ -219,7 +190,7 @@ export async function mount(rootEl, ctx) {
       if (f) {
         try {
           pdfText = await ctx.extractTextFromPDF(f);
-          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\\n...[cắt bớt]';
+          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO và câu hỏi.');
@@ -252,11 +223,10 @@ ${pdfText || '(không có)'}
         ctx.toast('GPT không trả về gợi ý hợp lệ.');
         console.warn('GPT raw reply (step2 suggest):', raw);
       } else {
-        // Hiển thị chuẩn hoá trong textarea (font đồng bộ)
         sTA.value = [
           parsed.main ? `Mục tiêu chính: ${parsed.main}` : '',
-          ...(parsed.subs || []).map((x, i) => `- ${x}`)
-        ].filter(Boolean).join('\\n');
+          ...(parsed.subs || []).map(x => `- ${x}`)
+        ].filter(Boolean).join('\n');
         sBox.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý từ GPT.');
       }
@@ -268,8 +238,8 @@ ${pdfText || '(không có)'}
     }
   }
 
-  // Áp dụng nội dung từ textarea gợi ý -> điền vào ô chính/phụ
-  sApply.addEventListener('click', () => {
+  // Áp dụng gợi ý
+  if (sApply) sApply.addEventListener('click', () => {
     const obj = parseObjectives(sTA.value);
     if (!obj) { ctx.toast('Không nhận diện được gợi ý hợp lệ.'); return; }
     if (obj.main) mainEl.value = obj.main;
@@ -279,11 +249,11 @@ ${pdfText || '(không có)'}
     ctx.save('subObjectives', subObjectives);
     ctx.toast('Đã chèn gợi ý vào các ô.');
   });
-  sCopy.addEventListener('click', () => copyText(sTA.value || ''));
-  sHide.addEventListener('click', () => sBox.classList.add('hidden'));
+  if (sCopy) sCopy.addEventListener('click', () => copyText(sTA.value || ''));
+  if (sHide) sHide.addEventListener('click', () => sBox.classList.add('hidden'));
 
   // ===== GPT Evaluate =====
-  evalBtn.addEventListener('click', onEvaluate);
+  if (evalBtn) evalBtn.addEventListener('click', onEvaluate);
 
   async function onEvaluate() {
     const main = (mainEl.value || '').trim();
@@ -329,12 +299,11 @@ ${rq || '(chưa có)'}
     }
   }
 
-  eCopy.addEventListener('click', () => copyText(eTA.value || ''));
-  eHide.addEventListener('click', () => eBox.classList.add('hidden'));
+  if (eCopy) eCopy.addEventListener('click', () => copyText(eTA.value || ''));
+  if (eHide) eHide.addEventListener('click', () => eBox.classList.add('hidden'));
 
   // ===== Helpers =====
   function parseObjectives(text) {
-    // Ưu tiên JSON {"main": "...", "subs":[...]}
     try {
       const j = JSON.parse(String(text));
       const main = String(j?.main || '').trim();
@@ -342,7 +311,6 @@ ${rq || '(chưa có)'}
       if (!main && subs.length === 0) return null;
       return { main, subs };
     } catch (_) {
-      // Fallback từ textarea: dòng đầu có thể là "Mục tiêu chính: …"
       const lines = String(text || '')
         .split(/\r?\n/)
         .map(s => s.replace(/^\s*[-*\d.)]+\s*/, '').trim())
@@ -354,8 +322,7 @@ ${rq || '(chưa có)'}
       lines.forEach((ln, i) => {
         const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/i);
         if (m) { main = m[1].trim(); return; }
-        if (i === 0 && !main) { main = ln; }
-        else { subs.push(ln); }
+        if (i === 0 && !main) main = ln; else subs.push(ln);
       });
       return { main, subs };
     }
@@ -368,13 +335,7 @@ ${rq || '(chưa có)'}
 
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
-    if (busy) {
-      btn.disabled = true;
-      btn.dataset.prev = btn.textContent || '';
-      btn.textContent = 'Đang xử lý...';
-    } else {
-      btn.disabled = false;
-      btn.textContent = label || btn.dataset.prev || '';
-    }
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
+    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 }
