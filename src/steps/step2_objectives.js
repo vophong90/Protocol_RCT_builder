@@ -273,7 +273,7 @@ Mục tiêu chính:
 ${main || '(chưa có)'}
 
 Mục tiêu phụ:
-${subs.length ? subs.map((s,i)=>\`\${i+1}. \${s}\`).join('\\n') : '(chưa có)'}
+${subs.length ? subs.map((s,i)=> (i+1) + '. ' + s).join('\\n') : '(chưa có)'}
 
 Tham chiếu PICO:
 P: ${pico.p || '(chưa có)'}
