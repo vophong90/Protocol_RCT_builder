@@ -40,9 +40,9 @@ export async function mount(rootEl, ctx) {
 
     <label>Blinding
       <select id="dsg-blinding">
-        <option value="none">Không che giấu</option>
-        <option value="single">Đơn mù (single-blind)</option>
-        <option value="double">Đôi mù (double-blind)</option>
+        <option value="none">Không làm mù</option>
+        <option value="single">Mù đơn (single-blind)</option>
+        <option value="double">Mù đôi (double-blind)</option>
       </select>
     </label>
 
@@ -68,9 +68,9 @@ export async function mount(rootEl, ctx) {
   </div>
 
   <!-- Cụm nút GPT (đặt trong body riêng) -->
-  <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
-    <button id="dsg-gpt-suggest" class="btn btn-secondary" type="button">GPT gợi ý mô tả thiết kế</button>
-    <button id="dsg-gpt-eval"    class="btn btn-secondary" type="button">GPT đánh giá mô tả</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
+    <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
   </div>
 
   <!-- Kết quả GPT – GỢI Ý -->
