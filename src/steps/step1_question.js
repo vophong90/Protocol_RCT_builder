@@ -4,36 +4,79 @@
 
 export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
-<div class="card">
+<div id="rq-card" class="card">
   <div class="card-header">
     <h3 class="card-title">Câu hỏi nghiên cứu</h3>
-    <div class="card-subtitle">Bạn có thể nhập trực tiếp, hoặc dùng GPT gợi ý từ PICO/PDF.</div>
+    <div class="card-subtitle">Bạn có thể nhập trực tiếp hoặc dùng GPT gợi ý từ PICO/PDF.</div>
   </div>
 
   <style>
-    /* Phạm vi trong card này */
-    .rq-textarea{
-      width:100%; font:inherit; line-height:1.55;
-      padding:.9rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+    /* ===== Chỉ áp dụng trong card này ===== */
+    #rq-card .card-title { font-weight: 600; }
+    #rq-card label { font-weight: 500; color: #111827; }
+
+    #rq-card .rq-textarea {
+      width: 100%;
+      font: 500 15.5px/1.6 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .9rem 1rem;
+      outline: 0;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+      min-height: 110px;
+      resize: vertical;
     }
-    .action-bar{
+    #rq-card .rq-textarea::placeholder { color: #9aa3af; }
+
+    #rq-card .action-bar{
       display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      margin-top: 4px;
     }
-    .left-tools,.right-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .file-chip{
-      display:inline-flex; gap:.5rem; align-items:center;
-      background:#fff; border:1px solid var(--border); color:var(--muted);
-      padding:.35rem .7rem; border-radius:999px;
+    #rq-card .left-tools, #rq-card .right-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    #rq-card .left-tools { flex: 1 1 360px; }
+    #rq-card .right-tools { justify-content:flex-end; }
+
+    /* File input full-width, đồng bộ với Step 0 */
+    #rq-card .file-wrap { width: 100%; }
+    #rq-card input[type="file"] {
+      width: 100%;
+      font: 500 14.5px/1 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .5rem .6rem;
+      background: #fff;
     }
-    .result-area{
+    #rq-card input[type="file"]::file-selector-button {
+      margin-right: .6rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: .5rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #rq-card input[type="file"]::file-selector-button:hover { background: #f9fafb; }
+    #rq-card .file-note { color: var(--muted); font-size: .85rem; margin-left: 4px; }
+
+    /* Kết quả GPT */
+    #rq-card .result-area{
       width:100%; min-height:160px; max-height:42vh; resize:vertical;
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      line-height:1.5; padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      line-height:1.55; padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+      white-space: pre-wrap;
     }
-    .section{margin:0 16px 12px}
-    .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
-    .btn-row{display:flex; gap:8px; align-items:center}
-    .mini{font-size:.85rem}
+    #rq-card .section{margin:0 2px 12px}
+    #rq-card .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    #rq-card .btn-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    #rq-card .mini{font-size:.9rem}
+
+    /* Nút đồng bộ */
+    #rq-card .btn { min-height: 38px; }
+
+    /* Ẩn/hiện */
+    .hidden { display: none !important; }
   </style>
 
   <!-- Ô nhập câu hỏi chính -->
@@ -44,13 +87,14 @@ export async function mount(rootEl, ctx) {
   <!-- Thanh hành động: Chọn PDF + 2 nút GPT -->
   <div class="card-body action-bar">
     <div class="left-tools">
-      <input id="rq-pdf" type="file" accept="application/pdf" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
-      <button id="rq-choose" class="btn-outline" type="button">Chọn PDF</button>
-      <span id="rq-fname" class="file-chip">Chưa chọn</span>
+      <div class="file-wrap">
+        <input id="rq-pdf" type="file" accept="application/pdf" />
+        <div class="file-note" id="rq-fname">Chưa chọn tệp PDF</div>
+      </div>
     </div>
     <div class="right-tools">
-      <button id="rq-gpt"  class="btn-primary" type="button">GPT gợi ý câu hỏi</button>
-      <button id="rq-eval" class="btn-outline" type="button">GPT đánh giá câu hỏi</button>
+      <button id="rq-gpt"  class="btn btn-primary"   type="button">GPT gợi ý câu hỏi</button>
+      <button id="rq-eval" class="btn btn-secondary" type="button">GPT đánh giá câu hỏi</button>
     </div>
   </div>
 
@@ -63,9 +107,9 @@ export async function mount(rootEl, ctx) {
         <select id="rq-apply-which" class="mini">
           <option value="1">1</option><option value="2">2</option><option value="3">3</option>
         </select>
-        <button id="rq-apply" class="btn-primary" type="button">Chèn vào ô</button>
-        <button id="rq-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
-        <button id="rq-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
+        <button id="rq-apply" class="btn btn-primary" type="button">Chèn vào ô</button>
+        <button id="rq-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="rq-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
@@ -78,8 +122,8 @@ export async function mount(rootEl, ctx) {
     <div class="card-header result-head">
       <strong>Kết quả GPT – Đánh giá</strong>
       <div class="btn-row">
-        <button id="rq-copy-eval" class="btn-ghost" type="button">Sao chép</button>
-        <button id="rq-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+        <button id="rq-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="rq-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
@@ -88,7 +132,7 @@ export async function mount(rootEl, ctx) {
   </div>
 
   <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="rq-save" class="btn-primary">Lưu</button>
+    <button id="rq-save" class="btn btn-primary">Lưu</button>
   </div>
 </div>
 `.trim();
@@ -97,7 +141,6 @@ export async function mount(rootEl, ctx) {
   const rqEl        = rootEl.querySelector('#rq-text');
 
   const pdfEl       = rootEl.querySelector('#rq-pdf');
-  const chooseBtn   = rootEl.querySelector('#rq-choose');
   const fnameChip   = rootEl.querySelector('#rq-fname');
 
   const saveBtn     = rootEl.querySelector('#rq-save');
@@ -122,10 +165,9 @@ export async function mount(rootEl, ctx) {
   if (oldEval) { eTA.value = String(oldEval); eBox.classList.remove('hidden'); }
 
   // ===== Events =====
-  chooseBtn.addEventListener('click', () => pdfEl.click());
   pdfEl.addEventListener('change', () => {
     const f = pdfEl.files?.[0];
-    fnameChip.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn';
+    fnameChip.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
   });
 
   saveBtn.addEventListener('click', () => {
@@ -153,7 +195,7 @@ export async function mount(rootEl, ctx) {
       if (f) {
         try {
           pdfText = await ctx.extractTextFromPDF(f);
-          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
+          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO hiện có.');
@@ -182,7 +224,7 @@ ${pdfText || '(không có)'}
         ctx.toast('GPT không trả về gợi ý hợp lệ.');
         console.warn('GPT raw reply (step1 suggest):', raw);
       } else {
-        sTA.value = arr.map((x, i) => `${i + 1}) ${x}`).join('\n');
+        sTA.value = arr.map((x, i) => `${i + 1}) ${x}`).join('\\n');
         sBox.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý từ GPT.');
       }
@@ -236,26 +278,30 @@ O: ${pico.o || '(chưa có)'}
     // lấy chỉ số 1..3
     const idx = Math.max(1, Math.min(3, parseInt(sApplyWhich.value || '1', 10))) - 1;
     const lines = (sTA.value || '')
-      .split(/\r?\n/)
-      .map(s => s.replace(/^\s*\d+\)\s*/, '').trim())
+      .split(/\\r?\\n/)
+      .map(s => s.replace(/^\\s*\\d+\\)\\s*/, '').trim())
       .filter(Boolean);
     if (!lines[idx]) { ctx.toast('Không tìm thấy gợi ý để chèn.'); return; }
     rqEl.value = lines[idx];
     ctx.save('researchQuestion', (rqEl.value || '').trim());
-    ctx.toast(`Đã chèn gợi ý #${idx + 1} vào ô câu hỏi.`);
+    ctx.toast(\`Đã chèn gợi ý #\${idx + 1} vào ô câu hỏi.\`);
   }
 
   // ===== Helpers =====
   function parseCandidates(text) {
+    const raw = String(text || '');
+    // Thử bắt JSON trong code fence ```json ... ```
+    const fenced = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
+    const candidate = fenced ? fenced[1] : raw;
     try {
-      const j = JSON.parse(String(text));
+      const j = JSON.parse(candidate);
       const arr = Array.isArray(j?.candidates) ? j.candidates : [];
       return arr.map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
     } catch { /* ignore */ }
     // Fallback: tách theo dòng/bullet
-    return String(text || '')
-      .split(/\r?\n/)
-      .map(s => s.replace(/^\s*[-*\d.)]+\s*/, '').trim())
+    return raw
+      .split(/\\r?\\n/)
+      .map(s => s.replace(/^\\s*[-*\\d.)]+\\s*/, '').trim())
       .filter(Boolean)
       .slice(0, 3);
   }
