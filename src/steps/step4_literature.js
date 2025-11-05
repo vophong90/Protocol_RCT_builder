@@ -1,5 +1,6 @@
 // src/steps/step4_literature.js
-// Step 4 – Tong quan tai lieu (9 tieu muc)
+// Step 4 – Tổng quan tài liệu (9 tiểu mục)
+// Cần ctx: get/save/toast, callGPT(prompt), extractTextFromPDF(file)
 
 export async function mount(rootEl, ctx) {
   const sections = [
@@ -14,117 +15,106 @@ export async function mount(rootEl, ctx) {
     { slug: 'pp-moi-phan-tich',    title: 'Các phương pháp mới trong phân tích/đánh giá số liệu' },
   ];
 
+  // rootEl CHÍNH LÀ .card trong index → không tạo thêm .card mới
   rootEl.innerHTML = `
-<div class="card" id="lit-card">
-  <div class="card-header">
-    <h3 class="card-title">Tổng quan tài liệu</h3>
-    <div class="card-subtitle">
-      9 tiểu mục. Mỗi mục có thể tải PDF riêng để GPT trích lược trước khi gợi ý nội dung.
-      Nội dung được lưu vào <code>literature.sections[slug]</code>.
+    <div class="card-header">
+      <h3 class="card-title">Tổng quan tài liệu</h3>
+      <div class="card-subtitle">
+        9 tiểu mục. Mỗi mục có thể tải PDF riêng để GPT trích lược trước khi gợi ý nội dung.
+        Nội dung được lưu vào <code>literature.sections[slug]</code>.
+      </div>
     </div>
-  </div>
-  <style>
-    #lit-card .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-    @media (max-width: 900px){ #lit-card .grid-2{ grid-template-columns: 1fr; } }
-    #lit-card .form-textarea {
-      width:100%; font: 500 15.5px/1.6 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-      background:#fff; border:1px solid var(--border); border-radius:12px; padding:.9rem 1rem; resize:vertical;
-    }
-    #lit-card .hidden { display:none !important; }
-    #lit-card .section-card { margin-bottom: 14px; }
-  </style>
-  <div class="card-body" id="lit-wrap"></div>
-</div>
-`.trim();
+    <div class="card-body" id="lit-wrap"></div>
+  `.trim();
 
   const wrap = rootEl.querySelector('#lit-wrap');
-  sections.forEach(sec => wrap.appendChild(renderSectionCard(sec, ctx)));
+  sections.forEach(sec => wrap.appendChild(renderSectionBlock(sec)));
 
-  function renderSectionCard(sec, ctx) {
-    const card = document.createElement('div');
-    card.className = 'card section-card';
-    card.innerHTML = `
-  <div class="card-header">
-    <h4 class="card-title">${toHtmlSafe(sec.title)}</h4>
-  </div>
+  function renderSectionBlock(sec) {
+    const block = document.createElement('div');
+    block.innerHTML = `
+      <div class="card-body">
+        <h4 style="font-weight:600;margin-bottom:.5rem">${toHtmlSafe(sec.title)}</h4>
 
-  <!-- File + nut GPT -->
-  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
-    <div style="flex:1;min-width:280px">
-      <input id="pdf-${sec.slug}" type="file" accept="application/pdf" />
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <button id="gpt-${sec.slug}"  class="btn-primary" type="button">GPT gợi ý nội dung</button>
-      <button id="eval-${sec.slug}" class="btn-primary" type="button">GPT đánh giá mục này</button>
-    </div>
-  </div>
+        <!-- File + 2 nút GPT -->
+        <div class="control-row row-spaced" style="margin-bottom:.5rem">
+          <input id="pdf-${sec.slug}" type="file" accept="application/pdf" />
+          <span id="fname-${sec.slug}" class="muted">Chưa chọn tệp PDF</span>
 
-  <!-- KET QUA GPT – GOI Y -->
-  <div id="sugg-box-${sec.slug}" class="card hidden" style="margin:0 16px 12px">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <strong>Kết quả GPT – Gợi ý</strong>
-      <div style="display:flex;gap:8px">
-        <button id="apply-replace-${sec.slug}" class="btn-primary"  type="button">Thay thế toàn bộ</button>
-        <button id="apply-append-${sec.slug}"  class="btn-secondary" type="button">Chèn thêm vào cuối</button>
-        <button id="copy-sugg-${sec.slug}"     class="btn-ghost"     type="button">Sao chép</button>
-        <button id="hide-sugg-${sec.slug}"     class="btn-ghost"     type="button">Ẩn</button>
+          <button id="gpt-${sec.slug}"  class="btn btn-primary" type="button">GPT gợi ý nội dung</button>
+          <button id="eval-${sec.slug}" class="btn btn-primary" type="button">GPT đánh giá mục này</button>
+        </div>
+
+        <!-- Kết quả GPT – GỢI Ý -->
+        <div id="sugg-wrap-${sec.slug}" class="card-body" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+            <strong>Kết quả GPT – Gợi ý</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="apply-replace-${sec.slug}" class="btn btn-primary"  type="button">Thay thế toàn bộ</button>
+              <button id="apply-append-${sec.slug}"  class="btn btn-secondary" type="button">Chèn thêm vào cuối</button>
+              <button id="copy-sugg-${sec.slug}"     class="btn btn-ghost"     type="button">Sao chép</button>
+              <button id="hide-sugg-${sec.slug}"     class="btn btn-ghost"     type="button">Ẩn</button>
+            </div>
+          </div>
+          <textarea id="sugg-ta-${sec.slug}" rows="10" placeholder="Gợi ý từ GPT (Markdown)…"></textarea>
+        </div>
+
+        <!-- Ô nhập nội dung chính -->
+        <div class="card-body">
+          <label>Nội dung ${toHtmlSafe(sec.title)}
+            <textarea id="txt-${sec.slug}" rows="10" placeholder="Viết/hiệu chỉnh nội dung ở đây (Markdown được hỗ trợ)"></textarea>
+          </label>
+        </div>
+
+        <!-- Kết quả GPT – ĐÁNH GIÁ -->
+        <div id="eval-wrap-${sec.slug}" class="card-body" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+            <strong>Kết quả GPT – Đánh giá</strong>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="copy-eval-${sec.slug}" class="btn btn-ghost" type="button">Sao chép</button>
+              <button id="hide-eval-${sec.slug}" class="btn btn-ghost" type="button">Ẩn</button>
+            </div>
+          </div>
+          <textarea id="eval-ta-${sec.slug}" rows="10" placeholder="Đánh giá của GPT (bullet/markdown)…"></textarea>
+        </div>
+
+        <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
+          <button id="save-${sec.slug}" class="btn btn-primary" type="button">Lưu mục này</button>
+        </div>
       </div>
-    </div>
-    <div class="card-body">
-      <textarea id="sugg-ta-${sec.slug}" class="form-textarea" rows="10" placeholder="Gợi ý từ GPT (Markdown)…"></textarea>
-    </div>
-  </div>
-
-  <!-- O nhap noi dung chinh -->
-  <div class="card-body">
-    <label>Nội dung ${toHtmlSafe(sec.title)}
-      <textarea id="txt-${sec.slug}" class="form-textarea" rows="10" placeholder="Viết/hiệu chỉnh nội dung ở đây (Markdown được hỗ trợ)"></textarea>
-    </label>
-  </div>
-
-  <!-- KET QUA GPT – DANH GIA -->
-  <div id="eval-box-${sec.slug}" class="card hidden" style="margin:0 16px 12px">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
-      <strong>Kết quả GPT – Đánh giá</strong>
-      <div style="display:flex;gap:8px">
-        <button id="copy-eval-${sec.slug}" class="btn-ghost" type="button">Sao chép</button>
-        <button id="hide-eval-${sec.slug}" class="btn-ghost" type="button">Ẩn</button>
-      </div>
-    </div>
-    <div class="card-body">
-      <textarea id="eval-ta-${sec.slug}" class="form-textarea" rows="10" placeholder="Đánh giá của GPT (bullet/markdown)…"></textarea>
-    </div>
-  </div>
-
-  <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="save-${sec.slug}" class="btn-primary" type="button">Lưu mục này</button>
-  </div>
-`.trim();
+    `.trim();
 
     // Elements
-    const pdfEl     = card.querySelector(`#pdf-${sec.slug}`);
-    const gptBtn    = card.querySelector(`#gpt-${sec.slug}`);
-    const evalBtn   = card.querySelector(`#eval-${sec.slug}`);
-    const saveBtn   = card.querySelector(`#save-${sec.slug}`);
+    const pdfEl    = block.querySelector(`#pdf-${sec.slug}`);
+    const fnameEl  = block.querySelector(`#fname-${sec.slug}`);
+    const gptBtn   = block.querySelector(`#gpt-${sec.slug}`);
+    const evalBtn  = block.querySelector(`#eval-${sec.slug}`);
+    const saveBtn  = block.querySelector(`#save-${sec.slug}`);
 
-    const textEl    = card.querySelector(`#txt-${sec.slug}`);
+    const textEl   = block.querySelector(`#txt-${sec.slug}`);
 
-    const suggBox   = card.querySelector(`#sugg-box-${sec.slug}`);
-    const suggTA    = card.querySelector(`#sugg-ta-${sec.slug}`);
-    const applyRep  = card.querySelector(`#apply-replace-${sec.slug}`);
-    const applyApp  = card.querySelector(`#apply-append-${sec.slug}`);
-    const copySugg  = card.querySelector(`#copy-sugg-${sec.slug}`);
-    const hideSugg  = card.querySelector(`#hide-sugg-${sec.slug}`);
+    const suggWrap = block.querySelector(`#sugg-wrap-${sec.slug}`);
+    const suggTA   = block.querySelector(`#sugg-ta-${sec.slug}`);
+    const applyRep = block.querySelector(`#apply-replace-${sec.slug}`);
+    const applyApp = block.querySelector(`#apply-append-${sec.slug}`);
+    const copySugg = block.querySelector(`#copy-sugg-${sec.slug}`);
+    const hideSugg = block.querySelector(`#hide-sugg-${sec.slug}`);
 
-    const evalBox   = card.querySelector(`#eval-box-${sec.slug}`);
-    const evalTA    = card.querySelector(`#eval-ta-${sec.slug}`);
-    const copyEval  = card.querySelector(`#copy-eval-${sec.slug}`);
-    const hideEval  = card.querySelector(`#hide-eval-${sec.slug}`);
+    const evalWrap = block.querySelector(`#eval-wrap-${sec.slug}`);
+    const evalTA   = block.querySelector(`#eval-ta-${sec.slug}`);
+    const copyEval = block.querySelector(`#copy-eval-${sec.slug}`);
+    const hideEval = block.querySelector(`#hide-eval-${sec.slug}`);
 
     // Load state
     textEl.value = ctx.get(`literature.sections.${sec.slug}`, '') || '';
     const initEval = ctx.get(`literatureEval.${sec.slug}`, '');
-    if (initEval) { evalTA.value = String(initEval); evalBox.classList.remove('hidden'); }
+    if (initEval) { evalTA.value = String(initEval); evalWrap.style.display = ''; }
+
+    // File UI
+    pdfEl.addEventListener('change', () => {
+      const f = pdfEl.files?.[0];
+      fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
+    });
 
     // Save
     saveBtn.addEventListener('click', () => {
@@ -132,21 +122,21 @@ export async function mount(rootEl, ctx) {
       ctx.toast(`Đã lưu: ${sec.title}`);
     });
 
-    // GPT goi y
+    // GPT gợi ý
     gptBtn.addEventListener('click', async () => {
       try {
         toggleBusy(gptBtn, true, 'Đang gợi ý...');
-        const pico = ctx.get('pico', {}) || {};
-        const rq   = ctx.get('researchQuestion', '') || '';
+        const pico    = ctx.get('pico', {}) || {};
+        const rq      = ctx.get('researchQuestion', '') || '';
         const mainObj = ctx.get('mainObjective', '') || '';
         const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
 
         let pdfText = '';
-        const f = pdfEl && pdfEl.files && pdfEl.files[0];
+        const f = pdfEl?.files?.[0];
         if (f) {
           try {
             pdfText = await ctx.extractTextFromPDF(f);
-            if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\n...[cat bot]';
+            if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\n...[cắt bớt]';
           } catch (e) {
             console.error(e);
             ctx.toast('Không đọc được PDF của mục này, sẽ chỉ dùng PICO/Câu hỏi/Mục tiêu.');
@@ -161,7 +151,7 @@ export async function mount(rootEl, ctx) {
           ctx.toast('GPT không trả về gợi ý.');
         } else {
           suggTA.value = md;
-          suggBox.classList.remove('hidden');
+          suggWrap.style.display = '';
         }
       } catch (e) {
         console.error(e);
@@ -171,7 +161,7 @@ export async function mount(rootEl, ctx) {
       }
     });
 
-    // Ap dung goi y
+    // Áp dụng gợi ý
     applyRep.addEventListener('click', () => {
       textEl.value = suggTA.value || '';
       ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
@@ -185,16 +175,16 @@ export async function mount(rootEl, ctx) {
       ctx.toast('Đã chèn thêm gợi ý vào cuối');
     });
     copySugg.addEventListener('click', () => copyText(suggTA.value || ''));
-    hideSugg.addEventListener('click', () => suggBox.classList.add('hidden'));
+    hideSugg.addEventListener('click', () => (suggWrap.style.display = 'none'));
 
-    // GPT danh gia
+    // GPT đánh giá
     evalBtn.addEventListener('click', async () => {
       const content = (textEl.value || '').trim();
       if (!content) return ctx.toast('Chưa có nội dung để đánh giá.');
       try {
         toggleBusy(evalBtn, true, 'Đang đánh giá...');
-        const pico = ctx.get('pico', {}) || {};
-        const rq   = ctx.get('researchQuestion', '') || '';
+        const pico    = ctx.get('pico', {}) || {};
+        const rq      = ctx.get('researchQuestion', '') || '';
         const mainObj = ctx.get('mainObjective', '') || '';
         const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
 
@@ -206,7 +196,7 @@ export async function mount(rootEl, ctx) {
           ctx.toast('GPT không trả về đánh giá.');
         } else {
           evalTA.value = md;
-          evalBox.classList.remove('hidden');
+          evalWrap.style.display = '';
           ctx.save(`literatureEval.${sec.slug}`, md);
           ctx.toast('Đã cập nhật đánh giá');
         }
@@ -219,12 +209,12 @@ export async function mount(rootEl, ctx) {
     });
 
     copyEval.addEventListener('click', () => copyText(evalTA.value || ''));
-    hideEval.addEventListener('click', () => evalBox.classList.add('hidden'));
+    hideEval.addEventListener('click', () => (evalWrap.style.display = 'none'));
 
-    return card;
+    return block;
   }
 
-  // ----- Prompt builders (ASCII-only, no backticks) -----
+  // ----- Prompt builders (ASCII-only, không backticks) -----
   function buildSuggestPrompt(title, pico, rq, mainObj, subObjs, pdfText) {
     const subsStr = (Array.isArray(subObjs) && subObjs.length)
       ? subObjs.map((s,i)=> (i+1) + '. ' + s).join('\n')
@@ -235,10 +225,10 @@ export async function mount(rootEl, ctx) {
       '- Han che phong doan ngoai boi canh; tranh tham chieu khong chac chan.\n' +
       '- Tra ve MARKDOWN thuan.\n\n' +
       'Ngu canh:\n' +
-      'P: ' + (pico && pico.p || '(chua co)') + '\n' +
-      'I: ' + (pico && pico.i || '(chua co)') + '\n' +
-      'C: ' + (pico && pico.c || '(chua co)') + '\n' +
-      'O: ' + (pico && pico.o || '(chua co)') + '\n' +
+      'P: ' + (pico?.p || '(chua co)') + '\n' +
+      'I: ' + (pico?.i || '(chua co)') + '\n' +
+      'C: ' + (pico?.c || '(chua co)') + '\n' +
+      'O: ' + (pico?.o || '(chua co)') + '\n' +
       'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\n' +
       'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\n' +
       'Muc tieu phu:\n' + subsStr + '\n\n' +
@@ -259,10 +249,10 @@ export async function mount(rootEl, ctx) {
       'Tra ve MARKDOWN (bullet ngan gon).\n\n' +
       '--- NOI DUNG CAN DANH GIA ---\n' + (content || '') + '\n\n' +
       '--- THAM CHIEU BOI CANH ---\n' +
-      'P: ' + (pico && pico.p || '(chua co)') + '\n' +
-      'I: ' + (pico && pico.i || '(chua co)') + '\n' +
-      'C: ' + (pico && pico.c || '(chua co)') + '\n' +
-      'O: ' + (pico && pico.o || '(chua co)') + '\n' +
+      'P: ' + (pico?.p || '(chua co)') + '\n' +
+      'I: ' + (pico?.i || '(chua co)') + '\n' +
+      'C: ' + (pico?.c || '(chua co)') + '\n' +
+      'O: ' + (pico?.o || '(chua co)') + '\n' +
       'Cau hoi nghien cuu: ' + (rq || '(chua co)') + '\n' +
       'Muc tieu chinh: ' + (mainObj || '(chua co)') + '\n' +
       'Muc tieu phu:\n' + subsStr
@@ -277,7 +267,7 @@ export async function mount(rootEl, ctx) {
       .replace(/'/g,'&#39;');
   }
   function copyText(t) {
-    try { navigator.clipboard && navigator.clipboard.writeText(t); ctx.toast('Đã sao chép.'); }
+    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
   }
   function toggleBusy(btn, busy, label) {
