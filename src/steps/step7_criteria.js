@@ -1,8 +1,8 @@
 // src/steps/step7_criteria.js
-// Step 7 – Tiêu chí vào/loại (aligned with new index.html)
+// Step 7 – Tiêu chí vào/loại (đồng bộ với index.html mới)
 // - rootEl đã là .card (không tạo .card lồng nhau)
-// - File input full-width theo .form-input (ghi đè CSS global của index.html)
-// - Hai box GPT (Gợi ý / Đánh giá) có nút copy / hide
+// - Bố cục: Vào/Loại (grid-2) → Ghi chú → PDF helper (control-row, nút không full-width) → Actions → Box GPT
+// - Nhãn "Tiêu chí Vào/Loại" giữ trên một dòng (nowrap)
 // - Lưu state: criteria { inclusion:[], exclusion:[], notes, sources, evaluation? }
 
 export async function mount(rootEl, ctx) {
@@ -15,7 +15,7 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <style>
-      /* Scoped helpers (ưu tiên so với CSS global) */
+      /* Scoped helpers (ưu tiên hơn CSS global khi cần) */
       #crit .hidden { display: none !important; }
       #crit .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
       #crit .form-input {
@@ -27,31 +27,29 @@ export async function mount(rootEl, ctx) {
         padding: .6rem .75rem;
         outline: 0;
       }
-      #crit .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
       #crit .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
-      @media (max-width: 1100px){ #crit .grid-3{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-      @media (max-width: 780px){ #crit .grid-3, #crit .grid-2{ grid-template-columns: 1fr; } }
+      @media (max-width: 900px){ #crit .grid-2{ grid-template-columns: 1fr; } }
+      #crit .nowrap { white-space: nowrap; }
     </style>
 
     <div id="crit">
-      <!-- PDF helper -->
-      <div class="card-body grid-3">
-        <label>Tải PDF hỗ trợ
-          <input id="crit-pdf" class="form-input" type="file" accept="application/pdf" />
-        </label>
-        <button id="crit-readpdf" class="btn-secondary" style="align-self:end" type="button">Đọc PDF</button>
-        <div class="muted" id="crit-pdfhint" style="align-self:end">Chưa có nội dung PDF</div>
-      </div>
-
-      <!-- Inclusion / Exclusion -->
+      <!-- Inclusion / Exclusion (đưa lên trên cùng như các step khác) -->
       <div class="card-body grid-2">
-        <label>Tiêu chí <b>Vào</b> (mỗi dòng 1 tiêu chí)
+        <label>
+          <div class="inline-row" style="justify-content:space-between">
+            <span class="nowrap" style="font-weight:700">Tiêu chí Vào</span>
+            <span class="muted">Mỗi dòng 1 tiêu chí</span>
+          </div>
           <textarea id="crit-inc" class="form-input" rows="12" placeholder="- Tuổi 40–75
 - Chẩn đoán THK gối theo ACR
 - Đồng ý tham gia và ký consent"></textarea>
         </label>
 
-        <label>Tiêu chí <b>Loại</b> (mỗi dòng 1 tiêu chí)
+        <label>
+          <div class="inline-row" style="justify-content:space-between">
+            <span class="nowrap" style="font-weight:700">Tiêu chí Loại</span>
+            <span class="muted">Mỗi dòng 1 tiêu chí</span>
+          </div>
           <textarea id="crit-exc" class="form-input" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
 - Bệnh kèm theo nặng (suy tim, suy thận giai đoạn cuối)
 - Phụ nữ có thai/cho con bú"></textarea>
@@ -63,6 +61,15 @@ export async function mount(rootEl, ctx) {
         <label>Ghi chú (tuỳ chọn)
           <textarea id="crit-notes" class="form-input" rows="4" placeholder="Ví dụ: Quy trình sàng lọc, kiểm tra tiêu chí tại lần khám 0..."></textarea>
         </label>
+      </div>
+
+      <!-- PDF helper (đưa xuống dưới, dùng control-row; input[type=file] không full-width theo index.html) -->
+      <div class="card-body">
+        <div class="control-row">
+          <input id="crit-pdf" type="file" accept="application/pdf" />
+          <button id="crit-readpdf" class="btn-secondary" type="button">Đọc PDF</button>
+          <span class="muted" id="crit-pdfhint">Chưa có nội dung PDF</span>
+        </div>
       </div>
 
       <!-- Actions -->
@@ -150,20 +157,11 @@ export async function mount(rootEl, ctx) {
       .map(x => x.replace(/^[\s\-•\*]+/, '').trim())
       .filter(Boolean);
   }
-  function arrToText(a) {
-    return (a || []).map(x => (x || '').trim()).filter(Boolean).join('\n');
-  }
-  function safeSlice(s, max = 10000) {
-    if (!s) return '';
-    return String(s).slice(0, max);
-  }
+  function arrToText(a) { return (a || []).map(x => (x || '').trim()).filter(Boolean).join('\n'); }
+  function safeSlice(s, max = 10000) { return s ? String(s).slice(0, max) : ''; }
   function dedup(arr) {
-    const seen = new Set();
-    const out = [];
-    for (const x of arr) {
-      const k = x.toLowerCase();
-      if (!seen.has(k)) { seen.add(k); out.push(x); }
-    }
+    const seen = new Set(); const out = [];
+    for (const x of arr) { const k = x.toLowerCase(); if (!seen.has(k)) { seen.add(k); out.push(x); } }
     return out;
   }
   function copyText(t) {
@@ -302,7 +300,6 @@ YÊU CẦU: Trả về các mục:
       eTA.value = text;
       evalBox.classList.remove('hidden');
 
-      // Gộp vào state, không mất các trường khác
       const current = ctx.get('criteria', {}) || {};
       ctx.save('criteria', { ...current, evaluation: text, lastEvaluatedAt: new Date().toISOString() });
 
