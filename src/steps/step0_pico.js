@@ -5,37 +5,90 @@
 export async function mount(rootEl, ctx) {
   // ===== UI =====
   rootEl.innerHTML = `
-<div class="card">
+<div id="pico-card" class="card">
   <div class="card-header">
     <h3 class="card-title">PICO</h3>
     <div class="card-subtitle">Nhập trực tiếp hoặc dùng GPT để gợi ý từ bối cảnh/PDF.</div>
   </div>
 
   <style>
-    /* Chỉ áp dụng trong card này */
-    .pico-grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (min-width:1024px){.pico-grid{grid-template-columns:1fr 1fr}}
-    .form-textarea{
-      width:100%; font:inherit; line-height:1.55;
-      padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+    /* ===== Chỉ áp dụng trong card này (scoped bằng #pico-card) ===== */
+    #pico-card .card-title { font-weight: 600; }
+    #pico-card label { font-weight: 500; color: #111827; }
+
+    #pico-card .pico-grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+    @media (min-width:1024px){ #pico-card .pico-grid { grid-template-columns: 1fr 1fr; } }
+
+    #pico-card .form-textarea {
+      width: 100%;
+      font: 500 15.5px/1.6 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: .9rem 1rem;
+      outline: 0;
+      transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+      min-height: 110px;
+      resize: vertical;
     }
-    .action-bar{
+    #pico-card .form-textarea::placeholder { color: #9aa3af; }
+
+    #pico-card .action-bar {
       display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+      margin-top: 4px;
     }
-    .left-tools, .right-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-    .file-chip{
-      display:inline-flex; gap:.5rem; align-items:center;
-      background:#fff; border:1px solid var(--border); color:var(--muted);
-      padding:.35rem .7rem; border-radius:999px;
+    #pico-card .left-tools, #pico-card .right-tools { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    #pico-card .left-tools { flex: 1 1 360px; }
+    #pico-card .right-tools { justify-content: flex-end; }
+
+    /* File input full-width, kiểu đồng bộ */
+    #pico-card .file-wrap { width: 100%; }
+    #pico-card input[type="file"] {
+      width: 100%;
+      font: 500 14.5px/1 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .5rem .6rem;
+      background: #fff;
     }
-    .result-area{
+    #pico-card input[type="file"]::file-selector-button {
+      margin-right: .6rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: .5rem .85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #pico-card input[type="file"]::file-selector-button:hover { background: #f9fafb; }
+
+    #pico-card .file-note {
+      color: var(--muted);
+      font-size: .85rem;
+      margin-left: 4px;
+    }
+
+    /* Kết quả GPT */
+    #pico-card .result-area {
       width:100%; min-height:170px; max-height:42vh; resize:vertical;
-      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      line-height:1.5; padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 14px;
+      line-height:1.55;
+      padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+      white-space: pre-wrap;
     }
-    .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
-    .btn-row{display:flex; gap:8px; align-items:center}
-    .section{margin:0 16px 12px}
+    #pico-card .result-head { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    #pico-card .btn-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    #pico-card .section { margin: 0 2px 12px; }
+
+    /* Đồng bộ nút */
+    #pico-card .btn { min-height: 38px; }
+    #pico-card .btn-primary,
+    #pico-card .btn-secondary,
+    #pico-card .btn-ghost { font-weight: 600; }
+
+    /* Ẩn/hiện dùng class hidden */
+    .hidden { display: none !important; }
   </style>
 
   <!-- Fields -->
@@ -57,13 +110,14 @@ export async function mount(rootEl, ctx) {
   <!-- Actions -->
   <div class="card-body action-bar">
     <div class="left-tools">
-      <input id="pico-pdf" type="file" accept="application/pdf" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
-      <button id="pico-choose" class="btn-outline" type="button">Chọn PDF</button>
-      <span id="pico-fname" class="file-chip">Chưa chọn</span>
+      <div class="file-wrap">
+        <input id="pico-pdf" type="file" accept="application/pdf" />
+        <div class="file-note" id="pico-fname">Chưa chọn tệp PDF</div>
+      </div>
     </div>
     <div class="right-tools">
-      <button id="pico-gpt-suggest" class="btn-primary" type="button">GPT gợi ý PICO</button>
-      <button id="pico-gpt-eval" class="btn-outline" type="button">GPT đánh giá PICO</button>
+      <button id="pico-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý PICO</button>
+      <button id="pico-gpt-eval" class="btn btn-secondary" type="button">GPT đánh giá PICO</button>
     </div>
   </div>
 
@@ -72,9 +126,9 @@ export async function mount(rootEl, ctx) {
     <div class="card-header result-head">
       <strong>Kết quả GPT – Gợi ý</strong>
       <div class="btn-row">
-        <button id="pico-apply" class="btn-primary" type="button">Chèn vào 4 ô</button>
-        <button id="pico-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
-        <button id="pico-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
+        <button id="pico-apply" class="btn btn-primary" type="button">Chèn vào 4 ô</button>
+        <button id="pico-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="pico-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
@@ -87,8 +141,8 @@ export async function mount(rootEl, ctx) {
     <div class="card-header result-head">
       <strong>Kết quả GPT – Đánh giá</strong>
       <div class="btn-row">
-        <button id="pico-copy-eval" class="btn-ghost" type="button">Sao chép</button>
-        <button id="pico-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+        <button id="pico-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
+        <button id="pico-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
@@ -97,7 +151,7 @@ export async function mount(rootEl, ctx) {
   </div>
 
   <div class="card-footer" style="display:flex;gap:12px;flex-wrap:wrap">
-    <button id="pico-save" class="btn-primary">Lưu</button>
+    <button id="pico-save" class="btn btn-primary">Lưu</button>
   </div>
 </div>
 `.trim();
@@ -108,9 +162,8 @@ export async function mount(rootEl, ctx) {
   const cEl = document.getElementById('pico-c');
   const oEl = document.getElementById('pico-o');
 
-  const pdfEl    = document.getElementById('pico-pdf');
-  const chooseEl = document.getElementById('pico-choose');
-  const fnameEl  = document.getElementById('pico-fname');
+  const pdfEl   = document.getElementById('pico-pdf');
+  const fnameEl = document.getElementById('pico-fname');
 
   const saveEl    = document.getElementById('pico-save');
   const suggestEl = document.getElementById('pico-gpt-suggest');
@@ -137,10 +190,9 @@ export async function mount(rootEl, ctx) {
   // ===== Events =====
   saveEl.addEventListener('click', onSave);
 
-  chooseEl.addEventListener('click', () => pdfEl.click());
   pdfEl.addEventListener('change', () => {
     const f = pdfEl.files?.[0];
-    fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn';
+    fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
   });
 
   suggestEl.addEventListener('click', onSuggest);
@@ -237,7 +289,7 @@ export async function mount(rootEl, ctx) {
     if (f) {
       try {
         pdfText = await ctx.extractTextFromPDF(f);
-        if (pdfText.length > 5000) pdfText = pdfText.slice(0, 5000) + '\n...[cắt bớt]';
+        if (pdfText.length > 5000) pdfText = pdfText.slice(0, 5000) + '\\n...[cắt bớt]';
       } catch (e) {
         console.warn('PDF read error:', e);
         ctx.toast('Không đọc được PDF, sẽ chỉ dùng dữ liệu đã nhập.');
@@ -304,7 +356,7 @@ O: ${current.o || '(trống)'}
     if (!raw) return { p:'', i:'', c:'', o:'' };
 
     // Ưu tiên code-fence ```json
-    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const fenced = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
     const candidate = fenced ? fenced[1] : raw;
 
     // Thử parse JSON
@@ -321,10 +373,10 @@ O: ${current.o || '(trống)'}
     } catch { /* ignore */ }
 
     // Fallback dò P:/I:/C:/O:
-    const mP = /(?:^|\n)\s*p\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mI = /(?:^|\n)\s*i\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mC = /(?:^|\n)\s*c\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mO = /(?:^|\n)\s*o\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
+    const mP = /(?:^|\\n)\\s*p\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mI = /(?:^|\\n)\\s*i\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mC = /(?:^|\\n)\\s*c\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mO = /(?:^|\\n)\\s*o\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
     return {
       p: (mP?.[1] || '').trim(),
       i: (mI?.[1] || '').trim(),
