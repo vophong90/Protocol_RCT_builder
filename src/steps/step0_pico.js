@@ -1,13 +1,9 @@
 // src/steps/step0_pico.js
 // Step 0 – PICO
-// Yêu cầu context (ctx):
-// - ctx.get(key, def), ctx.save(key, val), ctx.toast(msg)
-// - ctx.callGPT(prompt)  -> backend gpt.php cần đọc {action:"chat", prompt}
-// - ctx.extractTextFromPDF(file)
-// - ctx.downloadJSON(name, obj) (optional)
+// Cần ctx: get/save/toast, callGPT(prompt), extractTextFromPDF(file)
 
 export async function mount(rootEl, ctx) {
-  // ---------- UI ----------
+  // ===== UI =====
   rootEl.innerHTML = `
 <div class="card">
   <div class="card-header">
@@ -15,7 +11,35 @@ export async function mount(rootEl, ctx) {
     <div class="card-subtitle">Nhập trực tiếp hoặc dùng GPT để gợi ý từ bối cảnh/PDF.</div>
   </div>
 
-  <div class="card-body grid-2">
+  <style>
+    /* Chỉ áp dụng trong card này */
+    .pico-grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:1024px){.pico-grid{grid-template-columns:1fr 1fr}}
+    .form-textarea{
+      width:100%; font:inherit; line-height:1.55;
+      padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+    }
+    .action-bar{
+      display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;
+    }
+    .left-tools, .right-tools{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+    .file-chip{
+      display:inline-flex; gap:.5rem; align-items:center;
+      background:#fff; border:1px solid var(--border); color:var(--muted);
+      padding:.35rem .7rem; border-radius:999px;
+    }
+    .result-area{
+      width:100%; min-height:170px; max-height:42vh; resize:vertical;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      line-height:1.5; padding:.85rem 1rem; border:1px solid var(--border); border-radius:12px; background:#fff;
+    }
+    .result-head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+    .btn-row{display:flex; gap:8px; align-items:center}
+    .section{margin:0 16px 12px}
+  </style>
+
+  <!-- Fields -->
+  <div class="card-body pico-grid">
     <label>Population (P)
       <textarea id="pico-p" class="form-textarea" rows="4" placeholder="Đối tượng nghiên cứu (vd: Người lớn béo phì đơn thuần)"></textarea>
     </label>
@@ -30,44 +54,45 @@ export async function mount(rootEl, ctx) {
     </label>
   </div>
 
-  <div class="card-body" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-    <!-- File input (skinned) -->
-    <input id="pico-pdf" type="file" accept="application/pdf" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
-    <button id="pico-choose" class="btn-outline" type="button">Chọn PDF</button>
-    <span id="pico-fname" class="muted">Chưa chọn</span>
-
-    <div style="flex:1"></div>
-
-    <button id="pico-gpt-suggest" class="btn-primary" type="button">GPT Gợi ý PICO</button>
-    <button id="pico-gpt-eval" class="btn-outline" type="button">GPT Đánh giá PICO</button>
+  <!-- Actions -->
+  <div class="card-body action-bar">
+    <div class="left-tools">
+      <input id="pico-pdf" type="file" accept="application/pdf" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0" />
+      <button id="pico-choose" class="btn-outline" type="button">Chọn PDF</button>
+      <span id="pico-fname" class="file-chip">Chưa chọn</span>
+    </div>
+    <div class="right-tools">
+      <button id="pico-gpt-suggest" class="btn-primary" type="button">GPT gợi ý PICO</button>
+      <button id="pico-gpt-eval" class="btn-outline" type="button">GPT đánh giá PICO</button>
+    </div>
   </div>
 
-  <!-- KẾT QUẢ GPT – GỢI Ý -->
-  <div id="pico-suggest-box" class="card muted hidden" style="margin:0 16px 12px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+  <!-- Kết quả GPT – GỢI Ý -->
+  <div id="pico-suggest-box" class="card section hidden">
+    <div class="card-header result-head">
       <strong>Kết quả GPT – Gợi ý</strong>
-      <div style="display:flex;gap:8px">
+      <div class="btn-row">
         <button id="pico-apply" class="btn-primary" type="button">Chèn vào 4 ô</button>
         <button id="pico-copy-suggest" class="btn-ghost" type="button">Sao chép</button>
         <button id="pico-hide-suggest" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <pre id="pico-suggest-pre" style="white-space:pre-wrap;max-height:40vh;overflow:auto;margin:0"></pre>
+      <textarea id="pico-suggest-ta" class="result-area" placeholder='{"p":"...","i":"...","c":"...","o":"..."}'></textarea>
     </div>
   </div>
 
-  <!-- KẾT QUẢ GPT – ĐÁNH GIÁ -->
-  <div id="pico-eval-box" class="card muted hidden" style="margin:0 16px 12px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
+  <!-- Kết quả GPT – ĐÁNH GIÁ -->
+  <div id="pico-eval-box" class="card section hidden">
+    <div class="card-header result-head">
       <strong>Kết quả GPT – Đánh giá</strong>
-      <div style="display:flex;gap:8px">
+      <div class="btn-row">
         <button id="pico-copy-eval" class="btn-ghost" type="button">Sao chép</button>
         <button id="pico-hide-eval" class="btn-ghost" type="button">Ẩn</button>
       </div>
     </div>
     <div class="card-body">
-      <pre id="pico-eval-pre" style="white-space:pre-wrap;max-height:40vh;overflow:auto;margin:0"></pre>
+      <textarea id="pico-eval-ta" class="result-area" placeholder="Nhận xét & gợi ý tối ưu hóa từ GPT sẽ xuất hiện tại đây..."></textarea>
     </div>
   </div>
 
@@ -77,39 +102,39 @@ export async function mount(rootEl, ctx) {
 </div>
 `.trim();
 
-  // ---------- Bind ----------
-  const pEl   = document.getElementById('pico-p');
-  const iEl   = document.getElementById('pico-i');
-  const cEl   = document.getElementById('pico-c');
-  const oEl   = document.getElementById('pico-o');
+  // ===== Bind =====
+  const pEl = document.getElementById('pico-p');
+  const iEl = document.getElementById('pico-i');
+  const cEl = document.getElementById('pico-c');
+  const oEl = document.getElementById('pico-o');
 
   const pdfEl    = document.getElementById('pico-pdf');
   const chooseEl = document.getElementById('pico-choose');
   const fnameEl  = document.getElementById('pico-fname');
 
-  const saveEl     = document.getElementById('pico-save');
-  const suggestEl  = document.getElementById('pico-gpt-suggest');
-  const evalEl     = document.getElementById('pico-gpt-eval');
+  const saveEl    = document.getElementById('pico-save');
+  const suggestEl = document.getElementById('pico-gpt-suggest');
+  const evalEl    = document.getElementById('pico-gpt-eval');
 
-  const sBox   = document.getElementById('pico-suggest-box');
-  const sPre   = document.getElementById('pico-suggest-pre');
-  const sApply = document.getElementById('pico-apply');
-  const sCopy  = document.getElementById('pico-copy-suggest');
-  const sHide  = document.getElementById('pico-hide-suggest');
+  const sBox  = document.getElementById('pico-suggest-box');
+  const sTA   = document.getElementById('pico-suggest-ta');
+  const sApply= document.getElementById('pico-apply');
+  const sCopy = document.getElementById('pico-copy-suggest');
+  const sHide = document.getElementById('pico-hide-suggest');
 
-  const eBox   = document.getElementById('pico-eval-box');
-  const ePre   = document.getElementById('pico-eval-pre');
-  const eCopy  = document.getElementById('pico-copy-eval');
-  const eHide  = document.getElementById('pico-hide-eval');
+  const eBox  = document.getElementById('pico-eval-box');
+  const eTA   = document.getElementById('pico-eval-ta');
+  const eCopy = document.getElementById('pico-copy-eval');
+  const eHide = document.getElementById('pico-hide-eval');
 
-  // ---------- Load state ----------
+  // ===== Load state =====
   const st = ctx.get('pico', {}) || {};
   pEl.value = st.p || '';
   iEl.value = st.i || '';
   cEl.value = st.c || '';
   oEl.value = st.o || '';
 
-  // ---------- Events ----------
+  // ===== Events =====
   saveEl.addEventListener('click', onSave);
 
   chooseEl.addEventListener('click', () => pdfEl.click());
@@ -122,13 +147,13 @@ export async function mount(rootEl, ctx) {
   evalEl.addEventListener('click', onEvaluate);
 
   sApply.addEventListener('click', applySuggestionToFields);
-  sCopy.addEventListener('click', () => copyText(sPre.textContent || ''));
+  sCopy.addEventListener('click', () => copyText(sTA.value || ''));
   sHide.addEventListener('click', () => sBox.classList.add('hidden'));
 
-  eCopy.addEventListener('click', () => copyText(ePre.textContent || ''));
+  eCopy.addEventListener('click', () => copyText(eTA.value || ''));
   eHide.addEventListener('click', () => eBox.classList.add('hidden'));
 
-  // ---------- Handlers ----------
+  // ===== Handlers =====
   function onSave() {
     ctx.save('pico', {
       p: (pEl.value || '').trim(),
@@ -144,26 +169,24 @@ export async function mount(rootEl, ctx) {
       toggleBusy(suggestEl, true, 'Đang gợi ý...');
       const prompt = await buildSuggestPrompt();
       const reply  = await ctx.callGPT(prompt);
+      const raw    = String(reply ?? '');
 
-      // Lưu và hiển thị xem trước
-      const text = String(reply ?? '');
-      ctx.save('debug.picoSuggestRaw', text);
-      sPre.textContent = text;
+      // Lưu & render
+      ctx.save('debug.picoSuggestRaw', raw);
+
+      // Ưu tiên JSON hợp lệ → prettify; nếu không, giữ nguyên
+      const pico = parsePICOFromGPT(raw);
+      sTA.value = (pico.p || pico.i || pico.c || pico.o)
+        ? JSON.stringify(pico, null, 2)
+        : raw;
+
       sBox.classList.remove('hidden');
-
-      // Nếu parse được JSON → cũng điền nháp vào fields (không ép buộc)
-      const pico = parsePICOFromGPT(text);
-      if (pico.p || pico.i || pico.c || pico.o) {
-        // hiển thị JSON format đẹp trong preview
-        sPre.textContent = JSON.stringify(pico, null, 2);
-      } else {
-        ctx.toast('GPT trả về không đúng JSON P/I/C/O. Xem “Kết quả GPT – Gợi ý”.');
-      }
+      ctx.toast('Đã nhận gợi ý từ GPT.');
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT gợi ý.');
     } finally {
-      toggleBusy(suggestEl, false, 'GPT Gợi ý PICO');
+      toggleBusy(suggestEl, false, 'GPT gợi ý PICO');
     }
   }
 
@@ -172,24 +195,22 @@ export async function mount(rootEl, ctx) {
       toggleBusy(evalEl, true, 'Đang đánh giá...');
       const prompt = await buildEvaluatePrompt();
       const reply  = await ctx.callGPT(prompt);
+      const raw    = String(reply ?? '');
 
-      const text = String(reply ?? '');
-      ctx.save('debug.picoEvalRaw', text);
-      ePre.textContent = text;
+      ctx.save('debug.picoEvalRaw', raw);
+      eTA.value = raw;         // render trực tiếp vào khung đánh giá
       eBox.classList.remove('hidden');
-
       ctx.toast('Đã nhận đánh giá từ GPT.');
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT đánh giá.');
     } finally {
-      toggleBusy(evalEl, false, 'GPT Đánh giá PICO');
+      toggleBusy(evalEl, false, 'GPT đánh giá PICO');
     }
   }
 
   function applySuggestionToFields() {
-    const text = sPre.textContent || '';
-    const pico = parsePICOFromGPT(text);
+    const pico = parsePICOFromGPT(sTA.value || '');
     if (!(pico.p || pico.i || pico.c || pico.o)) {
       ctx.toast('Không nhận diện được JSON P/I/C/O để chèn.');
       return;
@@ -202,7 +223,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã chèn kết quả GPT vào 4 ô.');
   }
 
-  // ---------- Prompt builders ----------
+  // ===== Prompt builders =====
   async function buildSuggestPrompt() {
     const current = {
       p: (pEl.value || '').trim(),
@@ -225,8 +246,7 @@ export async function mount(rootEl, ctx) {
 
     return `
 Bạn là trợ lý biên soạn đề cương RCT. Hãy đề xuất/chuẩn hóa 4 thành phần PICO (tiếng Việt, ngắn gọn).
-YÊU CẦU ĐẦU RA: TRẢ VỀ CHỈ MỘT ĐỐI TƯỢNG JSON HỢP LỆ, không kèm giải thích:
-{"p":"...","i":"...","c":"...","o":"..."}
+YÊU CẦU: Chỉ trả về đúng một JSON hợp lệ: {"p":"...","i":"...","c":"...","o":"..."} – không kèm giải thích.
 
 Thông tin hiện có:
 P: ${current.p || '(chưa có)'}
@@ -247,11 +267,11 @@ ${pdfText || '(không có)'}
       o: (oEl.value || '').trim(),
     };
     return `
-Bạn là phản biện phương pháp nghiên cứu. Hãy đánh giá PICO dưới đây theo gạch đầu dòng súc tích:
+Bạn là phản biện phương pháp nghiên cứu. Hãy đánh giá PICO dưới đây bằng gạch đầu dòng súc tích:
 - Điểm mạnh
-- Điểm cần chỉnh (cụ thể từng thành phần P/I/C/O)
-- Gợi ý tối ưu hóa (nếu có)
-Trả lời bằng tiếng Việt, không trả JSON.
+- Điểm cần chỉnh (riêng cho P/I/C/O)
+- Gợi ý tối ưu hoá (nếu có)
+Trả lời tiếng Việt, không trả JSON.
 
 P: ${current.p || '(trống)'}
 I: ${current.i || '(trống)'}
@@ -260,16 +280,16 @@ O: ${current.o || '(trống)'}
 `.trim();
   }
 
-  // ---------- Helpers ----------
-  function toggleBusy(btn, busy, textWhenDone) {
+  // ===== Helpers =====
+  function toggleBusy(btn, busy, label) {
     if (!btn) return;
     if (busy) {
       btn.disabled = true;
-      btn.dataset._prev = btn.textContent || '';
+      btn.dataset.prev = btn.textContent || '';
       btn.textContent = 'Đang xử lý...';
     } else {
       btn.disabled = false;
-      btn.textContent = textWhenDone || btn.dataset._prev || '';
+      btn.textContent = label || btn.dataset.prev || '';
     }
   }
 
@@ -277,15 +297,13 @@ O: ${current.o || '(trống)'}
     try {
       navigator.clipboard?.writeText(t);
       ctx.toast('Đã sao chép.');
-    } catch {
-      ctx.toast('Không sao chép được.');
-    }
+    } catch { ctx.toast('Không sao chép được.'); }
   }
 
   function parsePICOFromGPT(raw) {
     if (!raw) return { p:'', i:'', c:'', o:'' };
 
-    // Nếu có code fence ```json ... ```
+    // Ưu tiên code-fence ```json
     const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
     const candidate = fenced ? fenced[1] : raw;
 
