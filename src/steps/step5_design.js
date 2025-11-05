@@ -224,7 +224,10 @@ export async function mount(rootEl, ctx) {
 
   // Hiện lại đánh giá nếu có
   const oldEval = dsgState.evaluation || '';
-  if (oldEval) { eTA.value = String(oldEval); evalBox.classList.remove('hidden'); }
+  if (oldEval) {
+    eTA.value = String(oldEval);
+    evalBox.classList.remove('hidden');
+  }
 
   // ------- Events -------
   typeEl.addEventListener('change', () => { maybeSuggestCrossoverNames(); updateSummary(); });
@@ -278,7 +281,11 @@ export async function mount(rootEl, ctx) {
       const armNames = readArmNames();
 
       const prompt = buildSuggestPrompt(pico, rq, mainObj, subObjs, {
-        type: curType, blinding: curBlind, allocationRatio: curAlloc, arms: nArms, armNames
+        type: curType,
+        blinding: curBlind,
+        allocationRatio: curAlloc,
+        arms: nArms,
+        armNames
       });
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
@@ -335,7 +342,11 @@ export async function mount(rootEl, ctx) {
         evalBox.classList.remove('hidden');
         eTA.value = md;
         const cur = ctx.get('design', {}) || {};
-        ctx.save('design', { ...cur, evaluation: md, lastEvaluatedAt: new Date().toISOString() });
+        ctx.save('design', {
+          ...cur,
+          evaluation: md,
+          lastEvaluatedAt: new Date().toISOString()
+        });
         ctx.toast('Đã cập nhật đánh giá');
       }
     } catch (e) {
@@ -377,7 +388,10 @@ export async function mount(rootEl, ctx) {
     const keepExisting = !opts.force;
     const current = keepExisting ? readArmNames() : [];
     namesBox.innerHTML = '';
-    const base = padOrTrim(keepExisting ? mergeNames(current, names, n) : padOrTrim(names || [], n), n);
+    const base = padOrTrim(
+      keepExisting ? mergeNames(current, names, n) : padOrTrim(names || [], n),
+      n
+    );
 
     for (let i = 0; i < n; i++) {
       const wrap = document.createElement('div');
@@ -420,14 +434,14 @@ export async function mount(rootEl, ctx) {
   }
 
   function defaultArmNames(n, ctx_) {
-  const out = [];
-  const pico = ctx_.get('pico', {}) || {};
-  const I = safeShort(pico.i);
-  const C = safeShort(pico.c);
-  for (let i = 0; i < n; i++) out.push(defaultName(i));
-  if (I) out[0] = `Nhóm can thiệp (${I})`;
-  if (C) out[1] = `Nhóm chứng (${C})`;
-  return out;
+    const out = [];
+    const pico = ctx_.get('pico', {}) || {};
+    const I = safeShort(pico.i);
+    const C = safeShort(pico.c);
+    for (let i = 0; i < n; i++) out.push(defaultName(i));
+    if (I) out[0] = `Nhóm can thiệp (${I})`;
+    if (C) out[1] = `Nhóm chứng (${C})`;
+    return out;
   }
 
   function maybeSuggestCrossoverNames() {
@@ -444,7 +458,7 @@ export async function mount(rootEl, ctx) {
       (names[0] || '').toLowerCase().startsWith('nhóm can thiệp') &&
       (names[1] || '').toLowerCase().startsWith('nhóm chứng');
     if (looksDefault) {
-      renderArmInputs(2, [\`Trình tự \${I}→\${C}\`, \`Trình tự \${C}→\${I}\`]);
+      renderArmInputs(2, [`Trình tự ${I}→${C}`, `Trình tự ${C}→${I}`]);
     }
   }
 
@@ -454,7 +468,7 @@ export async function mount(rootEl, ctx) {
   }
 
   function safeText(s) {
-    return String(s || '').replace(/\\s+/g, ' ').trim();
+    return String(s || '').replace(/\s+/g, ' ').trim();
   }
   function safeShort(s) {
     s = safeText(s);
@@ -487,7 +501,7 @@ export async function mount(rootEl, ctx) {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
     if (fixed.changed) {
-      ratioHint.textContent = \`Tỷ lệ hiện không khớp \${n} nhánh → gợi ý: \${fixed.ratio}\`;
+      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
       return;
     }
     const per = ratioToPercents(allocEl.value || '');
@@ -512,64 +526,70 @@ export async function mount(rootEl, ctx) {
 
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
-    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
-    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
+    if (busy) {
+      btn.disabled = true;
+      btn.dataset.prev = btn.textContent || '';
+      btn.textContent = 'Đang xử lý...';
+    } else {
+      btn.disabled = false;
+      btn.textContent = label || btn.dataset.prev || '';
+    }
   }
 
-  // Prompt builders
+  // Prompt builders (GPT)
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
-  const sub = (Array.isArray(subObjs) && subObjs.length)
-    ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
-    : '(chưa có)';
-  return [
-    'Bạn là trợ lý học thuật. Hãy gợi ý mô tả thiết kế RCT ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.',
-    'Yêu cầu:',
-    '- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.',
-    '- Trả về MARKDOWN thuần, không thêm tài liệu tham khảo.',
-    '',
-    'Bối cảnh:',
-    `P: ${pico.p || '(chưa có)'}`,
-    `I: ${pico.i || '(chưa có)'}`,
-    `C: ${pico.c || '(chưa có)'}`,
-    `O: ${pico.o || '(chưa có)'}`,
-    `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
-    `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
-    'Mục tiêu phụ:',
-    sub,
-    '',
-    'Lựa chọn hiện có:',
-    `- Loại thiết kế: ${cur.type}`,
-    `- Blinding: ${cur.blinding}`,
-    `- Tỷ lệ phân bổ: ${cur.allocationRatio}`,
-    `- Số nhánh: ${cur.arms}`,
-    `- Tên nhánh: ${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}`
-  ].join('\n');
+    const sub = (Array.isArray(subObjs) && subObjs.length)
+      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+      : '(chưa có)';
+    return [
+      'Bạn là trợ lý học thuật. Hãy gợi ý mô tả thiết kế RCT ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.',
+      'Yêu cầu:',
+      '- Nêu rõ loại thiết kế (song song/chéo), blinding, tỷ lệ phân bổ, số nhánh và tên các nhánh (theo đầu vào), thời gian theo dõi (nếu suy luận được), khung đánh giá chính.',
+      '- Trả về MARKDOWN thuần, không thêm tài liệu tham khảo.',
+      '',
+      'Bối cảnh:',
+      `P: ${pico.p || '(chưa có)'}`,
+      `I: ${pico.i || '(chưa có)'}`,
+      `C: ${pico.c || '(chưa có)'}`,
+      `O: ${pico.o || '(chưa có)'}`,
+      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+      'Mục tiêu phụ:',
+      sub,
+      '',
+      'Lựa chọn hiện có:',
+      `- Loại thiết kế: ${cur.type}`,
+      `- Blinding: ${cur.blinding}`,
+      `- Tỷ lệ phân bổ: ${cur.allocationRatio}`,
+      `- Số nhánh: ${cur.arms}`,
+      `- Tên nhánh: ${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}`
+    ].join('\n');
   }
 
   function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
-  const sub = (Array.isArray(subObjs) && subObjs.length)
-    ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
-    : '(chưa có)';
-  return [
-    'Bạn là phản biện khoa học. Hãy đánh giá mô tả thiết kế RCT sau theo các tiêu chí:',
-    '- Tính phù hợp với PICO/câu hỏi/mục tiêu',
-    '- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)',
-    '- Tính khả thi và rủi ro thiên lệch có thể phát sinh',
-    '- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)',
-    'Trả về MARKDOWN.',
-    '',
-    '--- MÔ TẢ CẦN ĐÁNH GIÁ ---',
-    content,
-    '',
-    '--- THAM CHIẾU BỐI CẢNH ---',
-    `P: ${pico.p || '(chưa có)'}`,
-    `I: ${pico.i || '(chưa có)'}`,
-    `C: ${pico.c || '(chưa có)'}`,
-    `O: ${pico.o || '(chưa có)'}`,
-    `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
-    `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
-    'Mục tiêu phụ:',
-    sub
-  ].join('\n');
+    const sub = (Array.isArray(subObjs) && subObjs.length)
+      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
+      : '(chưa có)';
+    return [
+      'Bạn là phản biện khoa học. Hãy đánh giá mô tả thiết kế RCT sau theo các tiêu chí:',
+      '- Tính phù hợp với PICO/câu hỏi/mục tiêu',
+      '- Rõ ràng và đủ các thành tố (loại thiết kế, blinding, allocation, arms, theo dõi, tiêu chí chính)',
+      '- Tính khả thi và rủi ro thiên lệch có thể phát sinh',
+      '- Gợi ý chỉnh sửa trọng tâm (bullet ngắn gọn)',
+      'Trả về MARKDOWN.',
+      '',
+      '--- MÔ TẢ CẦN ĐÁNH GIÁ ---',
+      content,
+      '',
+      '--- THAM CHIẾU BỐI CẢNH ---',
+      `P: ${pico.p || '(chưa có)'}`,
+      `I: ${pico.i || '(chưa có)'}`,
+      `C: ${pico.c || '(chưa có)'}`,
+      `O: ${pico.o || '(chưa có)'}`,
+      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
+      'Mục tiêu phụ:',
+      sub
+    ].join('\n');
   }
 }
