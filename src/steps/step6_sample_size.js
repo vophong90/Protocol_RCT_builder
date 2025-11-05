@@ -1,11 +1,10 @@
 // src/steps/step6_sample_size.js
-// Step 6 – Cỡ mẫu (baseline)
-// Công thức minh bạch, không dùng GPT để tính. Có bù rớt mẫu và cảnh báo nhập sai.
-// Lưu kết quả vào state.sampleSize { method, inputs, result }.
-// Bổ sung: GPT gợi ý chọn công thức theo Mục tiêu + Thiết kế; GPT đánh giá giả định so với y văn.
+// Step 6 – Cỡ mẫu (khớp index.html mới)
+// - Công thức minh bạch, có bù rớt mẫu
+// - Hộp GPT gợi ý/chấm: dùng card con, ẩn/hiện bằng style.display
+// - Lưu state: sampleSize { method, inputs, result, reportedAt }, kèm đánh giá nếu có
 
 export async function mount(rootEl, ctx) {
-  // rootEl đã là .card trong index.html → KHÔNG tạo thêm .card mới
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Cỡ mẫu</h3>
@@ -14,117 +13,93 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <style>
-      /* Helpers cục bộ (chỉ cho step này) */
-      #ss .hidden { display: none !important; }
-      #ss .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-      #ss .pill { display:inline-flex; align-items:center; padding:.25rem .6rem; border-radius:999px; background:var(--muted); color:var(--muted-foreground); font:600 12.5px/1.1 Inter, ui-sans-serif; }
-      #ss .form-input {
-        width: 100%;
-        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-        background: #fff;
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: .6rem .75rem;
-        outline: 0;
-      }
-      #ss .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
-      @media (max-width: 1100px){ #ss .grid-3{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-      @media (max-width: 780px){ #ss .grid-3{ grid-template-columns: 1fr; } }
-      #ss table.ss-kv { width:100%; border-collapse:collapse; }
-      #ss table.ss-kv td { border:1px solid var(--border); padding:.45rem .6rem; vertical-align:top; }
-      #ss table.ss-kv td:first-child { width:38%; color:#374151; font-weight:600; }
-    </style>
+    <!-- Hàng chọn tham số chung -->
+    <div class="card-body grid-3">
+      <label>Phương pháp
+        <select id="ss-method">
+          <option value="means">So sánh trung bình 2 nhóm (t-test)</option>
+          <option value="proportions">So sánh tỷ lệ 2 nhóm</option>
+          <option value="ni_proportions">Non-inferiority (tỷ lệ)</option>
+          <option value="crossover">Cross-over (trung bình, σw)</option>
+          <option value="anova">ANOVA (k nhóm, hiệu ứng f)</option>
+          <option value="chisq">Chi-square (hiệu ứng w)</option>
+          <option value="ancova">ANCOVA (2 nhóm, điều chỉnh theo R²)</option>
+        </select>
+      </label>
 
-    <div id="ss">
-      <!-- Hàng chọn tham số chung -->
-      <div class="card-body grid-3">
-        <label>Phương pháp
-          <select id="ss-method" class="form-input">
-            <option value="means">So sánh trung bình 2 nhóm (t-test)</option>
-            <option value="proportions">So sánh tỷ lệ 2 nhóm</option>
-            <option value="ni_proportions">Non-inferiority (tỷ lệ)</option>
-            <option value="crossover">Cross-over (trung bình, σ<sub>w</sub>)</option>
-            <option value="anova">ANOVA (k nhóm, hiệu ứng f)</option>
-            <option value="chisq">Chi-square (hiệu ứng w)</option>
-            <option value="ancova">ANCOVA (2 nhóm, điều chỉnh theo R²)</option>
-          </select>
-        </label>
+      <label>Alpha (mức ý nghĩa)
+        <input id="ss-alpha" type="number" step="0.0001" min="0.0001" max="0.2" value="0.05" />
+      </label>
 
-        <label>Alpha (mức ý nghĩa)
-          <input id="ss-alpha" class="form-input" type="number" step="0.0001" min="0.0001" max="0.2" value="0.05" />
-        </label>
+      <label>Power
+        <input id="ss-power" type="number" step="0.01" min="0.5" max="0.99" value="0.8" />
+      </label>
+    </div>
 
-        <label>Power
-          <input id="ss-power" class="form-input" type="number" step="0.01" min="0.5" max="0.99" value="0.8" />
-        </label>
+    <!-- Khối input tuỳ theo phương pháp -->
+    <div class="card-body" id="ss-opts"></div>
+
+    <!-- Rớt mẫu + số nhánh -->
+    <div class="card-body grid-3">
+      <label>% rớt mẫu dự kiến
+        <input id="ss-drop" type="number" min="0" max="90" step="1" value="0" />
+      </label>
+
+      <label>Số nhánh (k, nếu cần)
+        <input id="ss-arms" type="number" min="2" max="10" step="1" />
+      </label>
+
+      <div class="muted" style="align-self:end">
+        Nếu đã chọn thiết kế ở Bước 6, số nhánh sẽ tự gợi ý theo đó.
       </div>
+    </div>
 
-      <!-- Khối input tuỳ theo phương pháp -->
-      <div class="card-body" id="ss-opts"></div>
+    <!-- Cụm nút GPT -->
+    <div class="card-body control-row">
+      <button id="ss-gpt-suggest" class="btn-primary" type="button">GPT gợi ý công thức</button>
+      <button id="ss-gpt-eval"    class="btn-primary" type="button">GPT đánh giá giả định</button>
+    </div>
 
-      <!-- Rớt mẫu + số nhánh -->
-      <div class="card-body grid-3">
-        <label>% rớt mẫu dự kiến
-          <input id="ss-drop" class="form-input" type="number" min="0" max="90" step="1" value="0" />
-        </label>
-
-        <label>Số nhánh (k, nếu cần)
-          <input id="ss-arms" class="form-input" type="number" min="2" max="10" step="1" />
-        </label>
-
-        <div class="muted">
-          Nếu đã chọn thiết kế ở Bước 5, số nhánh sẽ tự gợi ý theo đó.
+    <!-- Hộp kết quả GPT gợi ý -->
+    <div id="ss-sugg-box" class="card" style="display:none">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Kết quả GPT – Gợi ý công thức</strong>
+        <div class="control-row">
+          <button id="ss-apply-method" class="btn-primary"  type="button">Áp dụng phương pháp gợi ý</button>
+          <button id="ss-copy-sugg"    class="btn-ghost"    type="button">Sao chép</button>
+          <button id="ss-hide-sugg"    class="btn-ghost"    type="button">Ẩn</button>
         </div>
       </div>
-
-      <!-- Cụm nút GPT -->
-      <div class="card-body inline-row">
-        <button id="ss-gpt-suggest" class="btn-primary" type="button">GPT gợi ý công thức</button>
-        <button id="ss-gpt-eval"    class="btn-primary" type="button">GPT đánh giá giả định</button>
+      <div class="card-body">
+        <textarea id="ss-sugg-ta" rows="8" placeholder="(GPT) Lý do chọn công thức, tham số cần nhập, cảnh báo thiên lệch…"></textarea>
+        <div class="muted">Mẹo: Kiểm tra từ khoá (ANOVA/ANCOVA/t-test/proportions/NI/cross-over…) rồi bấm “Áp dụng”.</div>
       </div>
+    </div>
 
-      <!-- Hộp kết quả GPT gợi ý -->
-      <div id="ss-sugg-box" class="card hidden" style="margin:0 16px 12px">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Kết quả GPT – Gợi ý công thức</strong>
-          <div class="inline-row">
-            <button id="ss-apply-method" class="btn-primary"  type="button">Áp dụng phương pháp gợi ý</button>
-            <button id="ss-copy-sugg"    class="btn-ghost"     type="button">Sao chép</button>
-            <button id="ss-hide-sugg"    class="btn-ghost"     type="button">Ẩn</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <textarea id="ss-sugg-ta" class="form-input" rows="8" placeholder="(GPT) Lý do chọn công thức, tham số cần nhập, cảnh báo thiên lệch…"></textarea>
-          <div class="muted">Mẹo: Kiểm tra từ khoá trong gợi ý (ANOVA/ANCOVA/t-test/proportions/NI/cross-over…) rồi bấm “Áp dụng”.</div>
+    <!-- Hộp kết quả GPT đánh giá -->
+    <div id="ss-eval-box" class="card" style="display:none">
+      <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+        <strong>Kết quả GPT – Đánh giá giả định</strong>
+        <div class="control-row">
+          <button id="ss-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+          <button id="ss-hide-eval" class="btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-
-      <!-- Hộp kết quả GPT đánh giá -->
-      <div id="ss-eval-box" class="card hidden" style="margin:0 16px 12px">
-        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
-          <strong>Kết quả GPT – Đánh giá giả định</strong>
-          <div class="inline-row">
-            <button id="ss-copy-eval" class="btn-ghost" type="button">Sao chép</button>
-            <button id="ss-hide-eval" class="btn-ghost" type="button">Ẩn</button>
-          </div>
-        </div>
-        <div class="card-body">
-          <textarea id="ss-eval-ta" class="form-input" rows="8" placeholder="(GPT) Đối chiếu y văn: SD/tỷ lệ nền/biên NI/hiệu ứng f,w,R²… có hợp lý không? Tham khảo & khuyến nghị."></textarea>
-        </div>
+      <div class="card-body">
+        <textarea id="ss-eval-ta" rows="8" placeholder="(GPT) Đối chiếu y văn: SD/tỷ lệ nền/biên NI/hiệu ứng f,w,R²… có hợp lý không? Tham khảo & khuyến nghị."></textarea>
       </div>
+    </div>
 
-      <!-- Tính & Lưu -->
-      <div class="card-footer">
-        <button id="ss-calc" class="btn-primary"  type="button">Tính cỡ mẫu</button>
-        <button id="ss-save" class="btn-secondary" type="button">Lưu vào đề cương</button>
-      </div>
+    <!-- Tính & Lưu -->
+    <div class="card-footer">
+      <button id="ss-calc" class="btn-primary"  type="button">Tính cỡ mẫu</button>
+      <button id="ss-save" class="btn-secondary" type="button">Lưu vào đề cương</button>
+    </div>
 
-      <!-- Output kết quả -->
-      <div class="card-body hidden" id="ss-out">
-        <div style="font-weight:700;margin-bottom:.5rem">Kết quả:</div>
-        <div id="ss-out-html"></div>
-      </div>
+    <!-- Output kết quả -->
+    <div class="card-body" id="ss-out" style="display:none">
+      <div style="font-weight:700;margin-bottom:.5rem">Kết quả:</div>
+      <div id="ss-out-html"></div>
     </div>
   `.trim();
 
@@ -156,7 +131,7 @@ export async function mount(rootEl, ctx) {
   const copyEval = rootEl.querySelector('#ss-copy-eval');
   const hideEval = rootEl.querySelector('#ss-hide-eval');
 
-  // ---- init arms from design/localStorage
+  // ---- init arms từ thiết kế / localStorage
   const design = ctx.get('design', {}) || {};
   let kFromDesign = parseInt(design?.arms ?? 2, 10);
   if (!Number.isFinite(kFromDesign) || kFromDesign < 2) {
@@ -187,13 +162,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Độ lệch chuẩn chung (σ)
-          <input id="m-sd" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 12.0" />
+          <input id="m-sd" type="number" min="0.0001" step="0.0001" placeholder="12.0" />
         </label>
         <label>Hiệu số cần phát hiện (Δ = |μ1−μ2|)
-          <input id="m-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 6.0" />
+          <input id="m-delta" type="number" min="0.0001" step="0.0001" placeholder="6.0" />
         </label>
         <label>Hai phía?
-          <select id="m-sided" class="form-input">
+          <select id="m-sided">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -203,13 +178,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>p1
-          <input id="p-p1" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.30" />
+          <input id="p-p1" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.30" />
         </label>
         <label>p2
-          <input id="p-p2" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.50" />
+          <input id="p-p2" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.50" />
         </label>
         <label>Hai phía?
-          <select id="p-sided" class="form-input">
+          <select id="p-sided">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -219,13 +194,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>p<sub>new</sub>
-          <input id="ni-p1" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
+          <input id="ni-p1" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
         </label>
         <label>p<sub>ctrl</sub>
-          <input id="ni-p2" class="form-input" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
+          <input id="ni-p2" type="number" min="0.0001" max="0.9999" step="0.0001" placeholder="0.60" />
         </label>
         <label>Biên không thua kém (δ, tuyệt đối)
-          <input id="ni-delta" class="form-input" type="number" min="0.0001" max="0.5" step="0.0001" placeholder="0.10" />
+          <input id="ni-delta" type="number" min="0.0001" max="0.5" step="0.0001" placeholder="0.10" />
         </label>
         <div class="muted">Kiểm định một phía (one-sided).</div>
       </div>`;
@@ -233,13 +208,13 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>SD within-subject (σ<sub>w</sub>)
-          <input id="x-sdw" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 8.0" />
+          <input id="x-sdw" type="number" min="0.0001" step="0.0001" placeholder="8.0" />
         </label>
         <label>Hiệu số cần phát hiện (Δ)
-          <input id="x-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="ví dụ 4.0" />
+          <input id="x-delta" type="number" min="0.0001" step="0.0001" placeholder="4.0" />
         </label>
         <label>Hai phía?
-          <select id="x-sided" class="form-input">
+          <select id="x-sided">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -250,10 +225,10 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Hiệu ứng f (Cohen's f)
-          <input id="a-f" class="form-input" type="number" min="0.01" max="2" step="0.01" placeholder="0.25 (vừa)" />
+          <input id="a-f" type="number" min="0.01" max="2" step="0.01" placeholder="0.25 (vừa)" />
         </label>
         <label>Số nhóm k
-          <input id="a-k" class="form-input" type="number" min="3" max="10" step="1" />
+          <input id="a-k" type="number" min="3" max="10" step="1" />
         </label>
         <div class="muted">Xấp xỉ theo f. Trả về n/nhóm và tổng N ≈ k·n.</div>
       </div>`;
@@ -261,7 +236,7 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>Hiệu ứng w (Cohen's w)
-          <input id="c-w" class="form-input" type="number" min="0.01" max="1.5" step="0.01" placeholder="0.3 (vừa)" />
+          <input id="c-w" type="number" min="0.01" max="1.5" step="0.01" placeholder="0.30 (vừa)" />
         </label>
         <div></div><div class="muted">Tổng N ≈ ((Z<sub>α</sub>+Z<sub>β</sub>)²)/w².</div>
       </div>`;
@@ -269,16 +244,16 @@ export async function mount(rootEl, ctx) {
       html = `
       <div class="grid-3">
         <label>SD (σ, chưa điều chỉnh)
-          <input id="ac-sd" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="12.0" />
+          <input id="ac-sd" type="number" min="0.0001" step="0.0001" placeholder="12.0" />
         </label>
         <label>Hiệu số Δ
-          <input id="ac-delta" class="form-input" type="number" min="0.0001" step="0.0001" placeholder="6.0" />
+          <input id="ac-delta" type="number" min="0.0001" step="0.0001" placeholder="6.0" />
         </label>
         <label>R² (giải thích bởi covariate)
-          <input id="ac-r2" class="form-input" type="number" min="0" max="0.9" step="0.01" placeholder="0.3" />
+          <input id="ac-r2" type="number" min="0" max="0.9" step="0.01" placeholder="0.3" />
         </label>
         <label>Hai phía?
-          <select id="ac-sided" class="form-input">
+          <select id="ac-sided">
             <option value="two">Two-sided</option>
             <option value="one">One-sided</option>
           </select>
@@ -317,7 +292,7 @@ export async function mount(rootEl, ctx) {
       setIf('#ac-r2', ip.r2);
       setIf('#ac-sided', ip.sided);
     } else {
-      // sensible defaults from design arms
+      // gợi ý k theo arms đã có
       if (m === 'anova') setIf('#a-k', parseInt(armsEl.value || '3', 10));
     }
   }
@@ -334,9 +309,9 @@ export async function mount(rootEl, ctx) {
   btnSugg.addEventListener('click', onSuggest);
   btnEval.addEventListener('click', onEvaluate);
   copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
-  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
+  hideSugg?.addEventListener('click', () => (suggBox.style.display = 'none'));
   copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
-  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
+  hideEval?.addEventListener('click', () => (evalBox.style.display = 'none'));
   applyMethodBtn?.addEventListener('click', () => {
     const txt = (sTA.value || '').toLowerCase();
     const m = detectMethodFromText(txt);
@@ -351,7 +326,7 @@ export async function mount(rootEl, ctx) {
 
   async function onSuggest() {
     try {
-      toggleBusy(btnSugg, true, 'Đang gọi GPT…');
+      toggleBusy(btnSugg, true, 'GPT gợi ý công thức');
       const dsg = ctx.get('design', {}) || {};
       const mainObj = ctx.get('mainObjective', '') || '';
       const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
@@ -361,26 +336,23 @@ export async function mount(rootEl, ctx) {
       const prompt = buildSuggestPrompt({ dsg, mainObj, subObjs, rq, pico });
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
-      if (!md) {
-        ctx.toast('GPT không trả về gợi ý.');
-        return;
-      }
+      if (!md) { ctx.toast('GPT không trả về gợi ý.'); return; }
       sTA.value = md;
-      suggBox.classList.remove('hidden');
+      suggBox.style.display = '';
       ctx.toast('Đã nhận gợi ý công thức.');
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT gợi ý.');
     } finally {
-      toggleBusy(btnSugg, false, 'GPT gợi ý công thức');
+      toggleBusy(btnSugg, false);
     }
   }
 
   async function onEvaluate() {
     try {
-      toggleBusy(btnEval, true, 'Đang đánh giá…');
+      toggleBusy(btnEval, true, 'GPT đánh giá giả định');
 
-      const snapshot = captureCurrentInputs(); // lấy method + inputs hiện tại
+      const snapshot = captureCurrentInputs();
       const dsg = ctx.get('design', {}) || {};
       const mainObj = ctx.get('mainObjective', '') || '';
       const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
@@ -390,19 +362,16 @@ export async function mount(rootEl, ctx) {
       const prompt = buildEvaluatePrompt({ snapshot, dsg, mainObj, subObjs, rq, pico });
       const raw = await ctx.callGPT(prompt);
       const md  = String(raw || '').trim();
-      if (!md) {
-        ctx.toast('GPT không trả về đánh giá.');
-        return;
-      }
+      if (!md) { ctx.toast('GPT không trả về đánh giá.'); return; }
       eTA.value = md;
-      evalBox.classList.remove('hidden');
+      evalBox.style.display = '';
       ctx.save('sampleSize.evaluation', md);
       ctx.toast('Đã nhận đánh giá giả định.');
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT đánh giá.');
     } finally {
-      toggleBusy(btnEval, false, 'GPT đánh giá giả định');
+      toggleBusy(btnEval, false);
     }
   }
 
@@ -413,7 +382,7 @@ export async function mount(rootEl, ctx) {
       ctx.toast(res.msg || 'Không tính được cỡ mẫu. Kiểm tra dữ liệu vào.');
       return;
     }
-    outWrap.classList.remove('hidden');
+    outWrap.style.display = '';
     outHtml.innerHTML = res.html;
   });
 
@@ -456,8 +425,8 @@ export async function mount(rootEl, ctx) {
       const sd = pos(optsBox, '#m-sd');
       const delta = pos(optsBox, '#m-delta');
       const two = twoSided('#m-sided');
-
       if (!sd || !delta) return bad('Thiếu SD hoặc Δ.');
+
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
       // n mỗi nhóm = 2 * (zA + zB)^2 * sd^2 / delta^2
@@ -473,6 +442,7 @@ export async function mount(rootEl, ctx) {
       const p2 = prop(optsBox, '#p-p2');
       const two = twoSided('#p-sided');
       if (!isProp(p1) || !isProp(p2) || p1 === p2) return bad('p1/p2 không hợp lệ hoặc Δ=0.');
+
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
       const pbar   = (p1 + p2) / 2;
@@ -485,9 +455,9 @@ export async function mount(rootEl, ctx) {
       inputs = { ...inputs, p1, p2, sided: two ? 'two' : 'one' };
     }
     else if (method === 'ni_proportions') {
-      const p1 = prop(optsBox, '#ni-p1');
-      const p2 = prop(optsBox, '#ni-p2');
-      const delta = prop(optsBox, '#ni-delta');
+      const p1 = prop(optsBox, '#ni-p1'); // new
+      const p2 = prop(optsBox, '#ni-p2'); // ctrl
+      const delta = prop(optsBox, '#ni-delta'); // margin (absolute)
       if (!isProp(p1) || !isProp(p2) || !(delta > 0 && delta < 0.5)) return bad('Giá trị p1/p2/δ không hợp lệ.');
 
       const zAlpha = Z(1 - alpha);    // one-sided
@@ -506,6 +476,7 @@ export async function mount(rootEl, ctx) {
       const delta = pos(optsBox, '#x-delta');
       const two = twoSided('#x-sided');
       if (!sdw || !delta) return bad('Thiếu SD within hoặc Δ.');
+
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
       // Tổng số đối tượng: (zA + zB)^2 * 2 * sdw^2 / delta^2
@@ -547,6 +518,7 @@ export async function mount(rootEl, ctx) {
       const r2 = clamp(num(optsBox.querySelector('#ac-r2')?.value), 0, 0.9);
       const two = twoSided('#ac-sided');
       if (!sd || !delta) return bad('Thiếu SD hoặc Δ.');
+
       const zAlpha = two ? Z(1 - alpha / 2) : Z(1 - alpha);
       const zBeta  = Z(power);
 
@@ -577,7 +549,6 @@ export async function mount(rootEl, ctx) {
     rows.push(`<tr><td>Power</td><td>${fmt(inputs.power)}</td></tr>`);
     if ('k' in inputs && inputs.k) rows.push(`<tr><td>Số nhánh k</td><td>${inputs.k}</td></tr>`);
 
-    // echo method-specific
     const echo = (k, v) => rows.push(`<tr><td>${k}</td><td>${v}</td></tr>`);
     if (method === 'means') {
       echo('σ', fmt(inputs.sd));
@@ -615,7 +586,9 @@ export async function mount(rootEl, ctx) {
 
     return `
       <div class="muted" style="margin-bottom:.5rem">Công thức dùng: ${detail}</div>
-      <table class="ss-kv"><tbody>${rows.join('')}</tbody></table>
+      <table class="ss-kv" style="width:100%;border-collapse:collapse">
+        <tbody>${rows.join('')}</tbody>
+      </table>
     `.trim();
   }
 
@@ -633,15 +606,19 @@ export async function mount(rootEl, ctx) {
   function clamp(x, a, b) { return Math.min(Math.max(x, a), b); }
   function clampInt(x, a, b) { if (!Number.isFinite(x)) return a; return Math.min(Math.max(Math.round(x), a), b); }
   function sq(x) { return x * x; }
-  function fmt(x) { if (x == null) return '—'; if (!Number.isFinite(x)) return String(x); return (Math.abs(x) >= 1000 || x % 1 === 0) ? String(x) : String(+x.toFixed(4)); }
+  function fmt(x) {
+    if (x == null) return '—';
+    if (!Number.isFinite(x)) return String(x);
+    return (Math.abs(x) >= 1000 || x % 1 === 0) ? String(x) : String(+x.toFixed(4));
+  }
   function copyText(t) {
     try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
   }
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
-    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
-    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = label || 'Đang xử lý...'; }
+    else { btn.disabled = false; btn.textContent = btn.dataset.prev || 'Xong'; }
   }
   function labelOfMethod(m) {
     return ({
@@ -654,7 +631,6 @@ export async function mount(rootEl, ctx) {
       ancova: 'ANCOVA (2 nhóm, R²)',
     }[m] || m);
   }
-
   function captureCurrentInputs() {
     const method = methodEl.value;
     const alpha  = num(alphaEl.value);
@@ -692,9 +668,7 @@ export async function mount(rootEl, ctx) {
     }
     return { method, inputs };
   }
-
   function detectMethodFromText(txt) {
-    // heuristics: tìm từ khoá trong gợi ý của GPT
     if (/\bcross[- ]?over\b|chéo/i.test(txt)) return 'crossover';
     if (/\bancova\b/i.test(txt)) return 'ancova';
     if (/\banova\b/i.test(txt)) return 'anova';
@@ -704,9 +678,7 @@ export async function mount(rootEl, ctx) {
     if (/\bt[- ]?test\b|trung bình|means/i.test(txt)) return 'means';
     return null;
   }
-
   function buildSuggestPrompt({ dsg, mainObj, subObjs, rq, pico }) {
-    // Yêu cầu GPT: đề xuất công thức phù hợp, chỉ ra biến cần & cách ước lượng từ y văn
     return (
 `Bạn là chuyên gia phương pháp RCT. Dựa vào thông tin sau, hãy **gợi ý công thức cỡ mẫu phù hợp** và giải thích ngắn gọn vì sao:
 - Loại thiết kế: ${dsg?.type || '(chưa chọn)'}; blinding: ${dsg?.blinding || '(?)'}; số nhánh: ${dsg?.arms || '(?)'}; allocation: ${dsg?.allocationRatio || '(?)'}
@@ -717,19 +689,17 @@ export async function mount(rootEl, ctx) {
 - PICO: P=${pico?.p||'(?)'}, I=${pico?.i||'(?)'}, C=${pico?.c||'(?)'}, O=${pico?.o||'(?)'}
 
 Hãy trả về Markdown với cấu trúc:
-1) **Phương pháp đề xuất** (ví dụ: t-test hai nhóm, proportions, non-inferiority, cross-over, ANOVA, ANCOVA…)
+1) **Phương pháp đề xuất** (t-test/proportions/non-inferiority/cross-over/ANOVA/ANCOVA…)
 2) **Khi nào dùng** (rõ tiêu chí phù hợp theo mục tiêu/kết cục)
 3) **Các tham số cần nhập** (SD/Δ; p1/p2; biên NI; f/w; σw; R²…) và gợi ý cách ước lượng từ y văn hoặc dữ liệu thí điểm
 4) **Cảnh báo thiên lệch/giả định quan trọng**
-5) (Tuỳ chọn) Gợi ý phương pháp thay thế nếu điều kiện thay đổi
+5) (Tuỳ chọn) Phương án thay thế nếu điều kiện đổi
 
-Lưu ý: Viết ngắn gọn, rõ ràng. Không tính cỡ mẫu giúp; chỉ định hướng chọn **phương pháp** và tham số cần.`);
+Lưu ý: Không tính cỡ mẫu giúp; chỉ định hướng chọn **phương pháp** và tham số cần.`);
   }
-
   function buildEvaluatePrompt({ snapshot, dsg, mainObj, subObjs, rq, pico }) {
-    // Yêu cầu GPT: đối chiếu tham số nhập với bối cảnh y văn, liệt kê phạm vi hợp lý & trích dẫn gợi ý
     return (
-`Bạn là phản biện phương pháp lâm sàng. Hãy **đánh giá tính hợp lý của các giả định cỡ mẫu** bên dưới so với y văn gần đây, và đưa khuyến nghị điều chỉnh nếu cần.
+`Bạn là phản biện phương pháp lâm sàng. Hãy **đánh giá tính hợp lý của các giả định cỡ mẫu** bên dưới so với y văn gần đây, và đề xuất điều chỉnh nếu cần.
 - Phương pháp hiện tại: ${labelOfMethod(snapshot?.method || '(?)')}
 - Tham số: ${JSON.stringify(snapshot?.inputs || {})}
 - Thiết kế: ${dsg?.type || '(?)'}; blinding: ${dsg?.blinding || '(?)'}; arms: ${dsg?.arms || '(?)'}; allocation: ${dsg?.allocationRatio || '(?)'}
@@ -739,10 +709,10 @@ Lưu ý: Viết ngắn gọn, rõ ràng. Không tính cỡ mẫu giúp; chỉ đ
 - Mục tiêu phụ: ${Array.isArray(subObjs) && subObjs.length ? subObjs.map((s,i)=> (i+1)+'. '+s).join(' | ') : '(chưa có)'}
 
 Trả về Markdown gồm:
-- **Đối chiếu y văn**: phạm vi hợp lý của từng tham số (SD, Δ, p nền, biên NI, f/w, σw, R²…) theo các nghiên cứu tương tự
-- **Nhận định**: các giả định hiện tại quá lạc quan/bi quan ở điểm nào? tác động tới n?
-- **Khuyến nghị**: điều chỉnh tham số & thực hiện pilot nếu cần; ghi chú về điều chỉnh alpha/power khi nhiều tiêu chí
-- **Tài liệu gợi ý**: liệt kê vài nguồn (tên tác giả/năm hoặc guideline) để người dùng tra cứu thêm (không cần URL).`);
+- **Đối chiếu y văn**: phạm vi hợp lý của từng tham số (SD, Δ, p nền, biên NI, f/w, σw, R²…)
+- **Nhận định**: giả định hiện tại quá lạc quan/bi quan ở đâu? tác động đến n?
+- **Khuyến nghị**: điều chỉnh tham số & pilot; ghi chú điều chỉnh alpha/power khi nhiều tiêu chí
+- **Tài liệu gợi ý**: vài nguồn (tên tác giả/năm hoặc guideline) để tra cứu thêm (không cần URL).`);
   }
 
   // Chuẩn ngược xấp xỉ (Acklam)
