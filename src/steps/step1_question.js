@@ -158,6 +158,7 @@ export async function mount(rootEl, ctx) {
   const eTA         = rootEl.querySelector('#rq-eval-ta');
   const eCopy       = rootEl.querySelector('#rq-copy-eval');
   const eHide       = rootEl.querySelector('#rq-hide-eval');
+  const BULLET_RE   = /^\s*(?:\d+[.)]|[-–—•*])\s*/;
 
   // ===== Load state =====
   rqEl.value = ctx.get('researchQuestion', '') || '';
@@ -279,7 +280,7 @@ O: ${pico.o || '(chưa có)'}
     const idx = Math.max(1, Math.min(3, parseInt(sApplyWhich.value || '1', 10))) - 1;
     const lines = (sTA.value || '')
       .split(/\\r?\\n/)
-      .map(s => s.replace(/^\\s*\\d+\\)\\s*/, '').trim())
+      .map(s => s.replace(BULLET_RE, '').trim())
       .filter(Boolean);
     if (!lines[idx]) { ctx.toast('Không tìm thấy gợi ý để chèn.'); return; }
     rqEl.value = lines[idx];
@@ -301,7 +302,7 @@ O: ${pico.o || '(chưa có)'}
     // Fallback: tách theo dòng/bullet
     return raw
       .split(/\\r?\\n/)
-      .map(s => s.replace(/^\\s*[-*\\d.)]+\\s*/, '').trim())
+      .map(s => s.replace(BULLET_RE, '').trim())
       .filter(Boolean)
       .slice(0, 3);
   }
