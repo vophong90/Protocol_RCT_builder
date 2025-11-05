@@ -385,7 +385,7 @@ export async function mount(rootEl, ctx) {
       const wrap = document.createElement('div');
       wrap.innerHTML = `
         <label>Tên nhánh ${i + 1}
-          <input class="form-input" type="text" data-arm-index="\${i}" placeholder="\${defaultName(i)}" />
+          <input class="form-input" type="text" data-arm-index="${i}" placeholder="${defaultName(i)}" />
         </label>
       `.trim();
       const inp = wrap.querySelector('input');
@@ -461,7 +461,7 @@ export async function mount(rootEl, ctx) {
   function safeShort(s) {
     s = safeText(s);
     return s.length > 40 ? (s.slice(0, 37) + '…') : s;
-    }
+  }
 
   function parseRatio(str) {
     const parts = String(str || '').split(':').map(s => s.trim()).filter(Boolean);
@@ -489,7 +489,7 @@ export async function mount(rootEl, ctx) {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
     if (fixed.changed) {
-      ratioHint.textContent = \`Tỷ lệ hiện không khớp \${n} nhánh → gợi ý: \${fixed.ratio}\`;
+      ratioHint.textContent = `Tỷ lệ hiện không khớp ${n} nhánh → gợi ý: ${fixed.ratio}`;
       return;
     }
     const per = ratioToPercents(allocEl.value || '');
@@ -527,7 +527,7 @@ export async function mount(rootEl, ctx) {
   // ----- Prompt builders -----
   function buildSuggestPrompt(pico, rq, mainObj, subObjs, cur) {
     const sub = (Array.isArray(subObjs) && subObjs.length)
-      ? subObjs.map((s,i)=> \`\${i+1}. \${s}\`).join('\\n')
+      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
       : '(chưa có)';
     return [
       'Bạn là trợ lý học thuật. Hãy gợi ý mô tả thiết kế RCT ngắn gọn (2–4 đoạn), dựa trên PICO, Câu hỏi, Mục tiêu và các lựa chọn hiện có.',
@@ -536,27 +536,27 @@ export async function mount(rootEl, ctx) {
       '- Trả về MARKDOWN thuần, không thêm tài liệu tham khảo.',
       '',
       'Bối cảnh:',
-      \`P: \${pico.p || '(chưa có)'}\`,
-      \`I: \${pico.i || '(chưa có)'}\`,
-      \`C: \${pico.c || '(chưa có)'}\`,
-      \`O: \${pico.o || '(chưa có)'}\`,
-      \`Câu hỏi nghiên cứu: \${rq || '(chưa có)'}\`,
-      \`Mục tiêu chính: \${mainObj || '(chưa có)'}\`,
+      `P: ${pico.p || '(chưa có)'}`,
+      `I: ${pico.i || '(chưa có)'}`,
+      `C: ${pico.c || '(chưa có)'}`,
+      `O: ${pico.o || '(chưa có)'}`,
+      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
       'Mục tiêu phụ:',
       sub,
       '',
       'Lựa chọn hiện có:',
-      \`- Loại thiết kế: \${cur.type}\`,
-      \`- Blinding: \${cur.blinding}\`,
-      \`- Tỷ lệ phân bổ: \${cur.allocationRatio}\`,
-      \`- Số nhánh: \${cur.arms}\`,
-      \`- Tên nhánh: \${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}\`
-    ].join('\\n');
+      `- Loại thiết kế: ${cur.type}`,
+      `- Blinding: ${cur.blinding}`,
+      `- Tỷ lệ phân bổ: ${cur.allocationRatio}`,
+      `- Số nhánh: ${cur.arms}`,
+      `- Tên nhánh: ${(cur.armNames && cur.armNames.length) ? cur.armNames.join(', ') : '(chưa có)'}`
+    ].join('\n');
   }
 
   function buildEvaluatePrompt(content, pico, rq, mainObj, subObjs) {
     const sub = (Array.isArray(subObjs) && subObjs.length)
-      ? subObjs.map((s,i)=> \`\${i+1}. \${s}\`).join('\\n')
+      ? subObjs.map((s,i)=> `${i+1}. ${s}`).join('\n')
       : '(chưa có)';
     return [
       'Bạn là phản biện khoa học. Hãy đánh giá mô tả thiết kế RCT sau theo các tiêu chí:',
@@ -570,14 +570,14 @@ export async function mount(rootEl, ctx) {
       content,
       '',
       '--- THAM CHIẾU BỐI CẢNH ---',
-      \`P: \${pico.p || '(chưa có)'}\`,
-      \`I: \${pico.i || '(chưa có)'}\`,
-      \`C: \${pico.c || '(chưa có)'}\`,
-      \`O: \${pico.o || '(chưa có)'}\`,
-      \`Câu hỏi nghiên cứu: \${rq || '(chưa có)'}\`,
-      \`Mục tiêu chính: \${mainObj || '(chưa có)'}\`,
+      `P: ${pico.p || '(chưa có)'}`,
+      `I: ${pico.i || '(chưa có)'}`,
+      `C: ${pico.c || '(chưa có)'}`,
+      `O: ${pico.o || '(chưa có)'}`,
+      `Câu hỏi nghiên cứu: ${rq || '(chưa có)'}`,
+      `Mục tiêu chính: ${mainObj || '(chưa có)'}`,
       'Mục tiêu phụ:',
       sub
-    ].join('\\n');
+    ].join('\n');
   }
 }
