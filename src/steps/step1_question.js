@@ -92,9 +92,9 @@ export async function mount(rootEl, ctx) {
         <div class="file-note" id="rq-fname">Chưa chọn tệp PDF</div>
       </div>
     </div>
-    <div class="right-tools">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button id="rq-gpt"  class="btn btn-primary"   type="button">GPT gợi ý câu hỏi</button>
-      <button id="rq-eval" class="btn btn-secondary" type="button">GPT đánh giá câu hỏi</button>
+      <button id="rq-eval" class="btn btn-primary" type="button">GPT đánh giá câu hỏi</button>
     </div>
   </div>
 
