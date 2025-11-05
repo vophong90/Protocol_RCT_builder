@@ -1,77 +1,131 @@
 // src/steps/step7_criteria.js
-// Step 7 – Tiêu chí vào/loại (baseline)
-// - Hai khối nhập: inclusion / exclusion (mỗi dòng là 1 tiêu chí)
-// - Đọc PDF để hỗ trợ trích xuất bối cảnh
-// - GPT gợi ý tiêu chí dựa trên PICO + bối cảnh (JSON → đổ vào textarea)
-// - GPT đánh giá tiêu chí hiện có
-// - Lưu vào state.criteria { inclusion:[], exclusion:[], notes, sources }
+// Step 7 – Tiêu chí vào/loại (aligned with new index.html)
+// - Không tạo .card mới (rootEl đã là .card)
+// - File input full-width (form-input), cụm GPT có 2 box (Gợi ý / Đánh giá) với copy/hide
+// - Lưu: state.criteria { inclusion:[], exclusion:[], notes, sources, evaluation? }
 
-export async function mount(root, ctx) {
-  root.innerHTML = `
-<div class="card">
-  <div class="card-header">
-    <h3 class="card-title">Tiêu chí vào/loại</h3>
-    <div class="card-subtitle">
-      Mỗi dòng là một tiêu chí. Bạn có thể đọc PDF để lấy bối cảnh, nhờ GPT gợi ý, và lưu lại.
+export async function mount(rootEl, ctx) {
+  rootEl.innerHTML = `
+    <div class="card-header">
+      <h3 class="card-title">Tiêu chí vào/loại</h3>
+      <div class="card-subtitle">
+        Mỗi dòng là một tiêu chí. Có thể đọc PDF để lấy bối cảnh, nhờ GPT gợi ý, và lưu lại.
+      </div>
     </div>
-  </div>
 
-  <div class="card-body grid-3">
-    <label>Tải PDF hỗ trợ
-      <input id="crit-pdf" type="file" accept="application/pdf" />
-    </label>
-    <button id="crit-readpdf" class="btn-secondary" style="align-self:end">Đọc PDF</button>
-    <div class="muted" id="crit-pdfhint" style="align-self:end">Chưa có nội dung PDF</div>
-  </div>
+    <style>
+      /* Scoped helpers */
+      #crit .hidden { display: none !important; }
+      #crit .inline-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+      #crit .form-input {
+        width: 100%;
+        font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .6rem .75rem;
+        outline: 0;
+      }
+      #crit .grid-3 { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:12px; }
+      #crit .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+      @media (max-width: 1100px){ #crit .grid-3{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      @media (max-width: 780px){ #crit .grid-3, #crit .grid-2{ grid-template-columns: 1fr; } }
+    </style>
 
-  <div class="card-body grid-2">
-    <label>Tiêu chí <b>Vào</b> (mỗi dòng 1 tiêu chí)
-      <textarea id="crit-inc" rows="12" placeholder="- Tuổi 40–75
+    <div id="crit">
+      <!-- PDF helper -->
+      <div class="card-body grid-3">
+        <label>Tải PDF hỗ trợ
+          <input id="crit-pdf" class="form-input" type="file" accept="application/pdf" />
+        </label>
+        <button id="crit-readpdf" class="btn-secondary" style="align-self:end">Đọc PDF</button>
+        <div class="muted" id="crit-pdfhint" style="align-self:end">Chưa có nội dung PDF</div>
+      </div>
+
+      <!-- Inclusion / Exclusion -->
+      <div class="card-body grid-2">
+        <label>Tiêu chí <b>Vào</b> (mỗi dòng 1 tiêu chí)
+          <textarea id="crit-inc" class="form-input" rows="12" placeholder="- Tuổi 40–75
 - Chẩn đoán THK gối theo ACR
 - Đồng ý tham gia và ký consent"></textarea>
-    </label>
+        </label>
 
-    <label>Tiêu chí <b>Loại</b> (mỗi dòng 1 tiêu chí)
-      <textarea id="crit-exc" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
+        <label>Tiêu chí <b>Loại</b> (mỗi dòng 1 tiêu chí)
+          <textarea id="crit-exc" class="form-input" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
 - Bệnh kèm theo nặng (suy tim, suy thận giai đoạn cuối)
 - Phụ nữ có thai/cho con bú"></textarea>
-    </label>
-  </div>
+        </label>
+      </div>
 
-  <div class="card-body">
-    <label>Ghi chú (tuỳ chọn)
-      <textarea id="crit-notes" rows="4" placeholder="Ví dụ: Quy trình sàng lọc, kiểm tra tiêu chí tại lần khám 0..."></textarea>
-    </label>
-  </div>
+      <!-- Notes -->
+      <div class="card-body">
+        <label>Ghi chú (tuỳ chọn)
+          <textarea id="crit-notes" class="form-input" rows="4" placeholder="Ví dụ: Quy trình sàng lọc, kiểm tra tiêu chí tại lần khám 0..."></textarea>
+        </label>
+      </div>
 
-  <div class="card-footer" style="display:flex;gap:10px;flex-wrap:wrap">
-    <button id="crit-suggest" class="btn-primary">GPT gợi ý tiêu chí</button>
-    <button id="crit-eval" class="btn-secondary">GPT đánh giá tiêu chí hiện có</button>
-    <button id="crit-save" class="btn-secondary">Lưu</button>
-  </div>
+      <!-- GPT buttons -->
+      <div class="card-body inline-row">
+        <button id="crit-suggest" class="btn-primary" type="button">GPT gợi ý tiêu chí</button>
+        <button id="crit-eval"    class="btn-primary" type="button">GPT đánh giá tiêu chí hiện có</button>
+        <button id="crit-save"    class="btn-secondary" type="button">Lưu</button>
+      </div>
 
-  <div class="card-body" id="crit-out" style="display:none">
-    <div style="font-weight:600;margin-bottom:.5rem">Đánh giá:</div>
-    <div id="crit-out-html" class="prose"></div>
-  </div>
-</div>
-`.trim();
+      <!-- GPT Suggest Box -->
+      <div id="crit-sugg-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Kết quả GPT – Gợi ý tiêu chí</strong>
+          <div class="inline-row">
+            <button id="crit-apply-sugg" class="btn-primary" type="button">Áp dụng JSON vào ô</button>
+            <button id="crit-copy-sugg"  class="btn-ghost"   type="button">Sao chép</button>
+            <button id="crit-hide-sugg"  class="btn-ghost"   type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="crit-sugg-ta" class="form-input" rows="10" placeholder='{"inclusion":["..."],"exclusion":["..."]}'></textarea>
+          <div class="muted">Kiểm tra JSON trước khi bấm “Áp dụng”.</div>
+        </div>
+      </div>
 
-  // ---- elements
-  const fileEl   = root.querySelector('#crit-pdf');
-  const readBtn  = root.querySelector('#crit-readpdf');
-  const hintEl   = root.querySelector('#crit-pdfhint');
+      <!-- GPT Evaluation Box -->
+      <div id="crit-eval-box" class="card hidden" style="margin:0 16px 12px">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <strong>Kết quả GPT – Đánh giá tiêu chí</strong>
+          <div class="inline-row">
+            <button id="crit-copy-eval" class="btn-ghost" type="button">Sao chép</button>
+            <button id="crit-hide-eval" class="btn-ghost" type="button">Ẩn</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="crit-eval-ta" class="form-input" rows="10" placeholder="Nhận xét tổng quát, điểm thiếu/mơ hồ, gợi ý tinh chỉnh..."></textarea>
+        </div>
+      </div>
+    </div>
+  `.trim();
 
-  const incTA    = root.querySelector('#crit-inc');
-  const excTA    = root.querySelector('#crit-exc');
-  const notesTA  = root.querySelector('#crit-notes');
+  // --- elements
+  const fileEl   = rootEl.querySelector('#crit-pdf');
+  const readBtn  = rootEl.querySelector('#crit-readpdf');
+  const hintEl   = rootEl.querySelector('#crit-pdfhint');
 
-  const suggestBtn = root.querySelector('#crit-suggest');
-  const evalBtn    = root.querySelector('#crit-eval');
-  const saveBtn    = root.querySelector('#crit-save');
+  const incTA    = rootEl.querySelector('#crit-inc');
+  const excTA    = rootEl.querySelector('#crit-exc');
+  const notesTA  = rootEl.querySelector('#crit-notes');
 
-  const outWrap = root.querySelector('#crit-out');
-  const outHtml = root.querySelector('#crit-out-html');
+  const suggestBtn = rootEl.querySelector('#crit-suggest');
+  const evalBtn    = rootEl.querySelector('#crit-eval');
+  const saveBtn    = rootEl.querySelector('#crit-save');
+
+  const suggBox  = rootEl.querySelector('#crit-sugg-box');
+  const sTA      = rootEl.querySelector('#crit-sugg-ta');
+  const applySugg = rootEl.querySelector('#crit-apply-sugg');
+  const copySugg = rootEl.querySelector('#crit-copy-sugg');
+  const hideSugg = rootEl.querySelector('#crit-hide-sugg');
+
+  const evalBox  = rootEl.querySelector('#crit-eval-box');
+  const eTA      = rootEl.querySelector('#crit-eval-ta');
+  const copyEval = rootEl.querySelector('#crit-copy-eval');
+  const hideEval = rootEl.querySelector('#crit-hide-eval');
 
   // ---- restore state
   const st = ctx.get('criteria', {}) || {};
@@ -98,6 +152,24 @@ export async function mount(root, ctx) {
     if (!s) return '';
     return String(s).slice(0, max);
   }
+  function dedup(arr) {
+    const seen = new Set();
+    const out = [];
+    for (const x of arr) {
+      const k = x.toLowerCase();
+      if (!seen.has(k)) { seen.add(k); out.push(x); }
+    }
+    return out;
+  }
+  function copyText(t) {
+    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
+    catch { ctx.toast('Không sao chép được.'); }
+  }
+  function toggleBusy(btn, busy, label) {
+    if (!btn) return;
+    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
+    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
+  }
 
   // ---- read PDF
   readBtn.addEventListener('click', async () => {
@@ -105,7 +177,7 @@ export async function mount(root, ctx) {
       const f = fileEl.files && fileEl.files[0];
       if (!f) { ctx.toast('Chọn một file PDF trước đã.'); return; }
       const text = await ctx.extractTextFromPDF(f);
-      pdfContext = safeSlice(text, 20000); // đủ ngữ cảnh, hạn chế quá dài
+      pdfContext = safeSlice(text, 20000);
       hintEl.textContent = `Đã nạp PDF (${pdfContext.length.toLocaleString()} ký tự)`;
       ctx.toast('Đã đọc PDF.');
     } catch (e) {
@@ -116,12 +188,15 @@ export async function mount(root, ctx) {
 
   // ---- GPT suggest
   suggestBtn.addEventListener('click', async () => {
-    const pico   = ctx.get('pico', {}) || {};
-    const design = ctx.get('design', {}) || {};
-    const rq     = ctx.get('researchQuestion', '') || '';
-    const obj    = ctx.get('mainObjective', '') || '';
+    try {
+      toggleBusy(suggestBtn, true, 'GPT gợi ý tiêu chí');
 
-    const prompt = `
+      const pico   = ctx.get('pico', {}) || {};
+      const design = ctx.get('design', {}) || {};
+      const rq     = ctx.get('researchQuestion', '') || '';
+      const obj    = ctx.get('mainObjective', '') || '';
+
+      const prompt = `
 Bạn là trợ lý nghiên cứu lâm sàng. Dựa vào thông tin sau, hãy GỢI Ý bộ tiêu chí vào và loại cho RCT, xuất đúng JSON:
 
 PICO:
@@ -141,60 +216,60 @@ YÊU CẦU ĐẦU RA (JSON, không kèm giải thích):
 {
   "inclusion": ["...","..."],
   "exclusion": ["...","..."]
-}
-`.trim();
+}`.trim();
 
-    outWrap.style.display = '';
-    outHtml.innerHTML = `<div>Đang gợi ý tiêu chí bằng GPT...</div>`;
+      const raw = await ctx.callGPT(prompt);
+      const txt = String(raw || '').trim();
+      if (!txt) { ctx.toast('GPT không trả về nội dung.'); return; }
 
-    const raw = await ctx.callGPT(prompt);
-    let inclusion = [], exclusion = [];
-
-    try {
-      const j = JSON.parse(raw);
-      if (Array.isArray(j?.inclusion)) inclusion = j.inclusion.map(x => String(x||'').trim()).filter(Boolean);
-      if (Array.isArray(j?.exclusion)) exclusion = j.exclusion.map(x => String(x||'').trim()).filter(Boolean);
-    } catch {
-      // fallback: cố gắng tách dòng khi GPT trả text
-      const txt = String(raw || '');
-      const incMatch = txt.match(/inclusion[^:\n]*[:\n]+([\s\S]*?)exclusion/i);
-      const excMatch = txt.match(/exclusion[^:\n]*[:\n]+([\s\S]*)$/i);
-      const incText = incMatch ? incMatch[1] : '';
-      const excText = excMatch ? excMatch[1] : '';
-      inclusion = linesToArray(incText);
-      exclusion = linesToArray(excText);
+      sTA.value = txt;
+      suggBox.classList.remove('hidden');
+      ctx.toast('Đã nhận gợi ý JSON.');
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Lỗi khi gọi GPT gợi ý.');
+    } finally {
+      toggleBusy(suggestBtn, false, 'GPT gợi ý tiêu chí');
     }
-
-    if (!inclusion.length && !exclusion.length) {
-      outHtml.innerHTML = `<div style="color:#b91c1c">GPT không trả về JSON hợp lệ. Bạn có thể chạy lại hoặc chỉnh tay.</div>`;
-      return;
-    }
-
-    // merge đơn giản: gợi ý không ghi đè nếu user đã nhập, chỉ bổ sung phần còn thiếu
-    const curInc = linesToArray(incTA.value);
-    const curExc = linesToArray(excTA.value);
-    const mergedInc = dedup([...curInc, ...inclusion]);
-    const mergedExc = dedup([...curExc, ...exclusion]);
-
-    incTA.value = arrToText(mergedInc);
-    excTA.value = arrToText(mergedExc);
-
-    outHtml.innerHTML = `<div>Đã chèn gợi ý vào ô tiêu chí. Hãy rà soát rồi bấm <b>Lưu</b>.</div>`;
   });
+
+  // Áp dụng JSON gợi ý vào 2 ô
+  applySugg?.addEventListener('click', () => {
+    try {
+      const raw = sTA.value || '';
+      const j = JSON.parse(raw);
+      let inclusion = Array.isArray(j?.inclusion) ? j.inclusion.map(x => String(x||'').trim()).filter(Boolean) : [];
+      let exclusion = Array.isArray(j?.exclusion) ? j.exclusion.map(x => String(x||'').trim()).filter(Boolean) : [];
+
+      const curInc = linesToArray(incTA.value);
+      const curExc = linesToArray(excTA.value);
+      incTA.value = arrToText(dedup([...curInc, ...inclusion]));
+      excTA.value = arrToText(dedup([...curExc, ...exclusion]));
+      ctx.toast('Đã áp dụng JSON vào ô tiêu chí.');
+    } catch {
+      ctx.toast('JSON không hợp lệ. Hãy kiểm tra lại nội dung.');
+    }
+  });
+
+  copySugg?.addEventListener('click', () => copyText(sTA.value || ''));
+  hideSugg?.addEventListener('click', () => suggBox.classList.add('hidden'));
 
   // ---- GPT eval
   evalBtn.addEventListener('click', async () => {
-    const pico   = ctx.get('pico', {}) || {};
-    const design = ctx.get('design', {}) || {};
-    const incArr = linesToArray(incTA.value);
-    const excArr = linesToArray(excTA.value);
+    try {
+      toggleBusy(evalBtn, true, 'GPT đánh giá');
 
-    if (!incArr.length && !excArr.length) {
-      ctx.toast('Chưa có tiêu chí để đánh giá.');
-      return;
-    }
+      const pico   = ctx.get('pico', {}) || {};
+      const design = ctx.get('design', {}) || {};
+      const incArr = linesToArray(incTA.value);
+      const excArr = linesToArray(excTA.value);
 
-    const prompt = `
+      if (!incArr.length && !excArr.length) {
+        ctx.toast('Chưa có tiêu chí để đánh giá.');
+        return;
+      }
+
+      const prompt = `
 Bạn là chuyên gia RCT. Đánh giá bộ tiêu chí vào/loại sau về tính rõ ràng, loại trừ mâu thuẫn, và mức khả thi sàng lọc.
 PICO:
 - P: ${pico.p || ''}
@@ -213,15 +288,26 @@ ${excArr.map(x => '- ' + x).join('\n')}
 YÊU CẦU: Trả về các mục:
 1) Nhận xét tổng quát (3–6 gạch đầu dòng)
 2) Mục tiêu/sàng lọc nào thiếu/bị mơ hồ
-3) Gợi ý tinh chỉnh (dưới dạng danh sách)
-`.trim();
+3) Gợi ý tinh chỉnh (dưới dạng danh sách)`.trim();
 
-    outWrap.style.display = '';
-    outHtml.innerHTML = `<div>Đang đánh giá bằng GPT...</div>`;
+      const res = await ctx.callGPT(prompt);
+      const text = String(res || '').trim();
+      if (!text) { ctx.toast('GPT không trả về đánh giá.'); return; }
 
-    const res = await ctx.callGPT(prompt);
-    outHtml.innerHTML = `<pre style="white-space:pre-wrap">${escapeHtml(res || '')}</pre>`;
+      eTA.value = text;
+      evalBox.classList.remove('hidden');
+      ctx.save('criteria.evaluation', text);
+      ctx.toast('Đã nhận đánh giá tiêu chí.');
+    } catch (e) {
+      console.error(e);
+      ctx.toast('Lỗi khi gọi GPT đánh giá.');
+    } finally {
+      toggleBusy(evalBtn, false, 'GPT đánh giá tiêu chí hiện có');
+    }
   });
+
+  copyEval?.addEventListener('click', () => copyText(eTA.value || ''));
+  hideEval?.addEventListener('click', () => evalBox.classList.add('hidden'));
 
   // ---- save
   saveBtn.addEventListener('click', () => {
@@ -238,20 +324,4 @@ YÊU CẦU: Trả về các mục:
 
     ctx.toast('Đã lưu tiêu chí vào/loại');
   });
-
-  // ---- local helpers (scoped)
-  function dedup(arr) {
-    const seen = new Set();
-    const out = [];
-    for (const x of arr) {
-      const k = x.toLowerCase();
-      if (!seen.has(k)) { seen.add(k); out.push(x); }
-    }
-    return out;
-  }
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
 }
