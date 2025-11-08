@@ -1,39 +1,69 @@
 /* public/css/steps/step5.css */
-[data-scope="step5"] .hidden{display:none !important;}
+/* Tất cả rule đều được scope theo [data-scope="step5"] để không ảnh hưởng step khác */
 
+[data-scope="step5"] .hidden{ display:none !important; }
+
+/* Pills tóm tắt */
 [data-scope="step5"] .pill{
-  display:inline-flex;align-items:center;padding:.25rem .6rem;
-  border-radius:999px;background:var(--muted);color:#fff;
-  font:600 12.5px/1.1 Inter,ui-sans-serif;border:0;
+  display:inline-flex; align-items:center; padding:.25rem .6rem;
+  border-radius:999px; background:var(--muted); color:#fff;
+  font:600 12.5px/1.1 Inter,ui-sans-serif; border:0;
 }
 
 /* Grid 2 cột riêng cho step này */
 [data-scope="step5"] .grid-2{
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-  gap:12px 16px;align-items:start;
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:12px 16px; align-items:start;
 }
-[data-scope="step5"] .grid-2 > *{min-width:0}
-[data-scope="step5"] .card-body.grid-2 > *{margin-top:0 !important}
-[data-scope="step5"] .full-span{grid-column:1 / -1}
+[data-scope="step5"] .grid-2 > *{ min-width:0; }
+
+/* Bỏ margin-top mặc định để không lệch hàng trong lưới */
+[data-scope="step5"] .card-body.grid-2 > *{ margin-top:0 !important; }
+
+/* Ô trải 2 cột khi cần */
+[data-scope="step5"] .full-span{ grid-column:1 / -1; }
 
 /* Nhãn & control */
 [data-scope="step5"] .grid-2 > label{
-  display:flex;flex-direction:column;gap:6px;line-height:1.2;
+  display:flex; flex-direction:column; gap:6px; line-height:1.2;
 }
 [data-scope="step5"] .form-input{
-  box-sizing:border-box;width:100%;
+  box-sizing:border-box; width:100%;
   font:500 15px/1.4 Inter,ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
-  background:#fff;border:1px solid var(--border);border-radius:10px;
-  padding:.6rem .75rem;outline:0;
+  background:#fff; border:1px solid var(--border); border-radius:10px;
+  padding:.6rem .75rem; outline:0;
 }
 [data-scope="step5"] input.form-input,
-[data-scope="step5"] select.form-input{height:44px}
-[data-scope="step5"] textarea.form-input{resize:vertical;min-height:112px}
+[data-scope="step5"] select.form-input{ height:44px; }
+[data-scope="step5"] textarea.form-input{ resize:vertical; min-height:112px; }
 
-/* Hàng ngang linh hoạt */
-[data-scope="step5"] .inline-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* Hàng ngang tiện dụng */
+[data-scope="step5"] .inline-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+/* Hàng nút GPT: 2 cột bằng nhau, tự xuống hàng ở màn nhỏ */
+[data-scope="step5"] .btn-row{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:12px;
+  align-items:stretch;
+  margin-top:6px;
+}
+[data-scope="step5"] .btn-row .btn{
+  width:100%;
+  justify-content:center;
+  min-height:44px;
+  padding:.6rem .9rem;
+  line-height:1.2;
+}
+
+/* Làm phần tóm tắt thoáng hơn một chút */
+[data-scope="step5"] #dsg-summary{ display:flex; flex-wrap:wrap; gap:8px; }
+[data-scope="step5"] .card-body + .card-body{ margin-top:8px; }
 
 /* Responsive */
 @media (max-width:900px){
-  [data-scope="step5"] .grid-2{grid-template-columns:1fr}
+  [data-scope="step5"] .grid-2{ grid-template-columns:1fr; }
+}
+@media (max-width:720px){
+  [data-scope="step5"] .btn-row{ grid-template-columns:1fr; }
 }
