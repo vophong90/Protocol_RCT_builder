@@ -1,5 +1,5 @@
 /* public/css/steps/step5.css */
-/* Tất cả rule đều được scope theo [data-scope="step5"] để không ảnh hưởng step khác */
+/* Tất cả rule đều scope theo [data-scope="step5"] để không ảnh hưởng step khác */
 
 [data-scope="step5"] .hidden{ display:none !important; }
 
@@ -40,7 +40,7 @@
 /* Hàng ngang tiện dụng */
 [data-scope="step5"] .inline-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 
-/* Hàng nút GPT: 2 cột bằng nhau, tự xuống hàng ở màn nhỏ */
+/* ---------------- Nút GPT: luôn cùng chiều cao, không xuống dòng ---------------- */
 [data-scope="step5"] .btn-row{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
@@ -48,12 +48,24 @@
   align-items:stretch;
   margin-top:6px;
 }
+[data-scope="step5"] .btn-row > *{ margin:0 !important; }
+
+/* Ép nút cùng chiều cao & không wrap text */
 [data-scope="step5"] .btn-row .btn{
   width:100%;
+  display:flex;                /* đồng nhất giữa các theme */
+  align-items:center;
   justify-content:center;
-  min-height:44px;
-  padding:.6rem .9rem;
-  line-height:1.2;
+  white-space:nowrap;          /* không xuống dòng */
+  overflow:hidden;             /* nếu dài thì ẩn… */
+  text-overflow:ellipsis;      /* …và hiện dấu … */
+  min-height:48px;
+  height:48px;                 /* giữ đúng cùng độ cao */
+  line-height:1.1;
+  padding:0 16px;              /* reset padding dọc về 0, chiều cao lấy theo height */
+  box-sizing:border-box;
+  font-weight:600;
+  font-size:15px;
 }
 
 /* Làm phần tóm tắt thoáng hơn một chút */
