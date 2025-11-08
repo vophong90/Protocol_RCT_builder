@@ -68,15 +68,22 @@
     const sidebar = document.getElementById('sidebar');
     const openBtn  = document.getElementById('open-menu');
     const toggleBtn = document.getElementById('toggle-nav');
+    const isDesktop = () => window.matchMedia('(min-width: 1025px)').matches;
 
-    openBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+    openBtn?.addEventListener('click', () => {
+    if (isDesktop()) {
+      app.classList.remove('sidebar-hidden');
+    } else {
+      sidebar.classList.toggle('open');
+    }
+  });
     toggleBtn?.addEventListener('click', () => {
-      if (window.matchMedia('(max-width: 1024px)').matches) {
-        sidebar.classList.toggle('open');
-      } else {
-        app.classList.toggle('sidebar-hidden');
-      }
-    });
+    if (isDesktop()) {
+      app.classList.toggle('sidebar-hidden');
+    } else {
+      sidebar.classList.toggle('open');
+    }
+  });
   </script>
 </body>
 </html>
