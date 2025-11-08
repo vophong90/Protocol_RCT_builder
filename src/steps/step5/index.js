@@ -5,10 +5,9 @@ export const subtitle = "";
 export const css = "/public/css/steps/step5.css";
 
 export async function mount(rootEl, ctx) {
-  // scope CSS cho step 5
+  // gắn scope để CSS step5 không rò rỉ
   rootEl.closest('.step')?.setAttribute('data-scope', 'step5');
 
-  // ==== UI không còn <style> inline, CSS đã tách ra file riêng ====
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Thiết kế nghiên cứu</h3>
@@ -18,7 +17,7 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <div id="dsg">
-      <!-- Tóm tắt nhanh -->
+      <!-- Tóm tắt -->
       <div class="card-body">
         <div class="inline-row" id="dsg-summary">
           <span class="pill" id="sum-type">Thiết kế: —</span>
@@ -69,7 +68,7 @@ export async function mount(rootEl, ctx) {
         <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
       </div>
 
-      <!-- Nút GPT -->
+      <!-- Nút GPT (guard nếu chưa cấu hình) -->
       <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
         <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
@@ -199,12 +198,13 @@ export async function mount(rootEl, ctx) {
     updateSummary();
   });
 
-  btnResetName.addEventListener('click', () => {
+  btnResetName?.addEventListener('click', () => {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     renderArmInputs(n, defaultArmNames(n, ctx), { force: true });
     ctx.toast('Đã đặt lại tên nhánh mặc định.');
   });
 
+  // GPT (guard nếu chưa cấu hình)
   btnSuggest.addEventListener('click', onSuggest);
   btnEval.addEventListener('click', onEvaluate);
 
@@ -217,6 +217,10 @@ export async function mount(rootEl, ctx) {
 
   // ------- Handlers -------
   async function onSuggest() {
+    if (typeof ctx.callGPT !== 'function') {
+      ctx.toast('Chưa cấu hình GPT. (Sẽ gắn ở bước kế tiếp)');
+      return;
+    }
     try {
       toggleBusy(btnSuggest, true, 'Đang gọi GPT...');
       const pico    = ctx.get('pico', {}) || {};
@@ -270,6 +274,10 @@ export async function mount(rootEl, ctx) {
   }
 
   async function onEvaluate() {
+    if (typeof ctx.callGPT !== 'function') {
+      ctx.toast('Chưa cấu hình GPT. (Sẽ gắn ở bước kế tiếp)');
+      return;
+    }
     const content = (descEl.value || '').trim();
     if (!content) {
       ctx.toast('Chưa có mô tả để đánh giá.');
@@ -333,7 +341,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu thiết kế & tên nhánh');
   }
 
-  // ------- Helpers (nguyên bản) -------
+  // ------- Helpers -------
   function renderArmInputs(n, names, opts = {}) {
     const keepExisting = !opts.force;
     const current = keepExisting ? readArmNames() : [];
@@ -416,7 +424,6 @@ export async function mount(rootEl, ctx) {
     v = Number.isFinite(v) ? v : min;
     return Math.min(Math.max(v, min), max);
   }
-
   function safeText(s) {
     return String(s || '').replace(/\s+/g, ' ').trim();
   }
@@ -424,21 +431,18 @@ export async function mount(rootEl, ctx) {
     s = safeText(s);
     return s.length > 40 ? (s.slice(0, 37) + '…') : s;
   }
-
   function parseRatio(str) {
     const parts = String(str || '').split(':').map(s => s.trim()).filter(Boolean);
     const nums  = parts.map(x => Number(x));
     if (nums.length === 0 || nums.some(x => !Number.isFinite(x) || x <= 0)) return null;
     return nums;
   }
-
   function ensureRatioLength(n, ratioStr) {
     const arr = parseRatio(ratioStr);
     if (!arr) return { changed: true, ratio: new Array(n).fill(1).join(':') };
     if (arr.length === n) return { changed: false, ratio: ratioStr };
     return { changed: true, ratio: new Array(n).fill(1).join(':') };
   }
-
   function ratioToPercents(str) {
     const arr = parseRatio(str);
     if (!arr) return null;
@@ -446,7 +450,6 @@ export async function mount(rootEl, ctx) {
     if (!sum) return null;
     return arr.map(x => Math.round((x / sum) * 1000) / 10);
   }
-
   function updateRatioHint() {
     const n = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed = ensureRatioLength(n, allocEl.value || '1:1');
@@ -459,7 +462,6 @@ export async function mount(rootEl, ctx) {
       ? ('Tương ứng ≈ ' + per.map(x => x + '%').join(' : '))
       : 'Ví dụ: 1:1 (2 nhánh), 1:1:1 (3 nhánh)';
   }
-
   function updateSummary() {
     const typeTxt  = typeEl.options[typeEl.selectedIndex]?.text || '—';
     const blindTxt = blindEl.options[blindEl.selectedIndex]?.text || '—';
@@ -468,12 +470,10 @@ export async function mount(rootEl, ctx) {
     sumAlloc.textContent = 'Tỷ lệ: ' + (allocEl.value || '—');
     sumArms.textContent  = 'Số nhánh: ' + (armsEl.value || '—');
   }
-
   function copyText(t) {
     try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
   }
-
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
     if (busy) {
