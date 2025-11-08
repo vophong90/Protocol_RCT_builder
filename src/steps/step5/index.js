@@ -70,9 +70,9 @@ export async function mount(rootEl, ctx) {
         </div>
         <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
       </div>
-
+      
       <!-- Nút GPT -->
-      <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="card-body btn-row">
         <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
         <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
       </div>
