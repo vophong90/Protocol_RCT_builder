@@ -1,0 +1,5 @@
+/* Scoped cho step 5, tránh ảnh hưởng các bước khác */
+[data-scope="step5"] .pill{
+  display:inline-flex; align-items:center; padding:.25rem .6rem;
+  border-radius:999px; background:var(--muted); color:#fff; font:600 12.5px/1.1 Inter,ui-sans-serif;
+}
