@@ -1,25 +1,25 @@
 // Step 2 – Mục tiêu nghiên cứu (main + subs)
-// Cần ctx: get/save/toast, extractTextFromPDF(file)
-// ctx.callStepGPT(key, prompt) (có fallback sang ctx.callGPT)
+// Cần ctx: get/save/toast, extractTextFromPDF(file), callStepGPT(bindingKey, prompt)
+
+export const id = 2;
+export const title = "Mục tiêu nghiên cứu";
+export const subtitle = "Đặt mục tiêu chính/phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF";
+export const css = "./public/css/steps/step2.css"; // (tuỳ chọn)
 
 export async function mount(rootEl, ctx) {
   // rootEl CHÍNH LÀ .card → không lồng .card mới
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Mục tiêu nghiên cứu</h3>
-      <div class="card-subtitle">
-        Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.
-      </div>
+      <div class="card-subtitle">Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.</div>
     </div>
 
-    <!-- Mục tiêu chính -->
     <div class="card-body">
       <label>Mục tiêu chính
         <textarea id="obj-main" rows="3" placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
       </label>
     </div>
 
-    <!-- Mục tiêu phụ -->
     <div class="card-body">
       <div style="font-weight:600;margin-bottom:.5rem">Mục tiêu phụ</div>
       <div class="control-row" style="gap:8px">
@@ -49,7 +49,7 @@ export async function mount(rootEl, ctx) {
         </div>
       </div>
       <textarea id="obj-suggest-ta" rows="10" placeholder='{"main":"...","subs":["...","..."],"refs":["Tác giả… (năm). … DOI/PMID/URL"]}'></textarea>
-      <div class="muted" style="margin-top:.35rem">Ứng dụng tự gỡ ```json và bullet nếu có. Khi chèn, chỉ lấy mục tiêu, không chèn TLTK.</div>
+      <div class="muted" style="margin-top:.35rem">Khi chèn, chỉ lấy mục tiêu; TLTK chỉ để bạn tham khảo.</div>
     </div>
 
     <!-- Kết quả GPT – ĐÁNH GIÁ -->
@@ -71,7 +71,6 @@ export async function mount(rootEl, ctx) {
 
   // ===== Elements =====
   const mainEl     = rootEl.querySelector('#obj-main');
-
   const subInputEl = rootEl.querySelector('#obj-sub-input');
   const subAddBtn  = rootEl.querySelector('#obj-sub-add');
   const subListEl  = rootEl.querySelector('#obj-sub-list');
@@ -166,8 +165,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu mục tiêu');
   });
 
-  // ===== File UI =====
-  // Bỏ chip “chưa chọn tệp”; chỉ set tooltip tên file
+  // ===== File UI ===== (không còn chip “chưa chọn tệp”; chỉ set tooltip)
   pdfEl.addEventListener('change', () => {
     pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
@@ -238,7 +236,6 @@ ${pdfText || '(không có)'}
         const lines = [];
         if (parsed.main) lines.push('Mục tiêu chính: ' + parsed.main);
         (parsed.subs || []).forEach(x => lines.push('- ' + x));
-
         if (parsed.refs && parsed.refs.length) {
           lines.push('', 'TLTK:');
           parsed.refs.forEach((r, i) => lines.push(`${i + 1}) ${r}`));
@@ -358,24 +355,22 @@ ${pdfText || '(không có)'}
 
   // ===== Helpers =====
 
-  // Parser: hỗ trợ JSON {main, subs, refs}; fallback tách dòng; bỏ phần TLTK khi chèn
   function parseObjectives(text) {
     const s = String(text || '').trim();
     if (!s) return null;
 
-    const jsonCandidate = extractJsonCandidate(s);
-
-    if (jsonCandidate) {
+    const json = extractJsonCandidate(s);
+    if (json) {
       try {
-        const j = JSON.parse(jsonCandidate);
+        const j = JSON.parse(json);
         const main = String(j?.main || '').trim();
         const subs = Array.isArray(j?.subs) ? j.subs.map(x => String(x || '').trim()).filter(Boolean) : [];
         const refs = Array.isArray(j?.refs) ? j.refs.map(x => String(x || '').trim()).filter(Boolean) : [];
         if (main || subs.length || refs.length) return { main, subs, refs };
-      } catch { /* continue */ }
+      } catch {}
     }
 
-    // Fallback: tách theo dòng tự do, bỏ khối TLTK
+    // Fallback: tách dòng; bỏ khối TLTK
     const Lraw = s.split(/\r?\n/);
     const L = [];
     let inRefs = false;
@@ -384,15 +379,13 @@ ${pdfText || '(không có)'}
       if (/^(TLTK|Tham\s*khảo)\s*:?\s*$/iu.test(trimmed)) { inRefs = true; continue; }
       if (!inRefs) L.push(trimmed);
     }
-
     const filtered = L
       .map(line => line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/u, '').trim())
       .filter(Boolean);
 
     if (filtered.length === 0) return null;
 
-    let main = '';
-    const subs = [];
+    let main = ''; const subs = [];
     for (const ln of filtered) {
       const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/iu);
       if (m) { main = m[1].trim(); continue; }
@@ -401,45 +394,32 @@ ${pdfText || '(không có)'}
     return { main, subs, refs: [] };
   }
 
-  // Lấy phần JSON dù bị bọc ```json hoặc có bullet ở đầu dòng
   function extractJsonCandidate(s) {
     const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fenced) return stripBullets(fenced[1]);
-    const i1 = s.indexOf('{');
-    const i2 = s.lastIndexOf('}');
-    if (i1 >= 0 && i2 > i1) {
-      const raw = s.slice(i1, i2 + 1);
-      return stripBullets(raw);
-    }
+    const i1 = s.indexOf('{'); const i2 = s.lastIndexOf('}');
+    if (i1 >= 0 && i2 > i1) return stripBullets(s.slice(i1, i2 + 1));
     return '';
   }
-
   function stripBullets(raw) {
-    return raw
-      .split(/\r?\n/)
-      .map(line => line.replace(/^\s*[-*•]\s?/, ''))
-      .join('\n')
-      .trim();
+    return raw.split(/\r?\n/).map(line => line.replace(/^\s*[-*•]\s?/, '')).join('\n').trim();
   }
 
   function copyText(t) {
     try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
   }
-
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
     if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
     else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
-  // Gọi GPT theo binding từng step; fallback callGPT nếu cần
+  // Gọi GPT theo binding; fallback callGPT nếu cần
   async function callAI(bindingKey, prompt, ctx_) {
     if (typeof ctx_.callStepGPT === 'function') {
-      try {
-        const r = await ctx_.callStepGPT(bindingKey, prompt);
-        return String(r ?? '');
-      } catch (e) {
+      try { return String(await ctx_.callStepGPT(bindingKey, prompt) ?? ''); }
+      catch (e) {
         if (typeof ctx_.callGPT === 'function') return String(await ctx_.callGPT(prompt));
         throw e;
       }
