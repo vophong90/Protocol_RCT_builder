@@ -4,7 +4,7 @@
 export const id = 1;
 export const title = "Câu hỏi nghiên cứu";
 export const subtitle = "Nhập trực tiếp hoặc dùng GPT gợi ý từ PICO/PDF";
-export const css = "./public/css/steps/step1.css"; // (tuỳ chọn) tạo file để căn nút giống step0/5
+export const css = "./public/css/steps/step1.css"; // (tuỳ chọn)
 
 export async function mount(rootEl, ctx) {
   // Scope CSS riêng cho step 1
@@ -27,7 +27,6 @@ export async function mount(rootEl, ctx) {
     <div class="card-body">
       <div class="inline-row" style="gap:12px; flex-wrap:wrap;">
         <input id="rq-pdf" type="file" accept="application/pdf" />
-        <span class="muted" id="rq-fname">Chưa chọn tệp PDF</span>
       </div>
       <div class="btn-row" style="margin-top:8px;">
         <button id="rq-gpt"  class="btn btn-primary" type="button">GPT gợi ý câu hỏi</button>
@@ -75,7 +74,6 @@ export async function mount(rootEl, ctx) {
   const rqEl        = $('#rq-text');
 
   const pdfEl       = $('#rq-pdf');
-  const fnameChip   = $('#rq-fname');
 
   const saveBtn     = $('#rq-save');
   const gptBtn      = $('#rq-gpt');
@@ -102,9 +100,9 @@ export async function mount(rootEl, ctx) {
   if (oldEval) { eTA.value = String(oldEval); eWrap.classList.remove('hidden'); }
 
   // ==== Events ====
+  // Tooltip tên file (không hiện chip “chưa chọn tệp” nữa)
   pdfEl.addEventListener('change', () => {
-    const f = pdfEl.files?.[0];
-    fnameChip.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
+    pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
 
   saveBtn.addEventListener('click', () => {
@@ -182,21 +180,65 @@ ${pdfText || '(không có)'}
     try {
       toggleBusy(evalBtn, true, 'GPT đánh giá câu hỏi');
       const pico = ctx.get('pico', {}) || {};
+
+      // Đọc PDF (nếu có) để mô hình bám dữ liệu thật
+      let pdfText = '';
+      const f = pdfEl?.files?.[0];
+      if (f) {
+        try {
+          pdfText = typeof ctx.extractTextFromPDF === 'function'
+            ? await ctx.extractTextFromPDF(f)
+            : await fallbackExtractTextFromPDF(f);
+          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
+        } catch (e) {
+          console.warn('PDF read error:', e);
+          ctx.toast('Không đọc được PDF đính kèm, đánh giá sẽ không trích nguồn từ file.');
+        }
+      }
+
+      const today = new Date().toISOString().slice(0,10);
+
       const prompt = `
-Bạn là chuyên gia phương pháp RCT. Hãy ĐÁNH GIÁ câu hỏi nghiên cứu dưới đây theo các tiêu chí và trả lời ngắn gọn bằng gạch đầu dòng (không trả JSON):
-- Rõ ràng & tập trung (1–5)
-- Bám PICO (1–5)
-- Đo lường được (1–5)
-- Khả thi & đạo đức (1–5)
-- Gợi ý chỉnh sửa (1–3 câu)
+Bạn là chuyên gia phương pháp RCT. Hãy ĐÁNH GIÁ câu hỏi nghiên cứu dưới đây theo **FINER** và **SMART**, đồng thời **trích dẫn tài liệu tham khảo CÓ THẬT** khi đưa ra nhận xét (nếu có).
+
+YÊU CẦU NGHIÊM NGẶT VỀ NGUỒN:
+- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
+- Chỉ liệt kê tối đa 5 tài liệu mà bạn **chắc chắn ≥90%** là có thật. Ưu tiên trích từ PDF đính kèm (nếu có).
+- Mỗi tài liệu phải có: Tác giả chính, năm, tiêu đề, tạp chí/sách, và **DOI hoặc PMID hoặc URL chính thức**.
+- Nếu không tìm thấy nguồn phù hợp để trích dẫn, hãy viết đúng câu: **"Không tìm thấy nguồn phù hợp để trích dẫn."**
+
+ĐỊNH DẠNG TRẢ LỜI (không trả JSON):
+FINER
+- Feasible: [điểm]/5 — nhận xét ngắn
+- Interesting: [điểm]/5 — …
+- Novel: [điểm]/5 — …
+- Ethical: [điểm]/5 — …
+- Relevant: [điểm]/5 — …
+
+SMART
+- Specific: [điểm]/5 — …
+- Measurable: [điểm]/5 — …
+- Achievable/Feasible: [điểm]/5 — …
+- Relevant: [điểm]/5 — …
+- Time-bound: [điểm]/5 — …
+
+Kết luận (1–3 câu): …
+Tham khảo:
+1) … (DOI/PMID/URL)
+2) … (DOI/PMID/URL)
+(hoặc ghi: "Không tìm thấy nguồn phù hợp để trích dẫn.")
 
 Câu hỏi nghiên cứu: "${currentQ}"
+Ngày đánh giá: ${today}
 
 PICO tham chiếu:
 P: ${pico.p || '(chưa có)'}
 I: ${pico.i || '(chưa có)'}
 C: ${pico.c || '(chưa có)'}
 O: ${pico.o || '(chưa có)'}
+
+Tài liệu đính kèm (trích đoạn, nếu có):
+${pdfText || '(không có)'}
 `.trim();
 
       const raw = await callAI('step1.evaluate', prompt, ctx);
@@ -273,11 +315,11 @@ O: ${pico.o || '(chưa có)'}
     const pdfjs = (globalThis.pdfjsLib || window.pdfjsLib);
     if (!pdfjs) throw new Error('pdfjsLib chưa được nạp');
     const buf = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: buf }).promise;
-    const n = Math.min(pdf.numPages, maxPages);
+    the_pdf = await pdfjs.getDocument({ data: buf }).promise;
+    const n = Math.min(the_pdf.numPages, maxPages);
     let out = '';
     for (let i = 1; i <= n; i++) {
-      const page = await pdf.getPage(i);
+      const page = await the_pdf.getPage(i);
       const content = await page.getTextContent();
       out += content.items.map(it => it.str).join(' ') + '\n';
     }
