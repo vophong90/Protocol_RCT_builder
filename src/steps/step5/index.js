@@ -1,13 +1,16 @@
 // src/steps/step5/index.js
+// Step 5 – Thiết kế nghiên cứu (module tách UI/logic, dùng per-step GPT binding)
+
 export const id = 5;
 export const title = "Thiết kế nghiên cứu";
 export const subtitle = "";
-export const css = "/public/css/steps/step5.css";
+export const css = "./public/css/steps/step5.css"; // nhớ tạo file CSS theo bước trước
 
 export async function mount(rootEl, ctx) {
-  // gắn scope để CSS step5 không rò rỉ
+  // Gắn scope để CSS chỉ áp cho step này
   rootEl.closest('.step')?.setAttribute('data-scope', 'step5');
 
+  // ---- UI ----
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Thiết kế nghiên cứu</h3>
@@ -68,7 +71,7 @@ export async function mount(rootEl, ctx) {
         <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
       </div>
 
-      <!-- Nút GPT (guard nếu chưa cấu hình) -->
+      <!-- Nút GPT -->
       <div class="card-body" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
         <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
         <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
@@ -204,7 +207,6 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã đặt lại tên nhánh mặc định.');
   });
 
-  // GPT (guard nếu chưa cấu hình)
   btnSuggest.addEventListener('click', onSuggest);
   btnEval.addEventListener('click', onEvaluate);
 
@@ -215,10 +217,10 @@ export async function mount(rootEl, ctx) {
 
   btnSave.addEventListener('click', onSave);
 
-  // ------- Handlers -------
+  // ------- GPT handlers (per-step binding) -------
   async function onSuggest() {
-    if (typeof ctx.callGPT !== 'function') {
-      ctx.toast('Chưa cấu hình GPT. (Sẽ gắn ở bước kế tiếp)');
+    if (typeof ctx.callStepGPT !== 'function') {
+      ctx.toast('Chưa cấu hình GPT binding (ctx.callStepGPT).');
       return;
     }
     try {
@@ -241,9 +243,8 @@ export async function mount(rootEl, ctx) {
         arms: nArms,
         armNames
       });
-      const raw = await ctx.callGPT(prompt);
-      const md  = String(raw || '').trim();
 
+      const md = String(await ctx.callStepGPT('step5.suggest', prompt) || '').trim();
       if (!md) {
         ctx.toast('GPT không trả về gợi ý.');
       } else {
@@ -274,8 +275,8 @@ export async function mount(rootEl, ctx) {
   }
 
   async function onEvaluate() {
-    if (typeof ctx.callGPT !== 'function') {
-      ctx.toast('Chưa cấu hình GPT. (Sẽ gắn ở bước kế tiếp)');
+    if (typeof ctx.callStepGPT !== 'function') {
+      ctx.toast('Chưa cấu hình GPT binding (ctx.callStepGPT).');
       return;
     }
     const content = (descEl.value || '').trim();
@@ -291,8 +292,7 @@ export async function mount(rootEl, ctx) {
       const subObjs = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
 
       const prompt = buildEvaluatePrompt(content, pico, rq, mainObj, subObjs);
-      const raw = await ctx.callGPT(prompt);
-      const md  = String(raw || '').trim();
+      const md = String(await ctx.callStepGPT('step5.evaluate', prompt) || '').trim();
 
       if (!md) {
         ctx.toast('GPT không trả về đánh giá.');
@@ -315,6 +315,7 @@ export async function mount(rootEl, ctx) {
     }
   }
 
+  // ------- Save -------
   function onSave() {
     const nArms  = clampInt(parseInt(armsEl.value || '2', 10), 2, 6);
     const fixed  = ensureRatioLength(nArms, allocEl.value || '1:1');
