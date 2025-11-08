@@ -7,6 +7,7 @@ export const subtitle = "Chọn công thức, nhập giả định; hệ thống
 export const css = "./public/css/steps/step6.css"; // có thể để 404 tạm thời; inline style bên dưới vẫn chạy
 
 export async function mount(rootEl, ctx) {
+  rootEl.closest('.step')?.setAttribute('data-scope', 'step6');
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Cỡ mẫu</h3>
