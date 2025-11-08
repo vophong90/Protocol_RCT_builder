@@ -1,13 +1,19 @@
-/* === Step 6: lưới & controls === */
+/* public/css/steps/step6.css */
+/* Scope riêng cho Step 6 */
+.step[data-scope="step6"] #ss{ --gap:12px; }
+
+/* Lưới input 3 cột, căn đỉnh, không bị tràn chữ đẩy cột */
 .step[data-scope="step6"] #ss .grid-3{
   display:grid;
   grid-template-columns:repeat(3, minmax(0,1fr));
-  gap:12px;
+  gap:var(--gap);
   align-items:start;
 }
 .step[data-scope="step6"] #ss .grid-3 > *{ min-width:0; }
 .step[data-scope="step6"] #ss .card-body.grid-3 > *{ margin-top:0 !important; }
+.step[data-scope="step6"] #ss .full-span{ grid-column:1 / -1; }
 
+/* Label & control đồng nhất */
 .step[data-scope="step6"] #ss label{ display:flex; flex-direction:column; gap:6px; }
 .step[data-scope="step6"] #ss .form-input{
   width:100%; box-sizing:border-box;
@@ -19,21 +25,20 @@
 .step[data-scope="step6"] #ss select.form-input{ height:44px; }
 .step[data-scope="step6"] #ss textarea.form-input{ resize:vertical; }
 
-/* === Hàng nút GPT: 2 cột bằng nhau, cùng CHIỀU CAO === */
+/* === Hàng 2 nút GPT: ép 2 cột bằng nhau và CHIỀU CAO BẰNG NHAU === */
 .step[data-scope="step6"] #ss .control-row{
   display:grid !important;
-  grid-template-columns:repeat(2, 1fr);
-  gap:12px;
-  align-items:stretch !important;   /* kéo con giãn đầy track */
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:var(--gap);
+  align-items:stretch !important;     /* ép con cao bằng nhau */
 }
-.step[data-scope="step6"] #ss .control-row > *{ min-width:0; } /* tránh nút “đẩy” cột rộng/nhỏ */
+.step[data-scope="step6"] #ss .control-row > *{ min-width:0; }
 .step[data-scope="step6"] #ss .control-row .btn{
-  box-sizing:border-box;
   width:100%;
-  height:56px;                      /* cố định cùng cao */
-  padding:0 18px;                   /* bỏ padding dọc để giữ đúng 56px */
+  height:56px;                         /* khóa chiều cao để không lệch */
+  padding:0 18px;                      /* bỏ padding dọc để giữ đúng 56px */
   display:inline-flex; align-items:center; justify-content:center;
-  line-height:1.2;
+  line-height:1.1;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
