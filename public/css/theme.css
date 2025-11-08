@@ -7,7 +7,12 @@
   --ring:rgba(14,164,75,.25);
   --border:#e5e7eb;
   --radius:12px;
-  --space:14px;
+  --space:18px;
+  --space-xs:8px;
+  --space-sm:12px;
+  --space-md:16px;
+  --space-lg:20px;
+  --section-gap:22px;
 }
 *{ box-sizing:border-box }
 html, body{ height:100% }
