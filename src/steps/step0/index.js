@@ -4,11 +4,12 @@
 export const id = 0;
 export const title = "PICO";
 export const subtitle = "Nhập trực tiếp hoặc dùng GPT từ bối cảnh/PDF";
-export const css = "./public/css/steps/step0.css"; // (tuỳ chọn) tạo file để căn nút đẹp như step5
+export const css = "./public/css/steps/step0.css"; // (tuỳ chọn)
 
 export async function mount(rootEl, ctx) {
   // Scope CSS riêng cho step 0
-  rootEl.closest('.step')?.setAttribute('data-scope', 'step0');
+  const scopeEl = rootEl.closest('.step');
+  scopeEl?.setAttribute('data-scope', 'step0');
 
   // ---- UI ----
   rootEl.innerHTML = `
@@ -37,7 +38,6 @@ export async function mount(rootEl, ctx) {
     <div class="card-body">
       <div class="inline-row" style="gap:12px; flex-wrap:wrap;">
         <input id="pico-pdf" type="file" accept="application/pdf" />
-        <span class="muted" id="pico-fname">Chưa chọn tệp PDF</span>
       </div>
       <div class="btn-row" style="margin-top:8px;">
         <button id="pico-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý PICO</button>
@@ -73,6 +73,26 @@ export async function mount(rootEl, ctx) {
     <div class="card-footer">
       <button id="pico-save" class="btn btn-primary" type="button">Lưu</button>
     </div>
+
+    <!-- Scoped style: biến nút Choose file -> kiểu btn-secondary chỉ cho Step 0 -->
+    <style>
+      [data-scope="step0"] input[type="file"]{
+        height:42px; /* đồng bộ với nút */
+      }
+      [data-scope="step0"] input[type="file"]::file-selector-button{
+        background:#fff !important;
+        color:#111827 !important;
+        border:1px solid var(--border) !important;
+        border-radius:10px !important;
+        padding:.6rem 1rem !important;
+        margin-right:.75rem !important;
+        font:600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system !important;
+        cursor:pointer !important;
+      }
+      [data-scope="step0"] input[type="file"]:hover::file-selector-button{
+        background:#f9fafb !important;
+      }
+    </style>
   `.trim();
 
   // ====== Bind DOM (ưu tiên query trong rootEl) ======
@@ -84,7 +104,6 @@ export async function mount(rootEl, ctx) {
   const oEl = $('#pico-o');
 
   const pdfEl   = $('#pico-pdf');
-  const fnameEl = $('#pico-fname');
 
   const saveEl    = $('#pico-save');
   const suggestEl = $('#pico-gpt-suggest');
@@ -111,9 +130,9 @@ export async function mount(rootEl, ctx) {
   // ====== Events ======
   saveEl.addEventListener('click', onSave);
 
+  // (tuỳ chọn) đặt tooltip tên file khi chọn
   pdfEl.addEventListener('change', () => {
-    const f = pdfEl.files?.[0];
-    fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
+    pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
 
   suggestEl.addEventListener('click', onSuggest);
@@ -210,7 +229,7 @@ export async function mount(rootEl, ctx) {
         pdfText = typeof ctx.extractTextFromPDF === 'function'
           ? await ctx.extractTextFromPDF(f)
           : await fallbackExtractTextFromPDF(f);
-        if (pdfText.length > 5000) pdfText = pdfText.slice(0, 5000) + '\n...[cắt bớt]';
+        if (pdfText.length > 5000) pdfText = pdfText.slice(0, 5000) + '\\n...[cắt bớt]';
       } catch (e) {
         console.warn('PDF read error:', e);
         ctx.toast('Không đọc được PDF, sẽ chỉ dùng dữ liệu đã nhập.');
@@ -275,7 +294,7 @@ O: ${current.o || '(trống)'}
     if (!raw) return { p:'', i:'', c:'', o:'' };
 
     // Ưu tiên lấy trong ```json
-    const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const fenced = raw.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
     const candidate = fenced ? fenced[1] : raw;
 
     try {
@@ -290,10 +309,10 @@ O: ${current.o || '(trống)'}
       }
     } catch { /* ignore */ }
 
-    const mP = /(?:^|\n)\s*p\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mI = /(?:^|\n)\s*i\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mC = /(?:^|\n)\s*c\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
-    const mO = /(?:^|\n)\s*o\s*[:\-]\s*(.+?)(?=\n[a-z]\s*[:\-]|\n?$)/is.exec(candidate);
+    const mP = /(?:^|\\n)\\s*p\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mI = /(?:^|\\n)\\s*i\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mC = /(?:^|\\n)\\s*c\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
+    const mO = /(?:^|\\n)\\s*o\\s*[:\\-]\\s*(.+?)(?=\\n[a-z]\\s*[:\\-]|\\n?$)/is.exec(candidate);
     return {
       p: (mP?.[1] || '').trim(),
       i: (mI?.[1] || '').trim(),
@@ -325,7 +344,7 @@ O: ${current.o || '(trống)'}
     for (let i = 1; i <= n; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      out += content.items.map(it => it.str).join(' ') + '\n';
+      out += content.items.map(it => it.str).join(' ') + '\\n';
     }
     return out.trim();
   }
