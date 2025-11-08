@@ -29,27 +29,30 @@
 .card-body > * + *{ margin-top:14px }
 .card-footer{ margin-top:16px; display:flex; gap:14px; flex-wrap:wrap }
 
-/* Input file – kiểu btn-secondary cho toàn bộ app */
+/* Input file – kiểu btn-secondary, căn giữa chuẩn, không bị cắt đáy */
 .card input[type="file"]{
   font: 600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: .5rem .75rem;
-  height: 42px;                /* đồng bộ chiều cao với .btn */
+  height: 42px;                 /* chiều cao chuẩn của nút */
+  padding: 0;                   /* QUAN TRỌNG: bỏ padding của input để không cắt đáy */
   display: inline-block;
   background: #fff;
   color: var(--ink);
+  vertical-align: middle;       /* canh với các control khác trên cùng hàng */
 }
 
-/* Nút "Choose file" – secondary */
+/* Nút "Choose file" – secondary, full height của input */
 .card input[type="file"]::file-selector-button{
-  font: 600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system;
+  display: inline-flex;         /* canh text giữa theo chiều dọc */
+  align-items: center;
+  height: 100%;                 /* khớp 42px của input */
+  padding: 0 1rem;              /* chỉ padding ngang */
+  margin-right: .75rem;
   background: #fff;
   color: #111827;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: .6rem 1rem;
-  margin-right: .75rem;
   cursor: pointer;
 }
 .card input[type="file"]:hover::file-selector-button{
@@ -59,15 +62,17 @@
   opacity: .6; cursor: not-allowed;
 }
 
-/* Fallback cho Safari cũ / Chromium cũ */
+/* Fallback cho trình duyệt WebKit cũ */
 .card input[type="file"]::-webkit-file-upload-button{
-  font: 600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 1rem;
+  margin-right: .75rem;
   background: #fff;
   color: #111827;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: .6rem 1rem;
-  margin-right: .75rem;
   cursor: pointer;
 }
 .card input[type="file"]:hover::-webkit-file-upload-button{
