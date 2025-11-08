@@ -19,8 +19,7 @@ export async function mount(rootEl, ctx) {
     <style>
       /* ===== Scoped styles cho Step 6 để canh cột không lệch ===== */
       #ss .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      #ss .control-row{ display:grid !important; grid-template-columns:repeat(2, minmax(0,1fr)); gap:12px; align-items:stretch !important; }
-      #ss .control-row .btn{ width:100%; min-height:52px; padding:.6rem 1rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      #ss .control-row{ display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
       #ss .grid-3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
       #ss .full-span{ grid-column:1 / -1; }
       #ss .form-input{
@@ -75,7 +74,7 @@ export async function mount(rootEl, ctx) {
         </label>
 
         <div class="muted full-span">
-          Nếu đã chọn thiết kế ở <b>Bước 5</b>, số nhánh sẽ tự gợi ý theo đó.
+          Nếu đã chọn thiết kế ở <b>Bước 6</b>, số nhánh sẽ tự gợi ý theo đó.
         </div>
       </div>
 
