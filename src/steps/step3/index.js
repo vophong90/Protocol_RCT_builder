@@ -1,4 +1,3 @@
-// src/steps/step3/index.js
 // Step 3 – Mở đầu (CaRS: Territory, Niche, Occupy) + References (AMA 11th)
 // Yêu cầu ctx: get/save/toast, callStepGPT(bindingKey,prompt) hoặc callGPT(prompt), extractTextFromPDF(file)
 
@@ -48,8 +47,8 @@ export async function mount(rootEl, ctx) {
         <span id="intro-fname" class="muted">Chưa chọn tệp PDF</span>
       </div>
       <div class="btn-row" style="margin-top:8px;">
-        <button id="intro-gpt"  class="btn btn-primary" type="button">GPT gợi ý CaRS + TLTK</button>
-        <button id="intro-eval" class="btn btn-primary" type="button">GPT đánh giá CaRS</button>
+        <button id="intro-gpt"  class="btn btn-primary" type="button">GPT gợi ý CaRS</button>
+        <button id="intro-eval" class="btn btn-secondary" type="button">GPT đánh giá CaRS</button>
       </div>
     </div>
 
@@ -144,7 +143,7 @@ export async function mount(rootEl, ctx) {
 
   async function onSuggest() {
     try {
-      toggleBusy(gptBtn, true, 'GPT gợi ý CaRS + TLTK');
+      toggleBusy(gptBtn, true, 'GPT gợi ý CaRS');
       const pico   = ctx.get('pico', {}) || {};
       const rq     = ctx.get('researchQuestion', '') || '';
       const mainOb = ctx.get('mainObjective', '') || '';
@@ -203,22 +202,23 @@ ${pdfText || '(không có)'}
 `.trim();
 
       const raw = await callAI('step3.suggest', prompt, ctx);
-      const parsed = parseSuggest(raw);
+      const text = unwrapToText(raw);
+      const parsed = parseSuggest(text);
 
       if (!parsed) {
         ctx.toast('GPT không trả về CaRS/References hợp lệ.');
         console.warn('GPT raw reply (step3 suggest):', raw);
       } else {
-        sTA.value    = formatCaRSPreview(parsed);
+        sTA.value     = formatCaRSPreview(parsed);
         sRefsTA.value = (parsed.references || []).join('\n');
         sWrap.classList.remove('hidden');
-        ctx.toast('Đã nhận gợi ý CaRS + TLTK.');
+        ctx.toast('Đã nhận gợi ý CaRS.');
       }
     } catch (e) {
       console.error(e);
       ctx.toast('Lỗi khi gọi GPT.');
     } finally {
-      toggleBusy(gptBtn, false, 'GPT gợi ý CaRS + TLTK');
+      toggleBusy(gptBtn, false, 'GPT gợi ý CaRS');
     }
   }
 
@@ -289,8 +289,8 @@ ${subListStr}
 `.trim();
 
       const raw = await callAI('step3.evaluate', prompt, ctx);
-      const text = String(raw || '').trim();
-      eTA.value = text;
+      const text = unwrapToText(raw);
+      eTA.value = String(text || '').trim();
       eWrap.classList.remove('hidden');
       ctx.save('introEval', eTA.value);
       ctx.toast('Đã nhận đánh giá CaRS.');
@@ -315,34 +315,40 @@ ${subListStr}
   }
 
   function parseSuggest(rawText) {
-    // Ưu tiên JSON {"territory","niche","occupy","references":[...]}
-    try {
-      const j = JSON.parse(String(rawText));
-      const t = String(j?.territory || '').trim();
-      const n = String(j?.niche || '').trim();
-      const o = String(j?.occupy || '').trim();
-      const refs = Array.isArray(j?.references) ? j.references.map(r => String(r || '').trim()).filter(Boolean) : [];
-      if (!t && !n && !o && refs.length === 0) return null;
-      return { territory: t, niche: n, occupy: o, references: refs };
-    } catch {
-      // Fallback: tách theo nhãn + khối References (không khuyến khích)
-      const s = String(rawText || '');
-      const obj = {
-        territory: pickSection(s, /territory\s*:\s*/i),
-        niche:     pickSection(s, /niche\s*:\s*/i),
-        occupy:    pickSection(s, /occupy\s*:\s*/i),
-        references: pickReferences(s),
-      };
-      if (!(obj.territory || obj.niche || obj.occupy || (obj.references||[]).length)) return null;
-      return obj;
+    const s = String(rawText ?? '').trim();
+    if (!s) return null;
+
+    // Thử lấy JSON "sạch"
+    const candidate = extractJsonCandidate(s);
+    if (candidate) {
+      try {
+        const j = JSON.parse(candidate);
+        const t = String(j?.territory || '').trim();
+        const n = String(j?.niche || '').trim();
+        const o = String(j?.occupy || '').trim();
+        const refs = Array.isArray(j?.references)
+          ? j.references.map(r => String(r || '').trim()).filter(Boolean)
+          : [];
+        if (t || n || o || refs.length) return { territory: t, niche: n, occupy: o, references: refs };
+      } catch {/* ignore and fallback */}
     }
+
+    // Fallback: tách theo nhãn + khối References
+    const obj = {
+      territory: pickSection(s, /territory\s*:\s*/i),
+      niche:     pickSection(s, /niche\s*:\s*/i),
+      occupy:    pickSection(s, /occupy\s*:\s*/i),
+      references: pickReferences(s),
+    };
+    if (!(obj.territory || obj.niche || obj.occupy || (obj.references||[]).length)) return null;
+    return obj;
   }
 
   function parseSuggestFromPreview(carsBlock, refsBlock) {
     const obj = {
-      territory: pickSection(carsBlock, /territory\s*:\s*/i),
-      niche:     pickSection(carsBlock, /niche\s*:\s*/i),
-      occupy:    pickSection(carsBlock, /occupy\s*:\s*/i),
+      territory: pickSection(String(carsBlock||''), /territory\s*:\s*/i),
+      niche:     pickSection(String(carsBlock||''), /niche\s*:\s*/i),
+      occupy:    pickSection(String(carsBlock||''), /occupy\s*:\s*/i),
       references: String(refsBlock || '')
         .split(/\r?\n/)
         .map(s => s.trim())
@@ -368,6 +374,23 @@ ${subListStr}
       .filter(Boolean);
   }
 
+  function extractJsonCandidate(s) {
+    // Ưu tiên ```json ... ``` rồi đến khối { ... } lớn nhất
+    const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced) return stripBullets(fenced[1]);
+    const i1 = s.indexOf('{');
+    const i2 = s.lastIndexOf('}');
+    if (i1 >= 0 && i2 > i1) return stripBullets(s.slice(i1, i2 + 1));
+    return '';
+    function stripBullets(raw) {
+      return String(raw)
+        .split(/\r?\n/)
+        .map(line => line.replace(/^\s*[-*•]\s?/, ''))
+        .join('\n')
+        .trim();
+    }
+  }
+
   function copyText(t) {
     try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
     catch { ctx.toast('Không sao chép được.'); }
@@ -379,11 +402,71 @@ ${subListStr}
     else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
-  // Gọi GPT theo binding per-step; fallback dùng ctx.callGPT
+  // ==== Unwrap utils (Responses API / Moderation) ====
+  function unwrapToText(maybe) {
+    if (maybe == null) return '';
+    if (typeof maybe === 'string') return maybe;
+
+    // Nếu binding trả object (chưa stringify)
+    try {
+      // Responses API (v1/responses)
+      if (maybe.output_text) return String(maybe.output_text);
+      if (Array.isArray(maybe.output) && maybe.output.length > 0) {
+        const parts = [];
+        for (const blk of maybe.output) {
+          if (Array.isArray(blk.content)) {
+            for (const c of blk.content) {
+              if (c?.type === 'output_text' && c?.text?.value) parts.push(String(c.text.value));
+              else if (c?.type === 'text' && c?.text) parts.push(String(c.text));
+            }
+          }
+        }
+        if (parts.length) return parts.join('\n').trim();
+      }
+    } catch {/* ignore */}
+
+    // Nếu là chuỗi JSON Responses/Moderation
+    try {
+      const asStr = JSON.stringify(maybe);
+      const obj = JSON.parse(asStr);
+      if (obj?.output_text) return String(obj.output_text);
+      if (Array.isArray(obj?.output)) {
+        const parts = [];
+        for (const blk of obj.output) {
+          if (Array.isArray(blk.content)) {
+            for (const c of blk.content) {
+              if (c?.type === 'output_text' && c?.text?.value) parts.push(String(c.text.value));
+              else if (c?.type === 'text' && c?.text) parts.push(String(c.text));
+            }
+          }
+        }
+        if (parts.length) return parts.join('\n').trim();
+      }
+      // Moderation? → trả string thô để parser tiếp nhận null (và UI báo lỗi)
+      return asStr;
+    } catch {
+      return String(maybe);
+    }
+  }
+
+  // Gọi GPT theo binding per-step; kèm fallback & phát hiện moderation
   async function callAI(bindingKey, prompt, ctx_) {
-    if (typeof ctx_.callStepGPT === 'function') return ctx_.callStepGPT(bindingKey, prompt);
-    if (typeof ctx_.callGPT === 'function') return ctx_.callGPT(prompt);
-    throw new Error('Chưa cấu hình GPT binding cho step 3');
+    let r;
+    if (typeof ctx_.callStepGPT === 'function') {
+      r = await ctx_.callStepGPT(bindingKey, prompt);
+      const s = String(r ?? '');
+      const looksModeration =
+        /^\s*\{/.test(s) &&
+        (/"id"\s*:\s*"modr-/i.test(s) || /"model"\s*:\s*".*moderation/i.test(s) || /"results"\s*:\s*\[/i.test(s));
+      if (looksModeration && typeof ctx_.callGPT === 'function') {
+        r = await ctx_.callGPT(prompt);
+      }
+    } else if (typeof ctx_.callGPT === 'function') {
+      r = await ctx_.callGPT(prompt);
+    } else {
+      throw new Error('Chưa cấu hình GPT binding cho step 3');
+    }
+    return r;
   }
 
   // Fallback đọc PDF bằng pdfjs nếu ctx chưa cung cấp
