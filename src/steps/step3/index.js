@@ -22,7 +22,7 @@ export async function mount(rootEl, ctx) {
 
     <div class="card-body grid-2">
       <label>Territory (Bối cảnh – tầm quan trọng)
-        <textarea id="intro-territory" rows="6" placeholder="Nêu bối cảnh, gánh nặng, quy mô vấn đề… Có thể chèn đánh số trích dẫn [1], [2]…"></textarea>
+        <textarea id="intro-territory" rows="6" placeholder="Nêu bối cảnh, gánh nặng, quy mô vấn đề… Dùng đánh số trích dẫn [1], [2]…"></textarea>
       </label>
       <label>Niche (Khoảng trống bằng chứng)
         <textarea id="intro-niche" rows="6" placeholder="Lỗ hổng tri thức, hạn chế nghiên cứu trước, tranh luận còn tồn tại…"></textarea>
@@ -35,16 +35,15 @@ export async function mount(rootEl, ctx) {
     <!-- References (AMA 11th) -->
     <div class="card-body">
       <label>Tài liệu tham khảo (AMA 11th)
-        <textarea id="intro-refs" rows="6" placeholder="1. Tác giả. Tựa bài… Tên tạp chí. Năm;Tập(Số):trang. doi:...&#10;2. …"></textarea>
+        <textarea id="intro-refs" rows="6" placeholder="1) Tác giả… Tiêu đề… Tạp chí. Năm;Tập(Số):trang. DOI/PMID/URL&#10;2) …"></textarea>
       </label>
-      <div class="muted">Gợi ý: mỗi mục 1 dòng, đánh số 1., 2., 3.…</div>
+      <div class="muted">Gợi ý: mỗi mục một dòng, đánh số 1), 2)…</div>
     </div>
 
     <!-- File + 2 nút GPT -->
     <div class="card-body">
       <div class="inline-row" style="gap:12px; flex-wrap:wrap;">
         <input id="intro-pdf" type="file" accept="application/pdf" />
-        <span id="intro-fname" class="muted">Chưa chọn tệp PDF</span>
       </div>
       <div class="btn-row" style="margin-top:8px;">
         <button id="intro-gpt"  class="btn btn-primary" type="button">GPT gợi ý CaRS</button>
@@ -52,7 +51,7 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <!-- Kết quả GPT – GỢI Ý -->
+    <!-- Kết quả GPT – GỢI Ý (một khối văn bản có cả TLTK) -->
     <div id="intro-suggest-wrap" class="card-body hidden">
       <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
         <strong>Kết quả GPT – Gợi ý</strong>
@@ -62,12 +61,11 @@ export async function mount(rootEl, ctx) {
           <button id="intro-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="intro-suggest-ta" rows="9" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …"></textarea>
-      <textarea id="intro-suggest-refs" rows="6" style="margin-top:8px" placeholder="1. … (AMA 11th)&#10;2. …"></textarea>
-      <div class="muted">Đầu ra gồm 3 đoạn CaRS (có đánh số trích dẫn [1], [2]…) và danh mục TLTK theo AMA 11th.</div>
+      <textarea id="intro-suggest-ta" rows="16" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …&#10;&#10;TLTK:&#10;1) …&#10;2) …"></textarea>
+      <div class="muted">Đầu ra gồm 3 phần CaRS (có [1], [2]…) và khối <strong>TLTK</strong> ngay bên dưới.</div>
     </div>
 
-    <!-- Kết quả GPT – ĐÁNH GIÁ -->
+    <!-- Kết quả GPT – ĐÁNH GIÁ (có TLTK ở cuối trong cùng khối) -->
     <div id="intro-eval-wrap" class="card-body hidden">
       <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
         <strong>Kết quả GPT – Đánh giá</strong>
@@ -76,7 +74,7 @@ export async function mount(rootEl, ctx) {
           <button id="intro-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="intro-eval-ta" rows="10" placeholder="Nhận xét mạch lạc CaRS, liên kết PICO, gợi ý chỉnh sửa…"></textarea>
+      <textarea id="intro-eval-ta" rows="16" placeholder="[Đánh giá + bản CaRS đề xuất (có trích dẫn) + TLTK …]"></textarea>
     </div>
 
     <div class="card-footer">
@@ -93,7 +91,6 @@ export async function mount(rootEl, ctx) {
   const refsEl   = $('#intro-refs');
 
   const pdfEl    = $('#intro-pdf');
-  const fnameEl  = $('#intro-fname');
 
   const gptBtn   = $('#intro-gpt');
   const evalBtn  = $('#intro-eval');
@@ -101,7 +98,6 @@ export async function mount(rootEl, ctx) {
 
   const sWrap    = $('#intro-suggest-wrap');
   const sTA      = $('#intro-suggest-ta');
-  const sRefsTA  = $('#intro-suggest-refs');
   const sApply   = $('#intro-apply');
   const sCopy    = $('#intro-copy-suggest');
   const sHide    = $('#intro-hide-suggest');
@@ -132,13 +128,12 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu phần Mở đầu (CaRS) & TLTK');
   });
 
-  // ===== File UI =====
+  // ===== File UI ===== (không chip; chỉ tooltip)
   pdfEl.addEventListener('change', () => {
-    const f = pdfEl.files?.[0];
-    fnameEl.textContent = f ? (f.name || 'Đã chọn 1 tệp') : 'Chưa chọn tệp PDF';
+    pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
 
-  // ===== GPT: Gợi ý CaRS + References =====
+  // ===== GPT: Gợi ý CaRS + TLTK (trong cùng khối) =====
   gptBtn.addEventListener('click', onSuggest);
 
   async function onSuggest() {
@@ -157,31 +152,40 @@ export async function mount(rootEl, ctx) {
           pdfText = typeof ctx.extractTextFromPDF === 'function'
             ? await ctx.extractTextFromPDF(f)
             : await fallbackExtractTextFromPDF(f);
-          if (pdfText.length > 8000) pdfText = pdfText.slice(0, 8000) + '\n...[cắt bớt]';
+          if (pdfText.length > 10000) pdfText = pdfText.slice(0, 10000) + '\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
           ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO/Câu hỏi/Mục tiêu.');
         }
       }
 
-      const prompt = `
-Bạn là trợ lý học thuật soạn phần Mở đầu (CaRS) cho đề cương RCT. Hãy viết 3 đoạn văn và kèm danh mục tài liệu tham khảo theo **AMA 11th**.
+      const today = new Date().toISOString().slice(0,10);
 
-YÊU CẦU:
-1) Trả về đúng **JSON** hợp lệ có khóa:
-{
-  "territory": "…đoạn văn có đánh số trích dẫn [1], [2]…",
-  "niche": "…đoạn văn có đánh số trích dẫn [3], [4]…",
-  "occupy": "…đoạn văn có đánh số trích dẫn [x]…",
-  "references": [
-    "1. Tên tác giả. Tựa bài… Tên tạp chí. Năm;Tập(Số):trang. doi:…",
-    "2. …"
-  ]
-}
-2) Văn bản tiếng Việt, mạch lạc (Territory 5–7 câu; Niche 4–6 câu; Occupy 5–8 câu).
-3) **Bắt buộc** dùng đánh số trích dẫn dạng [1], [2]… trùng khớp thứ tự trong danh mục "references".
-4) Mục "references" phải theo **AMA 11th** (đủ tác giả/bài/tạp chí/năm;tập(số):trang; DOI hoặc PMID nếu có).
-5) Không thêm bình luận ngoài JSON.
+      const prompt = `
+Bạn là trợ lý học thuật soạn phần Mở đầu (CaRS) cho đề cương RCT. Hãy viết 3 phần **Territory – Niche – Occupy** với văn phong bài báo khoa học và **tối thiểu ~2 trang A4** (≥1200 từ cho toàn bộ CaRS).
+
+YÊU CẦU NGHIÊM VỀ NGUỒN:
+- Mọi trích dẫn phải **CÓ THẬT**. KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
+- Chỉ liệt kê tối đa 10 tài liệu bạn **chắc chắn ≥90%** là có thật. Ưu tiên nguồn từ PDF đính kèm (nếu có).
+- Mỗi tài liệu phải có: Tác giả chính, năm, tiêu đề, tạp chí/sách, và **DOI hoặc PMID hoặc URL chính thức**.
+- Nếu không tìm thấy nguồn phù hợp, viết đúng câu: **"Không tìm thấy nguồn phù hợp để trích dẫn."**
+
+ĐỊNH DẠNG TRẢ LỜI — TRẢ VỀ ĐÚNG **MỘT KHỐI VĂN BẢN** (KHÔNG JSON, KHÔNG giải thích thêm):
+Territory:
+[đoạn dài, 9–14 câu, có chèn [1], [2]…]
+  
+Niche:
+[đoạn dài, 7–12 câu, có chèn [x]…]
+  
+Occupy:
+[đoạn dài, 9–15 câu, nêu mục tiêu/thiết kế/điểm mới, có chèn [x]…]
+  
+TLTK:
+1) Tác giả… (năm). Tiêu đề. Tạp chí… DOI/PMID/URL
+2) …
+(hoặc: "Không tìm thấy nguồn phù hợp để trích dẫn.")
+
+Ngày soạn: ${today}
 
 PICO:
 P: ${pico.p || '(chưa có)'}
@@ -203,14 +207,13 @@ ${pdfText || '(không có)'}
 
       const raw = await callAI('step3.suggest', prompt, ctx);
       const text = unwrapToText(raw);
-      const parsed = parseSuggest(text);
+      const pretty = String(text || '').trim();
 
-      if (!parsed) {
-        ctx.toast('GPT không trả về CaRS/References hợp lệ.');
+      if (!/^\s*Territory\s*:/i.test(pretty) || !/TLTK\s*:/i.test(pretty)) {
+        ctx.toast('GPT không trả về đúng định dạng yêu cầu.');
         console.warn('GPT raw reply (step3 suggest):', raw);
       } else {
-        sTA.value     = formatCaRSPreview(parsed);
-        sRefsTA.value = (parsed.references || []).join('\n');
+        sTA.value = pretty;
         sWrap.classList.remove('hidden');
         ctx.toast('Đã nhận gợi ý CaRS.');
       }
@@ -222,13 +225,13 @@ ${pdfText || '(không có)'}
     }
   }
 
-  // Áp dụng nội dung từ ô gợi ý
+  // Áp dụng nội dung từ ô gợi ý: tách Territory/Niche/Occupy + TLTK
   sApply.addEventListener('click', () => {
-    const obj = parseSuggestFromPreview(sTA.value, sRefsTA.value);
-    terrEl.value   = obj.territory || terrEl.value;
-    nicheEl.value  = obj.niche     || nicheEl.value;
-    occupyEl.value = obj.occupy    || occupyEl.value;
-    refsEl.value   = (obj.references || []).join('\n') || refsEl.value;
+    const { territory, niche, occupy, refs } = splitCarsAndRefs(sTA.value || '');
+    if (territory) terrEl.value = territory;
+    if (niche)     nicheEl.value = niche;
+    if (occupy)    occupyEl.value = occupy;
+    if (refs.length) refsEl.value = refs.join('\n');
 
     ctx.save('intro', {
       territory: (terrEl.value || '').trim(),
@@ -236,13 +239,13 @@ ${pdfText || '(không có)'}
       occupy:    (occupyEl.value || '').trim(),
     });
     ctx.save('introReferences', (refsEl.value || '').trim());
-    ctx.toast('Đã chèn gợi ý vào 3 ô + TLTK.');
+    ctx.toast('Đã chèn CaRS + TLTK vào các ô.');
   });
 
-  sCopy.addEventListener('click', () => copyText(`${sTA.value}\n\n${sRefsTA.value}`));
+  sCopy.addEventListener('click', () => copyText(sTA.value || ''));
   sHide.addEventListener('click', () => sWrap.classList.add('hidden'));
 
-  // ===== GPT: Đánh giá CaRS =====
+  // ===== GPT: Đánh giá CaRS (kèm bản đề xuất có TLTK) =====
   evalBtn.addEventListener('click', onEvaluate);
 
   async function onEvaluate() {
@@ -260,24 +263,44 @@ ${pdfText || '(không có)'}
       const subListStr = subs.length ? subs.map((s,i)=> `${i+1}. ${s}`).join('\n') : '(chưa có)';
 
       const prompt = `
-Bạn là biên tập viên học thuật. Hãy ĐÁNH GIÁ mạch lạc CaRS (Territory–Niche–Occupy) dưới đây theo các tiêu chí:
-- Logic & liên kết giữa 3 đoạn
-- Liên hệ PICO / câu hỏi / mục tiêu
-- Sử dụng trích dẫn (đánh số) có hợp lý không (không cần kiểm tra thật nguồn)
-- Gợi ý chỉnh sửa trọng tâm (bullet)
+Bạn là biên tập viên học thuật. Hãy:
+A) **ĐÁNH GIÁ** CaRS hiện có (gạch đầu dòng ngắn gọn): logic giữa 3 phần, liên hệ PICO/câu hỏi/mục tiêu, mức độ cập nhật bằng chứng, chất lượng trích dẫn.
+B) **VIẾT LẠI CaRS ĐỀ XUẤT** (Territory – Niche – Occupy) theo văn phong học thuật, độ dài mục tiêu toàn khối ≥1200 từ, có chèn trích dẫn [1], [2]… và **TLTK CÓ THẬT** ở cuối.
 
-Trả lời tiếng Việt, gạch đầu dòng ngắn gọn (không trả JSON).
+NGUYÊN TẮC NGUỒN:
+- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
+- Tối đa 10 nguồn, chắc chắn ≥90% là có thật; ưu tiên trích từ PDF đính kèm.
+- Nếu không có nguồn phù hợp, ghi đúng câu: "Không tìm thấy nguồn phù hợp để trích dẫn."
 
+ĐỊNH DẠNG TRẢ LỜI — MỘT KHỐI VĂN BẢN:
+Đánh giá:
+- …
+- …
+
+CaRS đề xuất
 Territory:
-${territory || '(chưa có)'}
+[đoạn dài … có [1], [2]…]
 
 Niche:
-${niche || '(chưa có)'}
+[đoạn dài …]
 
+Occupy:
+[đoạn dài …]
+
+TLTK:
+1) …
+2) …
+(hoặc: "Không tìm thấy nguồn phù hợp để trích dẫn.")
+
+CaRS hiện có để tham chiếu:
+Territory:
+${territory || '(chưa có)'}
+Niche:
+${niche || '(chưa có)'}
 Occupy:
 ${occupy || '(chưa có)'}
 
-Tham chiếu:
+PICO:
 P: ${pico.p || '(chưa có)'}
 I: ${pico.i || '(chưa có)'}
 C: ${pico.c || '(chưa có)'}
@@ -306,89 +329,28 @@ ${subListStr}
   eHide.addEventListener('click', () => eWrap.classList.add('hidden'));
 
   // ===== Helpers =====
-  function formatCaRSPreview(obj) {
-    const parts = [];
-    if (obj.territory) parts.push('Territory: ' + obj.territory);
-    if (obj.niche)     parts.push('Niche: ' + obj.niche);
-    if (obj.occupy)    parts.push('Occupy: ' + obj.occupy);
-    return parts.join('\n\n');
+  function splitCarsAndRefs(block) {
+    const s = String(block || '');
+    const t = pickSection(s, /territory\s*:/i);
+    const n = pickSection(s, /niche\s*:/i);
+    const o = pickSection(s, /occupy\s*:/i);
+    const refs = pickRefs(s);
+    return { territory: t, niche: n, occupy: o, refs };
   }
-
-  function parseSuggest(rawText) {
-    const s = String(rawText ?? '').trim();
-    if (!s) return null;
-
-    // Thử lấy JSON "sạch"
-    const candidate = extractJsonCandidate(s);
-    if (candidate) {
-      try {
-        const j = JSON.parse(candidate);
-        const t = String(j?.territory || '').trim();
-        const n = String(j?.niche || '').trim();
-        const o = String(j?.occupy || '').trim();
-        const refs = Array.isArray(j?.references)
-          ? j.references.map(r => String(r || '').trim()).filter(Boolean)
-          : [];
-        if (t || n || o || refs.length) return { territory: t, niche: n, occupy: o, references: refs };
-      } catch {/* ignore and fallback */}
-    }
-
-    // Fallback: tách theo nhãn + khối References
-    const obj = {
-      territory: pickSection(s, /territory\s*:\s*/i),
-      niche:     pickSection(s, /niche\s*:\s*/i),
-      occupy:    pickSection(s, /occupy\s*:\s*/i),
-      references: pickReferences(s),
-    };
-    if (!(obj.territory || obj.niche || obj.occupy || (obj.references||[]).length)) return null;
-    return obj;
-  }
-
-  function parseSuggestFromPreview(carsBlock, refsBlock) {
-    const obj = {
-      territory: pickSection(String(carsBlock||''), /territory\s*:\s*/i),
-      niche:     pickSection(String(carsBlock||''), /niche\s*:\s*/i),
-      occupy:    pickSection(String(carsBlock||''), /occupy\s*:\s*/i),
-      references: String(refsBlock || '')
-        .split(/\r?\n/)
-        .map(s => s.trim())
-        .filter(Boolean),
-    };
-    return obj;
-  }
-
   function pickSection(s, rx) {
     const m = s.match(rx); if (!m) return '';
     const start = m.index + m[0].length;
     const rest  = s.slice(start);
-    const next  = rest.search(/(?:territory|niche|occupy)\s*:/i);
+    const next  = rest.search(/(?:\n\s*)?(?:territory|niche|occupy|tltk)\s*:/i);
     return (next >= 0 ? rest.slice(0, next) : rest).trim();
   }
-
-  function pickReferences(s) {
-    const m = s.match(/references?\s*:\s*([\s\S]+)$/i);
+  function pickRefs(s) {
+    const m = s.match(/tltk\s*:\s*([\s\S]+)$/i);
     if (!m) return [];
     return m[1]
       .split(/\r?\n/)
-      .map(x => x.replace(/^\s*\d+\.\s*/, '').trim())
+      .map(x => x.replace(/^\s*(?:\d+[.)]|\d+\))\s*/, '').trim())
       .filter(Boolean);
-  }
-
-  function extractJsonCandidate(s) {
-    // Ưu tiên ```json ... ``` rồi đến khối { ... } lớn nhất
-    const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenced) return stripBullets(fenced[1]);
-    const i1 = s.indexOf('{');
-    const i2 = s.lastIndexOf('}');
-    if (i1 >= 0 && i2 > i1) return stripBullets(s.slice(i1, i2 + 1));
-    return '';
-    function stripBullets(raw) {
-      return String(raw)
-        .split(/\r?\n/)
-        .map(line => line.replace(/^\s*[-*•]\s?/, ''))
-        .join('\n')
-        .trim();
-    }
   }
 
   function copyText(t) {
@@ -406,12 +368,9 @@ ${subListStr}
   function unwrapToText(maybe) {
     if (maybe == null) return '';
     if (typeof maybe === 'string') return maybe;
-
-    // Nếu binding trả object (chưa stringify)
     try {
-      // Responses API (v1/responses)
       if (maybe.output_text) return String(maybe.output_text);
-      if (Array.isArray(maybe.output) && maybe.output.length > 0) {
+      if (Array.isArray(maybe.output)) {
         const parts = [];
         for (const blk of maybe.output) {
           if (Array.isArray(blk.content)) {
@@ -423,30 +382,8 @@ ${subListStr}
         }
         if (parts.length) return parts.join('\n').trim();
       }
-    } catch {/* ignore */}
-
-    // Nếu là chuỗi JSON Responses/Moderation
-    try {
-      const asStr = JSON.stringify(maybe);
-      const obj = JSON.parse(asStr);
-      if (obj?.output_text) return String(obj.output_text);
-      if (Array.isArray(obj?.output)) {
-        const parts = [];
-        for (const blk of obj.output) {
-          if (Array.isArray(blk.content)) {
-            for (const c of blk.content) {
-              if (c?.type === 'output_text' && c?.text?.value) parts.push(String(c.text.value));
-              else if (c?.type === 'text' && c?.text) parts.push(String(c.text));
-            }
-          }
-        }
-        if (parts.length) return parts.join('\n').trim();
-      }
-      // Moderation? → trả string thô để parser tiếp nhận null (và UI báo lỗi)
-      return asStr;
-    } catch {
-      return String(maybe);
-    }
+    } catch {}
+    try { return JSON.stringify(maybe); } catch { return String(maybe); }
   }
 
   // Gọi GPT theo binding per-step; kèm fallback & phát hiện moderation
