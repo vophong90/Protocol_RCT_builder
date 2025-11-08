@@ -1,0 +1,111 @@
+/* public/css/steps/step4.css */
+/* ===== Scoped ONLY to Step 4 ===== */
+#step-4 {
+  /* nothing here; just a scope anchor */
+}
+
+/* ---- Control row (file + 2 nút GPT) ---- */
+#step-4 .control-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px; /* row/column gap */
+}
+
+/* Giãn cách hai mép trái-phải cho hàng điều khiển */
+#step-4 .row-spaced {
+  justify-content: space-between;
+}
+
+/* Cụm nút bên phải luôn canh hàng và co giãn đẹp */
+#step-4 .inline-row {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* File input + tên file */
+#step-4 input[type="file"] {
+  flex: 0 0 auto;
+}
+#step-4 [id^="fname-"] {
+  flex: 1 1 280px;
+  min-width: 200px;
+  max-width: 52ch;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Hai nút GPT cùng chiều cao, nhìn cân đối */
+#step-4 .control-row .btn {
+  height: 44px;              /* đồng bộ chiều cao */
+  padding: .55rem .9rem;     /* khớp global button */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+/* ép cùng bề rộng tối thiểu để “ngang nhau” */
+#step-4 .control-row .btn-primary,
+#step-4 .control-row .btn-secondary {
+  min-width: 220px;
+}
+
+/* ---- Card spacing (chỉ trong Step 4) ---- */
+#step-4 .card + .card {
+  margin-top: 12px;
+}
+
+/* ---- Textarea look & feel ---- */
+#step-4 textarea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  font: 500 15px/1.5 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  color: var(--ink);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: .6rem .75rem;
+  outline: 0;
+  transition: border-color .15s, box-shadow .15s;
+}
+#step-4 textarea:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* Nhãn trong phần nội dung chính */
+#step-4 label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Toolbar ở phần gợi ý/đánh giá (hàng nút nhỏ) */
+#step-4 [id^="sugg-wrap-"] > div,
+#step-4 [id^="eval-wrap-"] > div {
+  gap: 8px;
+}
+#step-4 [id^="sugg-ta-"],
+#step-4 [id^="eval-ta-"] {
+  min-height: 200px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+  #step-4 .row-spaced {
+    justify-content: flex-start;
+  }
+  #step-4 [id^="fname-"] {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+  #step-4 .control-row .btn-primary,
+  #step-4 .control-row .btn-secondary {
+    min-width: 180px; /* hẹp hơn cho màn nhỏ */
+  }
+}
