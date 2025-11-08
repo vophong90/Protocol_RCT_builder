@@ -1,5 +1,5 @@
-// Step 3 – Mở đầu (CaRS: Territory, Niche, Occupy) + References (AMA 11th)
-// Yêu cầu ctx: get/save/toast, callStepGPT(bindingKey,prompt) hoặc callGPT(prompt), extractTextFromPDF(file)
+// Step 3 – Mở đầu (CaRS: Territory, Niche, Occupy)
+// ctx: get/save/toast, callStepGPT(bindingKey,prompt) | callGPT(prompt), extractTextFromPDF(file)
 
 export const id = 3;
 export const title = "Mở đầu (CaRS)";
@@ -19,24 +19,17 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <div class="card-body grid-2">
+    <!-- Ba ô xếp dọc -->
+    <div class="card-body grid-1">
       <label>Territory (Bối cảnh)
         <textarea id="intro-territory" rows="6" placeholder="Nêu bối cảnh, gánh nặng, quy mô vấn đề… Dùng đánh số trích dẫn [1], [2]…"></textarea>
       </label>
       <label>Niche (Khoảng trống)
         <textarea id="intro-niche" rows="6" placeholder="Lỗ hổng tri thức, hạn chế nghiên cứu trước, tranh luận còn tồn tại…"></textarea>
       </label>
-      <label class="full-span">Occupy (Cách nghiên cứu lấp khoảng trống)
+      <label>Occupy (Cách nghiên cứu lấp khoảng trống)
         <textarea id="intro-occupy" rows="6" placeholder="Mục tiêu/giả thuyết, thiết kế, điểm mới, đóng góp kỳ vọng…"></textarea>
       </label>
-    </div>
-
-    <!-- References (AMA 11th) -->
-    <div class="card-body">
-      <label>Tài liệu tham khảo (AMA 11th)
-        <textarea id="intro-refs" rows="6" placeholder="1) Tác giả… Tiêu đề… Tạp chí. Năm;Tập(Số):trang. DOI/PMID/URL&#10;2) …"></textarea>
-      </label>
-      <div class="muted">Gợi ý: mỗi mục một dòng, đánh số 1), 2)…</div>
     </div>
 
     <!-- File + 2 nút GPT -->
@@ -50,7 +43,7 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <!-- Kết quả GPT – GỢI Ý (một khối văn bản có cả TLTK) -->
+    <!-- Kết quả GPT – GỢI Ý: gồm CaRS + TLTK trong cùng khối -->
     <div id="intro-suggest-wrap" class="card-body hidden">
       <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
         <strong>Kết quả GPT – Gợi ý</strong>
@@ -60,11 +53,11 @@ export async function mount(rootEl, ctx) {
           <button id="intro-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="intro-suggest-ta" rows="16" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …&#10;&#10;TLTK:&#10;1) …&#10;2) …"></textarea>
-      <div class="muted">Đầu ra gồm 3 phần CaRS (có [1], [2]…) và khối <strong>TLTK</strong> ngay bên dưới.</div>
+      <textarea id="intro-suggest-ta" rows="18" placeholder="Territory: …&#10;&#10;Niche: …&#10;&#10;Occupy: …&#10;&#10;TLTK:&#10;1) …&#10;2) …"></textarea>
+      <div class="muted">Đầu ra gồm 3 phần CaRS (có [1], [2]…) và khối <strong>TLTK</strong> ngay bên dưới (không có ô TLTK riêng).</div>
     </div>
 
-    <!-- Kết quả GPT – ĐÁNH GIÁ (có TLTK ở cuối trong cùng khối) -->
+    <!-- Kết quả GPT – ĐÁNH GIÁ (có TLTK trong cùng khối) -->
     <div id="intro-eval-wrap" class="card-body hidden">
       <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
         <strong>Kết quả GPT – Đánh giá</strong>
@@ -73,7 +66,7 @@ export async function mount(rootEl, ctx) {
           <button id="intro-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="intro-eval-ta" rows="16" placeholder="[Đánh giá + bản CaRS đề xuất (có trích dẫn) + TLTK …]"></textarea>
+      <textarea id="intro-eval-ta" rows="18" placeholder="[Đánh giá + bản CaRS đề xuất (có trích dẫn) + TLTK …]"></textarea>
     </div>
 
     <div class="card-footer">
@@ -87,7 +80,6 @@ export async function mount(rootEl, ctx) {
   const terrEl   = $('#intro-territory');
   const nicheEl  = $('#intro-niche');
   const occupyEl = $('#intro-occupy');
-  const refsEl   = $('#intro-refs');
 
   const pdfEl    = $('#intro-pdf');
 
@@ -111,7 +103,6 @@ export async function mount(rootEl, ctx) {
   terrEl.value   = intro.territory || '';
   nicheEl.value  = intro.niche || '';
   occupyEl.value = intro.occupy || '';
-  refsEl.value   = ctx.get('introReferences', '') || '';
 
   const oldEval = ctx.get('introEval', '');
   if (oldEval) { eTA.value = String(oldEval); eWrap.classList.remove('hidden'); }
@@ -123,11 +114,10 @@ export async function mount(rootEl, ctx) {
       niche:     (nicheEl.value || '').trim(),
       occupy:    (occupyEl.value || '').trim(),
     });
-    ctx.save('introReferences', (refsEl.value || '').trim());
-    ctx.toast('Đã lưu phần Mở đầu (CaRS) & TLTK');
+    ctx.toast('Đã lưu phần Mở đầu (CaRS).');
   });
 
-  // ===== File UI ===== (không chip; chỉ tooltip)
+  // ===== File UI =====
   pdfEl.addEventListener('change', () => {
     pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
@@ -163,22 +153,22 @@ export async function mount(rootEl, ctx) {
       const prompt = `
 Bạn là trợ lý học thuật soạn phần Mở đầu (CaRS) cho đề cương RCT. Hãy viết 3 phần **Territory – Niche – Occupy** với văn phong bài báo khoa học và **tối thiểu ~2 trang A4** (≥1200 từ cho toàn bộ CaRS).
 
-YÊU CẦU NGHIÊM VỀ NGUỒN:
+YÊU CẦU NGUỒN:
 - Mọi trích dẫn phải **CÓ THẬT**. KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
-- Chỉ liệt kê tối đa 10 tài liệu bạn **chắc chắn ≥90%** là có thật. Ưu tiên nguồn từ PDF đính kèm (nếu có).
-- Mỗi tài liệu phải có: Tác giả chính, năm, tiêu đề, tạp chí/sách, và **DOI hoặc PMID hoặc URL chính thức**.
+- Chỉ liệt kê tối đa 10 tài liệu **chắc chắn ≥90%** là có thật. Ưu tiên nguồn từ PDF đính kèm (nếu có).
+- Mỗi tài liệu phải có: tác giả, năm, tiêu đề, tạp chí/sách và **DOI hoặc PMID hoặc URL chính thức**.
 - Nếu không tìm thấy nguồn phù hợp, viết đúng câu: **"Không tìm thấy nguồn phù hợp để trích dẫn."**
 
-ĐỊNH DẠNG TRẢ LỜI — TRẢ VỀ ĐÚNG **MỘT KHỐI VĂN BẢN** (KHÔNG JSON, KHÔNG giải thích thêm):
+ĐỊNH DẠNG TRẢ LỜI — **MỘT KHỐI VĂN BẢN** (KHÔNG JSON):
 Territory:
 [đoạn dài, 9–14 câu, có chèn [1], [2]…]
-  
+
 Niche:
 [đoạn dài, 7–12 câu, có chèn [x]…]
-  
+
 Occupy:
 [đoạn dài, 9–15 câu, nêu mục tiêu/thiết kế/điểm mới, có chèn [x]…]
-  
+
 TLTK:
 1) Tác giả… (năm). Tiêu đề. Tạp chí… DOI/PMID/URL
 2) …
@@ -208,7 +198,7 @@ ${pdfText || '(không có)'}
       const text = unwrapToText(raw);
       const pretty = String(text || '').trim();
 
-      if (!/^\s*Territory\s*:/i.test(pretty) || !/TLTK\s*:/i.test(pretty)) {
+      if (!/^\s*Territory\s*:/i.test(pretty) || !/TLTK\s*:/i.test(prety)) {
         ctx.toast('GPT không trả về đúng định dạng yêu cầu.');
         console.warn('GPT raw reply (step3 suggest):', raw);
       } else {
@@ -224,27 +214,26 @@ ${pdfText || '(không có)'}
     }
   }
 
-  // Áp dụng nội dung từ ô gợi ý: tách Territory/Niche/Occupy + TLTK
+  // Áp dụng: tách Territory/Niche/Occupy + TLTK, lưu refs ngầm (không có ô riêng)
   sApply.addEventListener('click', () => {
     const { territory, niche, occupy, refs } = splitCarsAndRefs(sTA.value || '');
     if (territory) terrEl.value = territory;
     if (niche)     nicheEl.value = niche;
     if (occupy)    occupyEl.value = occupy;
-    if (refs.length) refsEl.value = refs.join('\n');
+    if (refs.length) ctx.save('introReferences', refs.join('\n'));
 
     ctx.save('intro', {
       territory: (terrEl.value || '').trim(),
       niche:     (nicheEl.value || '').trim(),
       occupy:    (occupyEl.value || '').trim(),
     });
-    ctx.save('introReferences', (refsEl.value || '').trim());
-    ctx.toast('Đã chèn CaRS + TLTK vào các ô.');
+    ctx.toast('Đã chèn CaRS (TLTK được lưu ngầm).');
   });
 
   sCopy.addEventListener('click', () => copyText(sTA.value || ''));
   sHide.addEventListener('click', () => sWrap.classList.add('hidden'));
 
-  // ===== GPT: Đánh giá CaRS (kèm bản đề xuất có TLTK) =====
+  // ===== GPT: Đánh giá (kèm CaRS đề xuất + TLTK trong cùng khối) =====
   evalBtn.addEventListener('click', onEvaluate);
 
   async function onEvaluate() {
@@ -263,22 +252,22 @@ ${pdfText || '(không có)'}
 
       const prompt = `
 Bạn là biên tập viên học thuật. Hãy:
-A) **ĐÁNH GIÁ** CaRS hiện có (gạch đầu dòng ngắn gọn): logic giữa 3 phần, liên hệ PICO/câu hỏi/mục tiêu, mức độ cập nhật bằng chứng, chất lượng trích dẫn.
-B) **VIẾT LẠI CaRS ĐỀ XUẤT** (Territory – Niche – Occupy) theo văn phong học thuật, độ dài mục tiêu toàn khối ≥1200 từ, có chèn trích dẫn [1], [2]… và **TLTK CÓ THẬT** ở cuối.
+A) **ĐÁNH GIÁ** CaRS hiện có (bullet ngắn): logic 3 phần, liên hệ PICO/câu hỏi/mục tiêu, cập nhật bằng chứng, chất lượng trích dẫn.
+B) **VIẾT LẠI CaRS ĐỀ XUẤT** (Territory – Niche – Occupy) ≥1200 từ, có chèn trích dẫn [1], [2]… và **TLTK CÓ THẬT** ở cuối.
 
-NGUYÊN TẮC NGUỒN:
-- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
-- Tối đa 10 nguồn, chắc chắn ≥90% là có thật; ưu tiên trích từ PDF đính kèm.
+NGUỒN:
+- Không bịa DOI/PMID/URL, không bịa tên bài hoặc tác giả.
+- Tối đa 10 nguồn, chắc chắn ≥90% là có thật; ưu tiên PDF đính kèm.
 - Nếu không có nguồn phù hợp, ghi đúng câu: "Không tìm thấy nguồn phù hợp để trích dẫn."
 
-ĐỊNH DẠNG TRẢ LỜI — MỘT KHỐI VĂN BẢN:
+ĐỊNH DẠNG — **MỘT KHỐI VĂN BẢN**:
 Đánh giá:
 - …
 - …
 
 CaRS đề xuất
 Territory:
-[đoạn dài … có [1], [2]…]
+[đoạn dài …]
 
 Niche:
 [đoạn dài …]
