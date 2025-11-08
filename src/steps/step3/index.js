@@ -3,7 +3,7 @@
 
 export const id = 3;
 export const title = "Mở đầu (CaRS)";
-export const subtitle = "Trình bày Territory – Niche – Occupy, kèm trích dẫn theo AMA 11th";
+export const subtitle = "Trình bày Territory – Niche – Occupy";
 export const css = "./public/css/steps/step3.css";
 
 export async function mount(rootEl, ctx) {
@@ -16,15 +16,14 @@ export async function mount(rootEl, ctx) {
       <h3 class="card-title">Mở đầu (CaRS)</h3>
       <div class="card-subtitle">
         Trình bày theo CaRS: <strong>Territory</strong> (bối cảnh), <strong>Niche</strong> (khoảng trống), <strong>Occupy</strong> (cách nghiên cứu lấp khoảng trống).
-        Kết quả GPT sẽ kèm <strong>trích dẫn và danh mục TLTK theo AMA 11th</strong>.
       </div>
     </div>
 
     <div class="card-body grid-2">
-      <label>Territory (Bối cảnh – tầm quan trọng)
+      <label>Territory (Bối cảnh)
         <textarea id="intro-territory" rows="6" placeholder="Nêu bối cảnh, gánh nặng, quy mô vấn đề… Dùng đánh số trích dẫn [1], [2]…"></textarea>
       </label>
-      <label>Niche (Khoảng trống bằng chứng)
+      <label>Niche (Khoảng trống)
         <textarea id="intro-niche" rows="6" placeholder="Lỗ hổng tri thức, hạn chế nghiên cứu trước, tranh luận còn tồn tại…"></textarea>
       </label>
       <label class="full-span">Occupy (Cách nghiên cứu lấp khoảng trống)
