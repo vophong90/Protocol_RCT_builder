@@ -2,6 +2,7 @@
 import { initRouter, goToStep, getCurrentStep } from './router.js';
 import { getState, saveState, setAt } from './state/store.js';
 import { ensureCSS } from './utils/css.js';
+import { aiRun } from './services/ai.js';
 
 const TITLES = [
   "PICO","Câu hỏi nghiên cứu","Mục tiêu","Mở đầu (CaRS)","Tổng quan tài liệu",
@@ -32,6 +33,7 @@ const baseCtx = {
   setAt,
   toast: (msg) => console.log('[toast]', msg),
   goto: goToStep,
+  callStepGPT: aiRun,
 };
 
 // ---- Nav + Title ----
