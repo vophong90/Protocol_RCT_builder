@@ -1,51 +1,20 @@
-// src/state/storage.js
-const KEY = 'rctWizardData';
-let cache = null;
+// Trung tâm state + persist localStorage
+const LS_KEY = 'rctWizardData';
+let state = load();
+export const getState = () => state;
+export const saveState = (patch) => { state = deepMerge(state, patch || {}); persist(); return state; };
+export const setAt = (path, value) => { setDeep(state, path, value); persist(); return state; };
 
-export function loadData() {
-  try {
-    cache = JSON.parse(localStorage.getItem(KEY) || '{}');
-  } catch {
-    cache = {};
-  }
-  return cache;
-}
+function load(){ try{ const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : {}; }catch{ return {}; } }
+function persist(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch{} }
 
-export function getData() {
-  return cache ?? loadData();
-}
-
-export function saveData() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(cache ?? {}));
-  } catch (e) {
-    console.warn('saveData failed', e);
-  }
-}
-
-export function setData(path, value) {
-  const obj = getData();
+function setDeep(obj, path, value){
   const parts = Array.isArray(path) ? path : String(path).split('.');
-  let cur = obj;
-  for (let i = 0; i < parts.length - 1; i++) {
-    const k = parts[i];
-    cur[k] = cur[k] ?? {};
-    cur = cur[k];
-  }
-  cur[parts.at(-1)] = value;
-  cache = obj;
-  saveData();
-  document.dispatchEvent(
-    new CustomEvent('wizard:datachange', { detail: { path, value } })
-  );
+  let cur = obj; for (let i=0;i<parts.length-1;i++){ const k = parts[i]; cur[k] = cur[k] ?? {}; cur = cur[k]; }
+  cur[parts[parts.length-1]] = value;
 }
-
-export function updateData(mutator) {
-  const obj = getData();
-  const next = mutator ? mutator({ ...obj }) : obj;
-  cache = next;
-  saveData();
-  document.dispatchEvent(
-    new CustomEvent('wizard:datachange', { detail: { full: true } })
-  );
+function deepMerge(t, s){
+  if (Array.isArray(s)) return s.slice();
+  if (s && typeof s === 'object'){ const o = { ...(t||{}) }; for (const k of Object.keys(s)){ o[k] = deepMerge(o[k], s[k]); } return o; }
+  return s;
 }
