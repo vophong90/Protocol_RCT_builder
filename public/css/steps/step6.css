@@ -1,92 +1,61 @@
-/* ====== Step 6 (scoped) ====== */
-[data-scope="step6"] #ss { --gap: 12px; }
+/* public/css/steps/step6.css */
+/* Chỉ áp cho Step 6 */
+.step[data-scope="step6"] #ss { --gap: 12px; }
 
-/* Hàng ngang cơ bản (nếu dùng) */
-[data-scope="step6"] #ss .inline-row,
-[data-scope="step6"] #ss .control-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
+/* ==== GRID & SPACING ==== */
+.step[data-scope="step6"] .card-body.grid-3 > *{ margin-top:0 !important; } /* hạ đè rule global */
+.step[data-scope="step6"] #ss .grid-3{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0,1fr));
+  gap:var(--gap);
+  align-items:start;        /* tránh tụt đầu dòng */
+}
+.step[data-scope="step6"] #ss .grid-3 > *{ min-width:0; }
+.step[data-scope="step6"] #ss .full-span{ grid-column:1 / -1; }
+
+/* ==== FORM CONTROLS ==== */
+.step[data-scope="step6"] #ss label{
+  display:flex; flex-direction:column; gap:6px;
+}
+.step[data-scope="step6"] #ss .form-input{
+  width:100%; box-sizing:border-box;
+  font:500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
+  background:#fff; border:1px solid var(--border); border-radius:10px;
+  padding:.6rem .75rem; outline:0;
+}
+.step[data-scope="step6"] #ss input.form-input,
+.step[data-scope="step6"] #ss select.form-input{ height:44px; }   /* đồng bộ chiều cao */
+.step[data-scope="step6"] #ss textarea.form-input{ resize:vertical; }
+.step[data-scope="step6"] #ss .muted{ color:var(--muted); font-size:.92rem; }
+
+/* ==== GPT BUTTON ROW (2 cột, cao bằng nhau) ==== */
+.step[data-scope="step6"] #ss .control-row{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:12px;
+  align-items:stretch;
+}
+.step[data-scope="step6"] #ss .control-row .btn{
+  width:100%;
+  height:52px;                 /* chiều cao cố định */
+  padding:.6rem 1rem;
+  line-height:1.2;
+  white-space:nowrap;          /* không xuống dòng để khỏi cao lệch */
+  overflow:hidden; text-overflow:ellipsis;
 }
 
-/* Lưới 3 cột, các cột bằng nhau */
-[data-scope="step6"] #ss .grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gap);
-  align-items: start;          /* tránh label bị tụt */
-}
-[data-scope="step6"] #ss .grid-3 > * { min-width: 0; }
-[data-scope="step6"] #ss .full-span { grid-column: 1 / -1; }
-
-/* Label & control */
-[data-scope="step6"] #ss .grid-3 > label,
-[data-scope="step6"] #ss label {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;                    /* thoáng hơn một chút */
-}
-
-/* Form input đồng nhất kích thước */
-[data-scope="step6"] #ss .form-input{
-  width: 100%;
-  box-sizing: border-box;
-  font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-  background: #fff; border: 1px solid var(--border); border-radius: 10px;
-  padding: .6rem .75rem; outline: 0;
-}
-[data-scope="step6"] #ss textarea.form-input{ resize: vertical; }
-
-[data-scope="step6"] #ss .muted{ color: var(--muted); font-size: .92rem; }
-
-/* ===== HÀNG NÚT GPT: 2 cột bằng nhau, cùng chiều cao ===== */
-[data-scope="step6"] #ss .card-body.control-row{
-  /* chuyển riêng hàng nút GPT từ flex -> grid 2 cột */
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--gap);
-  align-items: stretch;
-}
-[data-scope="step6"] #ss .card-body.control-row > button{
-  width: 100%;
-}
-
-/* Bơm “base button” cho trường hợp thiếu .btn */
-[data-scope="step6"] #ss button.btn-primary,
-[data-scope="step6"] #ss button.btn-secondary,
-[data-scope="step6"] #ss button.btn-ghost,
-[data-scope="step6"] #ss #ss-apply-method,
-[data-scope="step6"] #ss #ss-copy-sugg,
-[data-scope="step6"] #ss #ss-hide-sugg,
-[data-scope="step6"] #ss #ss-copy-eval,
-[data-scope="step6"] #ss #ss-hide-eval,
-[data-scope="step6"] #ss #ss-calc,
-[data-scope="step6"] #ss #ss-save{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
-  padding: .6rem 1rem;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  font-weight: 600;
-  font-size: .95rem;
-  line-height: 1.2;
-  min-height: 44px;            /* chiều cao chuẩn */
-}
-
-/* Bảng kết quả */
-[data-scope="step6"] #ss table.ss-kv{ width:100%; border-collapse:collapse; }
-[data-scope="step6"] #ss table.ss-kv td{
+/* ==== RESULT TABLE ==== */
+.step[data-scope="step6"] #ss table.ss-kv{ width:100%; border-collapse:collapse; }
+.step[data-scope="step6"] #ss table.ss-kv td{
   border-top:1px solid var(--border);
   padding:.5rem .25rem; vertical-align:top;
 }
-[data-scope="step6"] #ss table.ss-kv tr:first-child td{ border-top:0; }
+.step[data-scope="step6"] #ss table.ss-kv tr:first-child td{ border-top:0; }
 
-/* Responsive */
+/* ==== RESPONSIVE ==== */
 @media (max-width:900px){
-  [data-scope="step6"] #ss .grid-3{ grid-template-columns:1fr; }
-  [data-scope="step6"] #ss .card-body.control-row{ grid-template-columns:1fr; }
+  .step[data-scope="step6"] #ss .grid-3{ grid-template-columns:1fr; }
+}
+@media (max-width:720px){
+  .step[data-scope="step6"] #ss .control-row{ grid-template-columns:1fr; }
 }
