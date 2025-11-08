@@ -127,3 +127,63 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 };
+
+// ---------- STEP 4 ----------
+'step4.suggest': {
+  endpoint: 'https://gpt-api-19xu.onrender.com/gpt.php',
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  bodyBuilder: (prompt) => JSON.stringify({
+    action: 'chat',
+    step: 'step4.suggest',
+    model: 'gpt-4o-mini', // hoặc 'gpt-5' nếu server bạn có quyền
+    prompt
+  }),
+  parse: async (res) => {
+    const txt = await res.text();
+    try {
+      const j = JSON.parse(txt);
+      if (
+        (typeof j?.id === 'string' && /^modr-/i.test(j.id)) ||
+        (typeof j?.model === 'string' && /moderation/i.test(j.model)) ||
+        Array.isArray(j?.results)
+      ) return txt; // để layer trên fallback
+      if (typeof j.output_text === 'string' && j.output_text.trim()) return j.output_text;
+      if (Array.isArray(j.output) && j.output.length) {
+        const first = j.output[0];
+        if (Array.isArray(first?.content)) return first.content.map(c => c?.text || '').join('');
+      }
+      if (j?.choices?.[0]?.message?.content) return j.choices[0].message.content;
+      return txt;
+    } catch { return txt; }
+  },
+},
+'step4.evaluate': {
+  endpoint: 'https://gpt-api-19xu.onrender.com/gpt.php',
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  bodyBuilder: (prompt) => JSON.stringify({
+    action: 'chat',
+    step: 'step4.evaluate',
+    model: 'gpt-4o-mini',
+    prompt
+  }),
+  parse: async (res) => {
+    const txt = await res.text();
+    try {
+      const j = JSON.parse(txt);
+      if (
+        (typeof j?.id === 'string' && /^modr-/i.test(j.id)) ||
+        (typeof j?.model === 'string' && /moderation/i.test(j.model)) ||
+        Array.isArray(j?.results)
+      ) return txt;
+      if (typeof j.output_text === 'string' && j.output_text.trim()) return j.output_text;
+      if (Array.isArray(j.output) && j.output.length) {
+        const first = j.output[0];
+        if (Array.isArray(first?.content)) return first.content.map(c => c?.text || '').join('');
+      }
+      if (j?.choices?.[0]?.message?.content) return j.choices[0].message.content;
+      return txt;
+    } catch { return txt; }
+  },
+},
