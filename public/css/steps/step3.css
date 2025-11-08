@@ -1,46 +1,41 @@
 /* public/css/steps/step3.css */
-/* Scope riêng cho step 3 để không ảnh hưởng step khác */
+/* Scope riêng cho step 3 */
 [data-scope="step3"] .hidden{ display:none !important; }
 
-/* Lưới 2 cột riêng + full-span dùng class có sẵn */
-[data-scope="step3"] .grid-2{
+/* Ba ô CaRS xếp dọc (stack) */
+[data-scope="step3"] .grid-1{
   display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  grid-template-columns: 1fr;
   gap:12px 16px;
   align-items:start;
 }
-[data-scope="step3"] .grid-2 > *{ min-width:0; }
-[data-scope="step3"] .full-span{ grid-column:1 / -1; }
 
 /* Textarea & form look */
 [data-scope="step3"] textarea{
-  resize:vertical;
-  min-height:112px;
-  border-radius:10px;
+  resize: vertical;
+  min-height: 112px;
+  border-radius: 10px;
 }
 
 /* Hàng nút GPT: 2 cột bằng nhau, tự xuống hàng màn nhỏ */
 [data-scope="step3"] .btn-row{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:12px;
-  align-items:stretch;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
 }
 [data-scope="step3"] .btn-row .btn{
-  width:100%;
-  justify-content:center;
-  min-height:44px;
-  padding:.6rem .9rem;
-  line-height:1.2;
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+  padding: .6rem .9rem;
+  line-height: 1.2;
 }
 
 /* Khoảng cách tổng thể thoáng hơn */
-[data-scope="step3"] .card-body + .card-body{ margin-top:8px; }
+[data-scope="step3"] .card-body + .card-body{ margin-top: 8px; }
 
 /* Responsive */
-@media (max-width:900px){
-  [data-scope="step3"] .grid-2{ grid-template-columns:1fr; }
-}
-@media (max-width:720px){
-  [data-scope="step3"] .btn-row{ grid-template-columns:1fr; }
+@media (max-width: 720px){
+  [data-scope="step3"] .btn-row{ grid-template-columns: 1fr; }
 }
