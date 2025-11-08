@@ -126,7 +126,7 @@ export const aiBindings = {
     bodyBuilder: (prompt) => buildJsonBody(prompt, { step: 'step3.evaluate' }),
     parse: parseResponsesAPI,
   },
-};
+},
 
 // ---------- STEP 4 ----------
 'step4.suggest': {
