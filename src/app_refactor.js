@@ -1,8 +1,9 @@
 import { initRouter, goToStep, getCurrentStep } from './router_refactor.js';
 import { getState, saveState, setAt } from './state/store.js';
 import { ensureCSS } from './utils/css.js';
+import { askGPT } from './services/gpt.js';
 
-// Import demo steps (0, 5, 15) — sau sẽ thay bằng bước thật
+// Import demo steps (0, 5, 15)
 import * as Step0 from './steps/step0/index.js';
 import * as Step5 from './steps/step5/index.js';
 import * as Step15 from './steps/step15/index.js';
@@ -27,6 +28,29 @@ function setTitle(i){
   title.textContent = `Bước ${i+1} – ${s.title}`;
 }
 
+// ---- Adapter cho ctx.get / ctx.save / ctx.callGPT ----
+function ctxGet(key, fallback){
+  const s = getState();
+  if (!key) return s;
+  return (s[key] !== undefined) ? s[key] : fallback;
+}
+function ctxSave(key, value){
+  if (typeof key === 'string') {
+    // Merge đơn giản cấp 1 (đúng với cách bạn dùng: 'design', 'interventions', ...)
+    const next = {};
+    next[key] = value;
+    saveState(next);
+  } else if (key && typeof key === 'object') {
+    // backup: cho phép save(patchObject)
+    saveState(key);
+  } else {
+    console.warn('[ctx.save] Sai tham số:', key);
+  }
+  return getState();
+}
+const ctxToast = (msg) => console.log('[toast]', msg);
+const ctxCallGPT = (prompt) => askGPT(prompt);
+
 async function mountStep(i){
   const s = STEPS[i];
   if (!s) return;
@@ -34,13 +58,23 @@ async function mountStep(i){
   const outlet = document.getElementById(`step-${i}-body`);
   if (!outlet) return;
   outlet.innerHTML = '';
+
   const ctx = {
+    // state helpers gốc
     state: getState(),
-    save: saveState,
+    save: saveState,  // save patch thô (nếu step cần)
     setAt,
+
+    // adapter tương thích file Step 5 cũ của bạn
+    get: ctxGet,
+    save: ctxSave,        // override: cho phép save('design', {...})
+    callGPT: ctxCallGPT,
+    toast: ctxToast,
+
+    // điều hướng
     goto: goToStep,
-    toast: (msg) => console.log('[toast]', msg),
   };
+
   await s.mount(outlet, ctx);
 }
 
