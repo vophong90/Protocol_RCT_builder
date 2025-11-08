@@ -1,22 +1,16 @@
 /* public/css/steps/step6.css */
-/* Chỉ áp cho Step 6 */
-.step[data-scope="step6"] #ss { --gap: 12px; }
+.step[data-scope="step6"] .card-body.grid-3 > *{ margin-top:0 !important; }
 
-/* ==== GRID & SPACING ==== */
-.step[data-scope="step6"] .card-body.grid-3 > *{ margin-top:0 !important; } /* hạ đè rule global */
 .step[data-scope="step6"] #ss .grid-3{
   display:grid;
   grid-template-columns:repeat(3, minmax(0,1fr));
-  gap:var(--gap);
-  align-items:start;        /* tránh tụt đầu dòng */
+  gap:12px;
+  align-items:start;
 }
 .step[data-scope="step6"] #ss .grid-3 > *{ min-width:0; }
 .step[data-scope="step6"] #ss .full-span{ grid-column:1 / -1; }
 
-/* ==== FORM CONTROLS ==== */
-.step[data-scope="step6"] #ss label{
-  display:flex; flex-direction:column; gap:6px;
-}
+.step[data-scope="step6"] #ss label{ display:flex; flex-direction:column; gap:6px; }
 .step[data-scope="step6"] #ss .form-input{
   width:100%; box-sizing:border-box;
   font:500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
@@ -24,27 +18,27 @@
   padding:.6rem .75rem; outline:0;
 }
 .step[data-scope="step6"] #ss input.form-input,
-.step[data-scope="step6"] #ss select.form-input{ height:44px; }   /* đồng bộ chiều cao */
+.step[data-scope="step6"] #ss select.form-input{ height:44px; }
 .step[data-scope="step6"] #ss textarea.form-input{ resize:vertical; }
 .step[data-scope="step6"] #ss .muted{ color:var(--muted); font-size:.92rem; }
 
-/* ==== GPT BUTTON ROW (2 cột, cao bằng nhau) ==== */
+/* Hàng nút GPT: 2 cột, cao bằng nhau */
 .step[data-scope="step6"] #ss .control-row{
-  display:grid;
+  display:grid !important;
   grid-template-columns:repeat(2, minmax(0,1fr));
   gap:12px;
-  align-items:stretch;
+  align-items:stretch !important;
 }
 .step[data-scope="step6"] #ss .control-row .btn{
   width:100%;
-  height:52px;                 /* chiều cao cố định */
+  min-height:52px;
   padding:.6rem 1rem;
   line-height:1.2;
-  white-space:nowrap;          /* không xuống dòng để khỏi cao lệch */
+  white-space:nowrap;
   overflow:hidden; text-overflow:ellipsis;
 }
 
-/* ==== RESULT TABLE ==== */
+/* Bảng kết quả */
 .step[data-scope="step6"] #ss table.ss-kv{ width:100%; border-collapse:collapse; }
 .step[data-scope="step6"] #ss table.ss-kv td{
   border-top:1px solid var(--border);
@@ -52,7 +46,6 @@
 }
 .step[data-scope="step6"] #ss table.ss-kv tr:first-child td{ border-top:0; }
 
-/* ==== RESPONSIVE ==== */
 @media (max-width:900px){
   .step[data-scope="step6"] #ss .grid-3{ grid-template-columns:1fr; }
 }
