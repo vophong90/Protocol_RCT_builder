@@ -73,26 +73,6 @@ export async function mount(rootEl, ctx) {
     <div class="card-footer">
       <button id="pico-save" class="btn btn-primary" type="button">Lưu</button>
     </div>
-
-    <!-- Scoped style: biến nút Choose file -> kiểu btn-secondary chỉ cho Step 0 -->
-    <style>
-      [data-scope="step0"] input[type="file"]{
-        height:42px; /* đồng bộ với nút */
-      }
-      [data-scope="step0"] input[type="file"]::file-selector-button{
-        background:#fff !important;
-        color:#111827 !important;
-        border:1px solid var(--border) !important;
-        border-radius:10px !important;
-        padding:.6rem 1rem !important;
-        margin-right:.75rem !important;
-        font:600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system !important;
-        cursor:pointer !important;
-      }
-      [data-scope="step0"] input[type="file"]:hover::file-selector-button{
-        background:#f9fafb !important;
-      }
-    </style>
   `.trim();
 
   // ====== Bind DOM (ưu tiên query trong rootEl) ======
