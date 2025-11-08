@@ -138,4 +138,30 @@ export const aiBindings = {
     bodyBuilder: (prompt) => buildJsonBody(prompt, { step: 'step4.evaluate' }),
     parse: parseResponsesAPI,
   },
+
+  // ---------- STEP 5 ----------
+'step5.suggest': {
+  endpoint: ENDPOINT,                     // 'https://gpt-api-19xu.onrender.com/gpt.php'
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  // step5 chỉ cần Markdown văn bản → không ép JSON
+  bodyBuilder: (prompt) =>
+    buildJsonBody(prompt, {
+      step: 'step5.suggest',
+      response_format: 'text'
+    }),
+  parse: parseResponsesAPI,               // dùng chung parser đã có ở trên
+},
+
+'step5.evaluate': {
+  endpoint: ENDPOINT,
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  bodyBuilder: (prompt) =>
+    buildJsonBody(prompt, {
+      step: 'step5.evaluate',
+      response_format: 'text'
+    }),
+  parse: parseResponsesAPI,
+},
 };
