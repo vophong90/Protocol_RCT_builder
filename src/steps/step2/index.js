@@ -1,20 +1,15 @@
-// src/steps/step2/index.js
-// Step 2 – Mục tiêu nghiên cứu (module hoá, per-step GPT binding)
-
-export const id = 2;
-export const title = "Mục tiêu nghiên cứu";
-export const subtitle = "Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.";
-export const css = "./public/css/steps/step2.css";
+// Step 2 – Mục tiêu nghiên cứu (main + subs)
+// Cần ctx: get/save/toast, extractTextFromPDF(file)
+// và binding GPT theo step: ctx.callStepGPT(key, prompt) (có fallback sang ctx.callGPT)
 
 export async function mount(rootEl, ctx) {
-  // Scope CSS riêng cho step 2
-  rootEl.closest('.step')?.setAttribute('data-scope', 'step2');
-
-  // ---- UI ----
+  // rootEl CHÍNH LÀ .card → không lồng .card mới
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Mục tiêu nghiên cứu</h3>
-      <div class="card-subtitle">Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.</div>
+      <div class="card-subtitle">
+        Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.
+      </div>
     </div>
 
     <!-- Mục tiêu chính -->
@@ -27,43 +22,43 @@ export async function mount(rootEl, ctx) {
     <!-- Mục tiêu phụ -->
     <div class="card-body">
       <div style="font-weight:600;margin-bottom:.5rem">Mục tiêu phụ</div>
-      <div class="inline-row" style="gap:8px">
+      <div class="control-row" style="gap:8px">
         <input id="obj-sub-input" type="text" placeholder="Nhập mục tiêu phụ..." />
         <button id="obj-sub-add" class="btn btn-secondary" type="button">Thêm</button>
       </div>
-      <div id="obj-sub-list" class="sub-list" style="margin-top:.5rem"></div>
+      <div id="obj-sub-list" style="margin-top:.5rem"></div>
     </div>
 
     <!-- File + 2 nút GPT -->
-    <div class="card-body">
-      <div class="inline-row" style="gap:12px; flex-wrap:wrap;">
-        <input id="obj-pdf" type="file" accept="application/pdf" />
-        <span id="obj-fname" class="muted">Chưa chọn tệp PDF</span>
-      </div>
-      <div class="btn-row" style="margin-top:8px;">
-        <button id="obj-gpt"  class="btn btn-primary" type="button">GPT gợi ý mục tiêu</button>
-        <button id="obj-eval" class="btn btn-primary" type="button">GPT đánh giá mục tiêu</button>
+    <div class="card-body control-row row-spaced">
+      <input id="obj-pdf" type="file" accept="application/pdf" />
+      <span id="obj-fname" class="muted">Chưa chọn tệp PDF</span>
+
+      <div class="inline-row" style="gap:8px">
+        <button id="obj-gpt"  class="btn btn-primary"  type="button">GPT gợi ý mục tiêu</button>
+        <button id="obj-eval" class="btn btn-secondary" type="button">GPT đánh giá mục tiêu</button>
       </div>
     </div>
 
     <!-- Kết quả GPT – GỢI Ý -->
-    <div id="obj-suggest-wrap" class="card-body hidden">
-      <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
+    <div id="obj-suggest-wrap" class="card-body" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
         <strong>Kết quả GPT – Gợi ý</strong>
-        <div class="inline-row" style="gap:8px; flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="obj-apply" class="btn btn-primary" type="button">Chèn vào ô</button>
           <button id="obj-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
           <button id="obj-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="obj-suggest-ta" rows="8" placeholder="Mục tiêu chính: …&#10;- Mục tiêu phụ 1&#10;- Mục tiêu phụ 2"></textarea>
+      <textarea id="obj-suggest-ta" rows="8" placeholder='{"main":"...","subs":["...","..."]}'></textarea>
+      <div class="muted" style="margin-top:.35rem">Nếu GPT trả Markdown có ```json hoặc dấu gạch đầu dòng, ứng dụng vẫn tự gỡ và parse JSON.</div>
     </div>
 
     <!-- Kết quả GPT – ĐÁNH GIÁ -->
-    <div id="obj-eval-wrap" class="card-body hidden">
-      <div class="inline-row" style="justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px">
+    <div id="obj-eval-wrap" class="card-body" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
         <strong>Kết quả GPT – Đánh giá</strong>
-        <div class="inline-row" style="gap:8px; flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button id="obj-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
           <button id="obj-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
@@ -77,31 +72,29 @@ export async function mount(rootEl, ctx) {
   `.trim();
 
   // ===== Elements =====
-  const $ = (sel) => rootEl.querySelector(sel);
+  const mainEl     = rootEl.querySelector('#obj-main');
 
-  const mainEl     = $('#obj-main');
+  const subInputEl = rootEl.querySelector('#obj-sub-input');
+  const subAddBtn  = rootEl.querySelector('#obj-sub-add');
+  const subListEl  = rootEl.querySelector('#obj-sub-list');
 
-  const subInputEl = $('#obj-sub-input');
-  const subAddBtn  = $('#obj-sub-add');
-  const subListEl  = $('#obj-sub-list');
+  const pdfEl      = rootEl.querySelector('#obj-pdf');
+  const fnameChip  = rootEl.querySelector('#obj-fname');
 
-  const pdfEl      = $('#obj-pdf');
-  const fnameChip  = $('#obj-fname');
+  const saveBtn    = rootEl.querySelector('#obj-save');
+  const gptBtn     = rootEl.querySelector('#obj-gpt');
+  const evalBtn    = rootEl.querySelector('#obj-eval');
 
-  const saveBtn    = $('#obj-save');
-  const gptBtn     = $('#obj-gpt');
-  const evalBtn    = $('#obj-eval');
+  const sWrap  = rootEl.querySelector('#obj-suggest-wrap');
+  const sTA    = rootEl.querySelector('#obj-suggest-ta');
+  const sApply = rootEl.querySelector('#obj-apply');
+  const sCopy  = rootEl.querySelector('#obj-copy-suggest');
+  const sHide  = rootEl.querySelector('#obj-hide-suggest');
 
-  const sWrap  = $('#obj-suggest-wrap');
-  const sTA    = $('#obj-suggest-ta');
-  const sApply = $('#obj-apply');
-  const sCopy  = $('#obj-copy-suggest');
-  const sHide  = $('#obj-hide-suggest');
-
-  const eWrap  = $('#obj-eval-wrap');
-  const eTA    = $('#obj-eval-ta');
-  const eCopy  = $('#obj-copy-eval');
-  const eHide  = $('#obj-hide-eval');
+  const eWrap  = rootEl.querySelector('#obj-eval-wrap');
+  const eTA    = rootEl.querySelector('#obj-eval-ta');
+  const eCopy  = rootEl.querySelector('#obj-copy-eval');
+  const eHide  = rootEl.querySelector('#obj-hide-eval');
 
   // ===== Load state =====
   mainEl.value = ctx.get('mainObjective', '') || '';
@@ -109,21 +102,16 @@ export async function mount(rootEl, ctx) {
   renderSubList();
 
   const oldEval = ctx.get('objectivesEval', '');
-  if (oldEval) { eTA.value = String(oldEval); eWrap.classList.remove('hidden'); }
+  if (oldEval) { eTA.value = String(oldEval); eWrap.style.display = ''; }
 
   // ===== Sub objectives =====
-  subAddBtn.addEventListener('click', addSubObjective);
-  subInputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); addSubObjective(); }
-  });
-
-  function addSubObjective() {
+  subAddBtn.addEventListener('click', () => {
     const v = (subInputEl.value || '').trim();
     if (!v) return;
     subObjectives.push(v);
     subInputEl.value = '';
     renderSubList();
-  }
+  });
 
   function renderSubList() {
     subListEl.innerHTML = '';
@@ -133,14 +121,19 @@ export async function mount(rootEl, ctx) {
     }
     subObjectives.forEach((txt, idx) => {
       const row = document.createElement('div');
-      row.className = 'sub-item';
+      row.style.display = 'flex';
+      row.style.justifyContent = 'space-between';
+      row.style.alignItems = 'center';
+      row.style.gap = '12px';
+      row.style.padding = '8px 0';
+      row.style.borderBottom = '1px dashed var(--border)';
 
       const t = document.createElement('div');
-      t.className = 'sub-item-text';
       t.textContent = txt;
 
       const controls = document.createElement('div');
-      controls.className = 'sub-item-ctrls';
+      controls.style.display = 'flex';
+      controls.style.gap = '8px';
 
       const up = document.createElement('button');
       up.className = 'btn btn-ghost';
@@ -187,7 +180,7 @@ export async function mount(rootEl, ctx) {
 
   async function onSuggest() {
     try {
-      toggleBusy(gptBtn, true, 'GPT gợi ý mục tiêu');
+      toggleBusy(gptBtn, true, 'Đang gợi ý...');
       const pico = ctx.get('pico', {}) || {};
       const rq   = ctx.get('researchQuestion', '') || '';
 
@@ -195,9 +188,7 @@ export async function mount(rootEl, ctx) {
       const f = pdfEl?.files?.[0];
       if (f) {
         try {
-          pdfText = typeof ctx.extractTextFromPDF === 'function'
-            ? await ctx.extractTextFromPDF(f)
-            : await fallbackExtractTextFromPDF(f);
+          pdfText = await ctx.extractTextFromPDF(f);
           if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
         } catch (e) {
           console.warn('PDF read error:', e);
@@ -209,7 +200,7 @@ export async function mount(rootEl, ctx) {
 Bạn là trợ lý xây dựng đề cương RCT. Dựa trên PICO, câu hỏi nghiên cứu và (nếu có) tài liệu PDF,
 hãy đề xuất MỘT mục tiêu chính và 2–5 mục tiêu phụ.
 
-YÊU CẦU TRẢ VỀ JSON HỢP LỆ:
+CHỈ TRẢ VỀ ĐÚNG 1 JSON HỢP LỆ, KHÔNG THÊM BẤT KỲ KÝ TỰ NÀO TRƯỚC/SAU, KHÔNG DÙNG \`\`\`json\`\`\`, KHÔNG BULLET:
 {"main":"...","subs":["...","..."]}
 
 PICO:
@@ -236,7 +227,7 @@ ${pdfText || '(không có)'}
         if (parsed.main) lines.push('Mục tiêu chính: ' + parsed.main);
         (parsed.subs || []).forEach(x => lines.push('- ' + x));
         sTA.value = lines.join('\n');
-        sWrap.classList.remove('hidden');
+        sWrap.style.display = '';
         ctx.toast('Đã nhận gợi ý từ GPT.');
       }
     } catch (e) {
@@ -259,7 +250,7 @@ ${pdfText || '(không có)'}
     ctx.toast('Đã chèn gợi ý vào các ô.');
   });
   sCopy.addEventListener('click', () => copyText(sTA.value || ''));
-  sHide.addEventListener('click', () => sWrap.classList.add('hidden'));
+  sHide.addEventListener('click', () => (sWrap.style.display = 'none'));
 
   // ===== GPT Evaluate =====
   evalBtn.addEventListener('click', onEvaluate);
@@ -270,7 +261,7 @@ ${pdfText || '(không có)'}
     if (!main && subs.length === 0) { ctx.toast('Chưa có mục tiêu để đánh giá.'); return; }
 
     try {
-      toggleBusy(evalBtn, true, 'GPT đánh giá mục tiêu');
+      toggleBusy(evalBtn, true, 'Đang đánh giá...');
       const pico = ctx.get('pico', {}) || {};
       const rq   = ctx.get('researchQuestion', '') || '';
 
@@ -282,7 +273,7 @@ Mục tiêu chính:
 ${main || '(chưa có)'}
 
 Mục tiêu phụ:
-${subs.length ? subs.map((s,i)=> (i+1)+'. '+s).join('\\n') : '(chưa có)'}
+${subs.length ? subs.map((s,i)=> (i+1)+'. '+s).join('\n') : '(chưa có)'}
 
 Tham chiếu PICO:
 P: ${pico.p || '(chưa có)'}
@@ -297,7 +288,7 @@ ${rq || '(chưa có)'}
       const raw = await callAI('step2.evaluate', prompt, ctx);
       const text = String(raw || '').trim();
       eTA.value = text;
-      eWrap.classList.remove('hidden');
+      eWrap.style.display = '';
       ctx.save('objectivesEval', eTA.value);
       ctx.toast('Đã nhận đánh giá từ GPT.');
     } catch (e) {
@@ -309,33 +300,64 @@ ${rq || '(chưa có)'}
   }
 
   eCopy.addEventListener('click', () => copyText(eTA.value || ''));
-  eHide.addEventListener('click', () => eWrap.classList.add('hidden'));
+  eHide.addEventListener('click', () => (eWrap.style.display = 'none'));
 
   // ===== Helpers =====
+
+  // Parser “chống đạn”: gỡ ```json và gạch đầu dòng rồi parse JSON
   function parseObjectives(text) {
-    try {
-      const j = JSON.parse(String(text));
-      const main = String(j?.main || '').trim();
-      const subs = Array.isArray(j?.subs) ? j.subs.map(s => String(s || '').trim()).filter(Boolean) : [];
-      if (!main && subs.length === 0) return null;
-      return { main, subs };
-    } catch {
-      // fallback: tách theo dòng, nhận "Mục tiêu chính:" hoặc dòng đầu là chính
-      const L = String(text || '')
-        .split(/\r?\n/)
-        .map(s => s.replace(/^\s*(?:\d+[.)]|[-*•])\s*/u, '').trim())
-        .filter(Boolean);
-      if (L.length === 0) return null;
-      let main = '';
-      const subs = [];
-      for (let i = 0; i < L.length; i++) {
-        const ln = L[i];
-        const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/iu);
-        if (m) { main = m[1].trim(); continue; }
-        if (!main) main = ln; else subs.push(ln);
-      }
-      return { main, subs };
+    const s = String(text || '').trim();
+    if (!s) return null;
+
+    const jsonCandidate = extractJsonCandidate(s);
+
+    if (jsonCandidate) {
+      try {
+        const j = JSON.parse(jsonCandidate);
+        const main = String(j?.main || '').trim();
+        const subs = Array.isArray(j?.subs) ? j.subs.map(x => String(x || '').trim()).filter(Boolean) : [];
+        if (main || subs.length) return { main, subs };
+      } catch { /* tiếp tục fallback */ }
     }
+
+    // Fallback: tách theo dòng “tự do”
+    const L = s
+      .split(/\r?\n/)
+      .map(line => line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/u, '').trim())
+      .filter(Boolean);
+
+    if (L.length === 0) return null;
+
+    let main = '';
+    const subs = [];
+    for (let i = 0; i < L.length; i++) {
+      const ln = L[i];
+      const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/iu);
+      if (m) { main = m[1].trim(); continue; }
+      if (!main) main = ln; else subs.push(ln);
+    }
+    return { main, subs };
+  }
+
+  // Lấy phần JSON dù bị bọc ```json hoặc có bullet ở đầu dòng
+  function extractJsonCandidate(s) {
+    const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced) return stripBullets(fenced[1]);
+    const i1 = s.indexOf('{');
+    const i2 = s.lastIndexOf('}');
+    if (i1 >= 0 && i2 > i1) {
+      const raw = s.slice(i1, i2 + 1);
+      return stripBullets(raw);
+    }
+    return '';
+  }
+
+  function stripBullets(raw) {
+    return raw
+      .split(/\r?\n/)
+      .map(line => line.replace(/^\s*[-*•]\s?/, ''))
+      .join('\n')
+      .trim();
   }
 
   function copyText(t) {
@@ -349,30 +371,25 @@ ${rq || '(chưa có)'}
     else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
   }
 
-  // Gọi GPT theo kiến trúc per-step binding, fallback qua ctx.callGPT nếu có
+  // Gọi GPT theo binding từng step; nếu server trả moderation JSON thì fallback callGPT
   async function callAI(bindingKey, prompt, ctx_) {
     if (typeof ctx_.callStepGPT === 'function') {
-      return ctx_.callStepGPT(bindingKey, prompt);
+      try {
+        const r = await ctx_.callStepGPT(bindingKey, prompt);
+        const str = String(r ?? '');
+        const looksModeration =
+          /^\s*\{/.test(str) &&
+          (/"id"\s*:\s*"modr-/i.test(str) || /"model"\s*:\s*".*moderation/i.test(str) || /"results"\s*:\s*\[/i.test(str));
+        if (!looksModeration) return str;
+        console.warn('[step2] Backend trả moderation; fallback callGPT.', str);
+        if (typeof ctx_.callGPT === 'function') return await ctx_.callGPT(prompt);
+        throw new Error('Moderation response & no fallback.');
+      } catch (e) {
+        if (typeof ctx_.callGPT === 'function') return await ctx_.callGPT(prompt);
+        throw e;
+      }
     }
-    if (typeof ctx_.callGPT === 'function') {
-      return ctx_.callGPT(prompt);
-    }
-    throw new Error('Chưa cấu hình GPT binding cho step 2');
-  }
-
-  // Fallback đọc PDF bằng pdfjs nếu ctx chưa cung cấp
-  async function fallbackExtractTextFromPDF(file, maxPages = 4) {
-    const pdfjs = (globalThis.pdfjsLib || window.pdfjsLib);
-    if (!pdfjs) throw new Error('pdfjsLib chưa được nạp');
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjs.getDocument({ data: buf }).promise;
-    const n = Math.min(pdf.numPages, maxPages);
-    let out = '';
-    for (let i = 1; i <= n; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      out += content.items.map(it => it.str).join(' ') + '\n';
-    }
-    return out.trim();
+    if (typeof ctx_.callGPT === 'function') return await ctx_.callGPT(prompt);
+    throw new Error('Chưa cấu hình GPT cho step2.');
   }
 }
