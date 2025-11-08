@@ -4,7 +4,7 @@
 export const id = 5;
 export const title = "Thiết kế nghiên cứu";
 export const subtitle = "";
-export const css = "./public/css/steps/step5.css"; // nhớ tạo file CSS theo bước trước
+export const css = "./public/css/steps/step5.css"; // nhớ tạo/chỉnh file CSS (ở dưới)
 
 export async function mount(rootEl, ctx) {
   // Gắn scope để CSS chỉ áp cho step này
@@ -27,8 +27,7 @@ export async function mount(rootEl, ctx) {
           <span class="pill" id="sum-blind">Blinding: —</span>
           <span class="pill" id="sum-alloc">Tỷ lệ: —</span>
           <span class="pill" id="sum-arms">Số nhánh: —</span>
-        </div>
-      </div>
+      </div></div>
 
       <!-- Tham số chính -->
       <div class="card-body grid-2">
@@ -70,14 +69,21 @@ export async function mount(rootEl, ctx) {
         </div>
         <div id="dsg-armnames" class="grid-2" style="margin-top:.5rem"></div>
       </div>
-      
-      <!-- Nút GPT -->
+
+      <!-- Nút GPT (2 nút cùng kích thước) -->
       <div class="card-body btn-row">
         <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
         <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
       </div>
 
-      <!-- Kết quả GPT – Gợi ý -->
+      <!-- Mô tả do người dùng soạn (ĐƯA LÊN TRƯỚC) -->
+      <div class="card-body">
+        <label>Mô tả thiết kế (tóm tắt)
+          <textarea id="dsg-desc" class="form-input" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
+        </label>
+      </div>
+
+      <!-- Kết quả GPT – Gợi ý (ĐỨNG SAU MÔ TẢ) -->
       <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Gợi ý</strong>
@@ -94,14 +100,7 @@ export async function mount(rootEl, ctx) {
         </div>
       </div>
 
-      <!-- Mô tả do người dùng soạn -->
-      <div class="card-body">
-        <label>Mô tả thiết kế (tóm tắt)
-          <textarea id="dsg-desc" class="form-input" rows="7" placeholder="Ví dụ: RCT song song, đôi mù, phân bổ 1:1 giữa nhóm can thiệp và nhóm chứng; thời gian theo dõi …"></textarea>
-        </label>
-      </div>
-
-      <!-- Kết quả GPT – Đánh giá -->
+      <!-- Kết quả GPT – Đánh giá (ĐỨNG SAU GỢI Ý) -->
       <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Đánh giá</strong>
@@ -248,9 +247,8 @@ export async function mount(rootEl, ctx) {
       if (!md) {
         ctx.toast('GPT không trả về gợi ý.');
       } else {
-        suggBox.classList.remove('hidden');
         sTA.value = md;
-
+        suggBox.classList.remove('hidden');
         applyRep.onclick = () => {
           descEl.value = sTA.value || '';
           const cur = ctx.get('design', {}) || {};
@@ -297,8 +295,8 @@ export async function mount(rootEl, ctx) {
       if (!md) {
         ctx.toast('GPT không trả về đánh giá.');
       } else {
-        evalBox.classList.remove('hidden');
         eTA.value = md;
+        evalBox.classList.remove('hidden');
         const cur = ctx.get('design', {}) || {};
         ctx.save('design', {
           ...cur,
@@ -342,7 +340,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu thiết kế & tên nhánh');
   }
 
-  // ------- Helpers -------
+  // ------- Helpers (không đổi) -------
   function renderArmInputs(n, names, opts = {}) {
     const keepExisting = !opts.force;
     const current = keepExisting ? readArmNames() : [];
