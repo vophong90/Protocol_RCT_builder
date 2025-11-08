@@ -1,6 +1,5 @@
 /* ===========================
-   theme.css
-   Khung bố cục + điều hướng
+   theme.css – Khung bố cục + điều hướng
    =========================== */
 
 :root{
@@ -81,27 +80,23 @@ nav{ overflow:auto; padding:.5rem 0 1rem }
 .tab.active{ background:#eefaf2; border-left-color:var(--brand); }
 
 /* ===== Main ===== */
-main{ background:var(--bg); }
+main{
+  background:var(--bg);
+  padding:12px; /* để có khoảng cách khi card mở rộng */
+}
 
-/* Topbar cố định và trong suốt nhẹ */
+/* Topbar cố định, mọi thứ dồn trái */
 .topbar{
   position:sticky; top:0; z-index:20;
   background:rgba(255,255,255,.8);
   backdrop-filter:saturate(180%) blur(10px);
   padding:.6rem 1rem;
-  display:flex; align-items:center; justify-content:space-between;
+  display:flex; align-items:center; justify-content:flex-start;
+  gap:.75rem;
   border-bottom:1px solid var(--border);
 }
 .topbar .title{ font-weight:700 }
-
-/* Badges */
-.pill{
-  display:inline-flex; align-items:center; gap:.5rem;
-  padding:.2rem .6rem; background:#fff; border:1px solid var(--border); border-radius:999px
-}
-.brand-dot{
-  width:.5rem; height:.5rem; border-radius:999px; background:var(--brand); display:inline-block;
-}
+.topbar .actions{ display:flex; align-items:center; gap:.5rem; }
 
 /* ===== Outlets ===== */
 .step{ display:none; }
