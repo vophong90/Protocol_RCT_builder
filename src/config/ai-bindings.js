@@ -164,4 +164,34 @@ export const aiBindings = {
     }),
   parse: parseResponsesAPI,
 },
+
+  // ---------- STEP 6 ----------
+  'step6.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // gợi ý công thức/logic, trả Markdown
+    bodyBuilder: (prompt) => JSON.stringify({
+      action: 'chat',
+      step: 'step6.suggest',
+      model: DEFAULT_MODEL,       // 'gpt-4o-mini' hoặc 'gpt-5' nếu server có quyền
+      prompt
+    }),
+    parse: parseResponsesAPI,     // đã định nghĩa phía trên file
+  },
+
+  'step6.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // đánh giá giả định, trả Markdown
+    bodyBuilder: (prompt) => JSON.stringify({
+      action: 'chat',
+      step: 'step6.evaluate',
+      model: DEFAULT_MODEL,
+      prompt
+    }),
+    parse: parseResponsesAPI,
+  },
+
 };
