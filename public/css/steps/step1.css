@@ -1,0 +1,42 @@
+/* public/css/steps/step1.css */
+/* Scope riêng cho step 1 để không ảnh hưởng step khác */
+[data-scope="step1"] .hidden{ display:none !important; }
+
+/* Khối điều khiển ngang (file + chip tên file) */
+[data-scope="step1"] .inline-row{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+/* Textarea mặc định */
+[data-scope="step1"] textarea{
+  resize:vertical;
+  min-height:112px;
+  border-radius:10px;
+}
+
+/* Hàng nút GPT: 2 cột bằng nhau, tự xuống hàng màn nhỏ */
+[data-scope="step1"] .btn-row{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:12px;
+  align-items:stretch;
+  margin-top:6px;
+}
+[data-scope="step1"] .btn-row .btn{
+  width:100%;
+  justify-content:center;
+  min-height:44px;
+  padding:.6rem .9rem;
+  line-height:1.2;
+}
+
+/* Làm các khối trong step thoáng hơn một chút */
+[data-scope="step1"] .card-body + .card-body{ margin-top:8px; }
+
+/* Responsive */
+@media (max-width:720px){
+  [data-scope="step1"] .btn-row{ grid-template-columns:1fr; }
+}
