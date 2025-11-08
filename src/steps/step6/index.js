@@ -19,9 +19,6 @@ export async function mount(rootEl, ctx) {
     <style>
       /* ===== Scoped styles cho Step 6 để canh cột không lệch ===== */
       #ss .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      #ss .control-row{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; align-items:stretch; }
-      #ss .control-row > button{ width:100%; min-height:44px; padding:.6rem 1rem; }
-      #ss .grid-3 > *{ min-width:0; }
       #ss .grid-3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
       #ss .full-span{ grid-column:1 / -1; }
       #ss .form-input{
