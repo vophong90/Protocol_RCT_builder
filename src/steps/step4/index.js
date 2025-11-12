@@ -8,8 +8,8 @@ export const subtitle = "Trình bày bối cảnh và tình hình nghiên cứu"
 export const css = "./public/css/steps/step4.css";
 
 export async function mount(rootEl, ctx) {
-  // Scope cho CSS riêng step4
-  rootEl.closest('.step')?.setAttribute('data-scope', 'step4');
+  const card = rootEl.closest('.card') || rootEl;
+  card.closest('.step')?.setAttribute('data-scope', 'step4');
 
   const sections = [
     { slug: 'yhhd-overview',       title: 'Đại cương YHHĐ của tình trạng/bệnh trong nghiên cứu' },
