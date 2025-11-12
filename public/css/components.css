@@ -22,14 +22,24 @@
   max-width: min(1400px, calc(100% - 32px));
 }
 
+/* Nếu có nhiều card liên tiếp */
 .card + .card{ margin-top:var(--section-gap) }
-.card-header{ margin-bottom:12px }
+
+/* NHỊP DỌC MẶC ĐỊNH giữa các khối con trong card (header/body/footer/...) */
+.card > * + * { margin-top: 12px; }
+
+/* Header / Title / Subtitle */
+.card-header{ margin-bottom:0 } /* đã có nhịp dọc chung ở trên */
 .card-title{ margin:0; font-size:1.15rem; font-weight:700 }
 .card-subtitle{ color:var(--muted); font-size:.92rem }
-.card-body > * + *{ margin-top:14px }
-.card-footer{ margin-top:16px; display:flex; gap:14px; flex-wrap:wrap }
 
-/* Input file – kiểu btn-secondary, căn giữa chuẩn, không bị cắt đáy */
+/* Body: tạo nhịp dọc cho thành phần con */
+.card-body > * + *{ margin-top:14px }
+
+/* Footer: không cần margin-top riêng vì đã có nhịp dọc chung */
+.card-footer{ display:flex; gap:14px; flex-wrap:wrap }
+
+/* ===== Input file ===== – kiểu btn-secondary, căn giữa chuẩn, không bị cắt đáy */
 .card input[type="file"]{
   font: 600 14px/1 Inter, ui-sans-serif, system-ui, -apple-system;
   border: 1px solid var(--border);
@@ -55,14 +65,10 @@
   border-radius: 10px;
   cursor: pointer;
 }
-.card input[type="file"]:hover::file-selector-button{
-  background: #f9fafb;
-}
-.card input[type="file"][disabled]::file-selector-button{
-  opacity: .6; cursor: not-allowed;
-}
+.card input[type="file"]:hover::file-selector-button{ background:#f9fafb }
+.card input[type="file"][disabled]::file-selector-button{ opacity:.6; cursor:not-allowed }
 
-/* Fallback cho trình duyệt WebKit cũ */
+/* Fallback cho WebKit cũ */
 .card input[type="file"]::-webkit-file-upload-button{
   display: inline-flex;
   align-items: center;
@@ -75,14 +81,10 @@
   border-radius: 10px;
   cursor: pointer;
 }
-.card input[type="file"]:hover::-webkit-file-upload-button{
-  background: #f9fafb;
-}
-.card input[type="file"][disabled]::-webkit-file-upload-button{
-  opacity: .6; cursor: not-allowed;
-}
+.card input[type="file"]:hover::-webkit-file-upload-button{ background:#f9fafb }
+.card input[type="file"][disabled]::-webkit-file-upload-button{ opacity:.6; cursor:not-allowed }
 
-/* Form controls */
+/* ===== Form controls ===== */
 label{ display:flex; flex-direction:column; gap:8px; font-weight:600; color:#111827 }
 textarea,
 input[type="text"],
@@ -97,7 +99,7 @@ textarea{ resize:vertical; min-height:48px }
 textarea::placeholder, input::placeholder{ color:#9aa3af }
 textarea:focus, input:focus, select:focus{ border-color:var(--brand); box-shadow:0 0 0 3px var(--ring) }
 
-/* Grid helpers */
+/* ===== Grid helpers ===== */
 .grid-1{ display:grid; grid-template-columns:1fr; gap:14px 18px; align-items:start; }
 .grid-2{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px 16px; align-items:start; }
 .grid-3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px 16px; align-items:start; }
@@ -106,9 +108,22 @@ textarea:focus, input:focus, select:focus{ border-color:var(--brand); box-shadow
   .grid-2, .grid-3{ grid-template-columns:1fr; }
 }
 .full-span{ grid-column:1 / -1; }
+
+/* Hàng điều khiển chung: file + trạng thái + nút GPT có khoảng cách đều nhau */
+.row, .control-row, .btn-row{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  gap:12px 16px;
+  align-items:center;
+}
+@media (max-width:900px){
+  .row, .control-row, .btn-row{ grid-template-columns:1fr; }
+}
+
+/* Hàng ngang linh hoạt (khi cần bọc) */
 .inline-row{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
 
-/* Buttons */
+/* ===== Buttons ===== */
 .btn{
   display:inline-flex; align-items:center; justify-content:center;
   gap:.5rem; padding:.6rem 1rem; border-radius:10px; border:1px solid transparent;
