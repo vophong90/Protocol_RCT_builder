@@ -1,6 +1,6 @@
 // Step 4 – Tổng quan tài liệu (9 tiểu mục) + TLTK AMA 11th
-// Yêu cầu ctx: get/save/toast, extractTextFromPDF(file)
-// và hàm gọi GPT theo binding từng step: ctx.callStepGPT(key, prompt) (có fallback)
+// ctx: get/save/toast, extractTextFromPDF(file)
+// và gọi GPT: ctx.callStepGPT(key, prompt) (có fallback sang ctx.callGPT)
 
 export const id = 4;
 export const title = "Tổng quan";
@@ -8,8 +8,29 @@ export const subtitle = "Trình bày bối cảnh và tình hình nghiên cứu"
 export const css = "./public/css/steps/step4.css";
 
 export async function mount(rootEl, ctx) {
-  const card = rootEl.closest('.card') || rootEl;
-  card.closest('.step')?.setAttribute('data-scope', 'step4');
+  // Scope CSS riêng step4
+  rootEl.closest('.step')?.setAttribute('data-scope', 'step4');
+
+  // ---- UI ----
+  rootEl.innerHTML = `
+    <style>
+      /* Ẩn phần text tên tệp, chỉ hiển thị nút Choose file trong step4 */
+      [data-scope="step4"] input[type="file"].file-btn-only { font-size: 0; }
+      [data-scope="step4"] input[type="file"].file-btn-only::file-selector-button { font-size: 14px; }
+      [data-scope="step4"] input[type="file"].file-btn-only::-webkit-file-upload-button { font-size: 14px; }
+    </style>
+
+    <div class="card-header">
+      <h3 class="card-title">Tổng quan tài liệu</h3>
+      <div class="card-subtitle">
+        9 tiểu mục. Mỗi mục có thể tải PDF riêng để GPT trích lược trước khi gợi ý nội dung.
+      </div>
+    </div>
+    <div class="card-body" id="lit-wrap"></div>
+  `.trim();
+
+  const $ = (sel) => rootEl.querySelector(sel);
+  const wrap = $('#lit-wrap');
 
   const sections = [
     { slug: 'yhhd-overview',       title: 'Đại cương YHHĐ của tình trạng/bệnh trong nghiên cứu' },
@@ -23,25 +44,6 @@ export async function mount(rootEl, ctx) {
     { slug: 'pp-moi-phan-tich',    title: 'Các phương pháp mới trong phân tích/đánh giá số liệu' },
   ];
 
-  // rootEl CHÍNH LÀ .card → không lồng .card nữa
-  card.innerHTML = `
-    <style>
-      /* Ẩn phần text tên tệp, chỉ hiển thị nút Choose file trong step4 */
-      [data-scope="step4"] input[type="file"].file-btn-only{ font-size:0; }
-      [data-scope="step4"] input[type="file"].file-btn-only::file-selector-button{ font-size:14px; }
-      [data-scope="step4"] input[type="file"].file-btn-only::-webkit-file-upload-button{ font-size:14px; }
-    </style>
-
-    <div class="card-header">
-      <h3 class="card-title">Tổng quan tài liệu</h3>
-      <div class="card-subtitle">
-        9 tiểu mục. Mỗi mục có thể tải PDF riêng để GPT trích lược trước khi gợi ý nội dung.
-      </div>
-    </div>
-    <div class="card-body" id="lit-wrap"></div>
-  `.trim();
-
-  const wrap = card.querySelector('#lit-wrap');
   sections.forEach(sec => wrap.appendChild(renderSectionBlock(sec)));
 
   // ---------------- Section renderer ----------------
@@ -129,8 +131,6 @@ export async function mount(rootEl, ctx) {
     const initEval = ctx.get(`literatureEval.${sec.slug}`, '');
     if (initEval) { evalTA.value = String(initEval); evalWrap.style.display = ''; }
 
-    // (Không hiển thị tên tệp, không cần listener đổi tên tệp)
-
     // -------- Save --------
     saveBtn.addEventListener('click', () => {
       ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
@@ -151,7 +151,7 @@ export async function mount(rootEl, ctx) {
         if (f) {
           try {
             pdfText = await ctx.extractTextFromPDF(f);
-            if (pdfText.length > 9000) pdfText = pdfText.slice(0, 9000) + '\\n...[cắt bớt]';
+            if (pdfText.length > 9000) pdfText = pdfText.slice(0, 9000) + '\n...[cắt bớt]';
           } catch (e) {
             console.warn('PDF read error:', e);
             ctx.toast('Không đọc được PDF của mục này, sẽ chỉ dùng PICO/Câu hỏi/Mục tiêu.');
@@ -186,7 +186,7 @@ export async function mount(rootEl, ctx) {
     applyApp.addEventListener('click', () => {
       const cur = textEl.value || '';
       const add = suggTA.value || '';
-      textEl.value = cur ? (cur + '\\n\\n' + add) : add;
+      textEl.value = cur ? (cur + '\n\n' + add) : add;
       ctx.save(`literature.sections.${sec.slug}`, (textEl.value || '').trim());
       ctx.toast('Đã chèn thêm gợi ý vào cuối.');
     });
@@ -242,7 +242,7 @@ export async function mount(rootEl, ctx) {
     return (
 'Ban la tro ly hoc thuat. Hay soan muc tong quan: "' + (title || '') + '" cho de cuong RCT, dua tren PICO, Cau hoi nghien cuu, Muc tieu va trich luoc PDF (neu co).\n' +
 'YEU CAU NOI DUNG:\n' +
-'- Viet tieng Viet, 2-5 doan van dai, Markdown thuần.\n' +
+'- Viet tieng Viet, 2-5 doan van dai, Markdown thuan.\n' +
 '- Chen cac chi dan trong van ban bang so [1], [2], ... tuong ung danh muc tai lieu.\n' +
 '- Tranh khang dinh vuot ngoai thong tin cung cap; uu tien tong quan can thiet cho muc nay.\n' +
 '\n' +
@@ -314,27 +314,29 @@ export async function mount(rootEl, ctx) {
 
   // Phân tích trả lời của GPT:
   // - Nếu là JSON {content_md, references[]} → ghép thành Markdown + “Tài liệu tham khảo”
-  // - Nếu không phải JSON, trả y nguyên (nhưng vẫn ổn vì GPT có thể đã chèn TLTK ở cuối)
+  // - Nếu không phải JSON, trả y nguyên
   function toMarkdownWithRefs(raw) {
     const s = String(raw ?? '').trim();
     if (!s) return '';
 
-    const fenced = s.match(/```(?:json)?\\s*([\\s\\S]*?)```/i);
+    const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
     const jsonLike = fenced ? fenced[1] : (s.startsWith('{') ? s : '');
 
     if (jsonLike) {
       try {
         const j = JSON.parse(jsonLike);
         const body = String(j?.content_md || '').trim();
-        const refs = Array.isArray(j?.references) ? j.references.map(x => String(x || '').trim()).filter(Boolean) : [];
+        const refs = Array.isArray(j?.references)
+          ? j.references.map(x => String(x || '').trim()).filter(Boolean)
+          : [];
         if (!body && refs.length === 0) return s;
 
         const mdRefs = refs.length
-          ? '\\n\\n### Tài liệu tham khảo (AMA 11th)\\n' + refs.map((r,i)=> \`\${i+1}. \${r}\`).join('\\n')
+          ? '\n\n### Tài liệu tham khảo (AMA 11th)\n' + refs.map((r,i)=> `${i+1}. ${r}`).join('\n')
           : '';
         return (body || '') + mdRefs;
       } catch {
-        // không phải JSON hợp lệ → rơi xuống trả s
+        // không phải JSON hợp lệ → trả nguyên s
       }
     }
     return s;
@@ -347,8 +349,8 @@ export async function mount(rootEl, ctx) {
         const r = await ctx_.callStepGPT(bindingKey, prompt);
         const str = String(r ?? '');
         const looksModeration =
-          /^\\s*\\{/.test(str) &&
-          (/"id"\\s*:\\s*"modr-/i.test(str) || /"model"\\s*:\\s*".*moderation/i.test(str) || /"results"\\s*:\\s*\\[/i.test(str));
+          /^\s*\{/.test(str) &&
+          (/"id"\s*:\s*"modr-/i.test(str) || /"model"\s*:\s*".*moderation/i.test(str) || /"results"\s*:\s*\[/i.test(str));
         if (!looksModeration) return str;
         console.warn('Backend trả moderation; fallback callGPT.', str);
         if (typeof ctx_.callGPT === 'function') return await ctx_.callGPT(prompt);
