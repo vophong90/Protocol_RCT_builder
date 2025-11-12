@@ -41,7 +41,7 @@ export async function mount(rootEl, ctx) {
     <div class="card-body" id="lit-wrap"></div>
   `.trim();
 
-  const wrap = rootEl.querySelector('#lit-wrap');
+  const wrap = card.querySelector('#lit-wrap');
   sections.forEach(sec => wrap.appendChild(renderSectionBlock(sec)));
 
   // ---------------- Section renderer ----------------
