@@ -2,6 +2,11 @@
 // Yêu cầu ctx: get/save/toast, extractTextFromPDF(file)
 // và hàm gọi GPT theo binding từng step: ctx.callStepGPT(key, prompt) (có fallback)
 
+export const id = 4;
+export const title = "Tổng quan";
+export const subtitle = "Trình bày bối cảnh và tình hình nghiên cứu";
+export const css = "./public/css/steps/step4.css";
+
 export async function mount(rootEl, ctx) {
   // Scope cho CSS riêng step4
   rootEl.closest('.step')?.setAttribute('data-scope', 'step4');
