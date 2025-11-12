@@ -24,7 +24,7 @@ export async function mount(rootEl, ctx) {
   ];
 
   // rootEl CHÍNH LÀ .card → không lồng .card nữa
-  rootEl.innerHTML = `
+  card.innerHTML = `
     <style>
       /* Ẩn phần text tên tệp, chỉ hiển thị nút Choose file trong step4 */
       [data-scope="step4"] input[type="file"].file-btn-only{ font-size:0; }
