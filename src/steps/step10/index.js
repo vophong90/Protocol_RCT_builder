@@ -123,8 +123,9 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
       </div>
 
       <!-- Form thêm biến (ẩn mặc định, chỉ hiện khi bấm + Thêm biến) -->
-      <div class="var-form-wrap hidden">
+            <div class="var-form-wrap hidden">
         <div class="grid-2">
+          <!-- Hàng 1: tên + thời điểm -->
           <div class="form-field">
             <label class="field-label">
               Tên biến <span class="required">*</span>
@@ -144,7 +145,8 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
               placeholder="Ví dụ: Baseline, tuần 4, tuần 12" />
           </div>
 
-          <div class="form-field">
+          <!-- Hàng 2: Đo lường full width -->
+          <div class="form-field full-span">
             <label class="field-label">
               Đo lường / định nghĩa
             </label>
@@ -153,6 +155,8 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
               rows="3"
               placeholder="Mô tả cách đo, thang điểm, điểm cắt, phương pháp tính…"></textarea>
           </div>
+
+          <!-- Hàng 3: Đơn vị + Công cụ -->
           <div class="form-field">
             <label class="field-label">
               Đơn vị
@@ -162,7 +166,6 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
               class="input-var-unit"
               placeholder="mm, kg, điểm, %, mL/phút… (nếu có)" />
           </div>
-
           <div class="form-field">
             <label class="field-label">
               Công cụ / thang đo
@@ -172,7 +175,9 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
               class="input-var-instrument"
               placeholder="Ví dụ: Thang VAS 100 mm, WOMAC, SF-36, …" />
           </div>
-          <div class="form-field">
+
+          <!-- Hàng 4: Ghi chú full width -->
+          <div class="form-field full-span">
             <label class="field-label">
               Ghi chú bổ sung
             </label>
