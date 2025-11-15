@@ -53,6 +53,38 @@
 }
 .step[data-scope="step6"] #ss table.ss-kv tr:first-child td{ border-top:0; }
 
+/* ===== Khoảng cách & layout cho vùng nút Step 6 ===== */
+
+/* Tạo khoảng cách giữa khối GPT và footer */
+.step[data-scope="step6"] #ss #ss-gpt-row + .card-footer,
+.step[data-scope="step6"] #ss .card-body.control-row + .card-footer {
+  margin-top: 12px;
+}
+
+/* Card-footer riêng Step 6: 2 nút ngang, có gap */
+.step[data-scope="step6"] #ss .card-footer {
+  display: flex;
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+/* Làm 2 nút footer cao đều, full-width mỗi nút 1/auto */
+.step[data-scope="step6"] #ss .card-footer .btn {
+  min-height: 48px;
+  padding: 0 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+/* Mobile: cho 2 nút footer xuống 1 cột */
+@media (max-width: 720px) {
+  .step[data-scope="step6"] #ss .card-footer {
+    flex-direction: column;
+  }
+}
+
 /* Responsive */
 @media (max-width:900px){
   .step[data-scope="step6"] #ss .grid-3{ grid-template-columns:1fr; }
