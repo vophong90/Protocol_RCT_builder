@@ -41,8 +41,8 @@ export async function mount(root, ctx) {
       <!-- Arms & tỷ lệ -->
       <div class="card-body">
         <div class="rand-section-title">Nhánh can thiệp &amp; Tỷ lệ</div>
-        <div id="arm-rows" class="grid-3"></div>
-      </div>
+        <div id="arm-rows" class="grid-2"></div>
+     </div>
 
       <!-- Block sizes: ghi chú ngay dưới ô, cùng cột -->
       <div class="card-body hidden" id="block-row">
