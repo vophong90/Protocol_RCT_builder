@@ -20,8 +20,8 @@ export async function mount(root, ctx) {
         </div>
       </div>
 
-      <!-- Phương pháp & seed -->
-      <div class="card-body grid-2">
+      <!-- Phương pháp & seed: dùng control-row để giống các step khác -->
+      <div class="card-body control-row">
         <div>
           <label>Phương pháp
             <select id="rand-method">
@@ -63,15 +63,22 @@ export async function mount(root, ctx) {
         </label>
       </div>
 
-      <!-- Tổng N -->
-      <div class="card-body grid-3">
+      <!-- Tổng N + ghi chú ngay dưới, không lệch cột -->
+      <div class="card-body">
         <label>Tổng N cần sinh (nếu trống sẽ lấy từ bước cỡ mẫu)
           <input id="rand-totalN" type="number" min="1" placeholder="vd: 120" />
+          <span class="muted rand-note">
+            Nếu có N theo nhánh ở bước cỡ mẫu, hệ thống sẽ ưu tiên phân bổ theo tỷ lệ tương ứng.
+          </span>
         </label>
-        <div class="muted">
-          Nếu có N theo nhánh ở bước cỡ mẫu, hệ thống sẽ ưu tiên phân bổ theo tỷ lệ tương ứng.
-        </div>
-        <div></div>
+      </div>
+
+      <!-- Đoạn mô tả quy trình ngẫu nhiên hoá (Methods) -->
+      <div class="card-body">
+        <label>Mô tả quy trình ngẫu nhiên hoá (đoạn Methods cho bài báo quốc tế)
+          <textarea id="rand-desc" rows="5"
+            placeholder="Đoạn mô tả quy trình ngẫu nhiên hoá, bao gồm phương pháp, tỷ lệ, block/strata, seed và cách che giấu phân bổ..."></textarea>
+        </label>
       </div>
 
       <!-- Che giấu phân bổ -->
@@ -84,7 +91,7 @@ export async function mount(root, ctx) {
 
       <!-- Nút hành động -->
       <div class="card-footer">
-        <button id="rand-suggest" class="btn btn-secondary">GPT gợi ý cấu hình</button>
+        <button id="rand-suggest" class="btn btn-secondary">GPT viết mô tả quy trình</button>
         <button id="rand-generate" class="btn btn-primary">Tạo chuỗi phân bổ</button>
         <button id="rand-download" class="btn btn-secondary">Tải CSV</button>
         <button id="rand-save" class="btn btn-secondary">Lưu</button>
@@ -115,6 +122,7 @@ export async function mount(root, ctx) {
   const strataRow   = root.querySelector('#strata-row');
   const strataTA    = root.querySelector('#rand-strata');
   const totalNInput = root.querySelector('#rand-totalN');
+  const descTA      = root.querySelector('#rand-desc');
   const concealTA   = root.querySelector('#rand-conceal');
 
   const suggestBtn  = root.querySelector('#rand-suggest');
@@ -149,6 +157,7 @@ export async function mount(root, ctx) {
   if (Array.isArray(st.blockSizes)) blockSizesI.value = st.blockSizes.join(',');
   if (Array.isArray(st.strata)) strataTA.value = st.strata.join('\n');
   if (typeof st.totalN === 'number' && st.totalN > 0) totalNInput.value = String(st.totalN);
+  descTA.value = st.description || '';
   concealTA.value = st.concealment || '';
 
   const ratio = normalizeRatio(st.ratio, arms);
@@ -161,75 +170,58 @@ export async function mount(root, ctx) {
   }
 
   // ---------- Events
+
   methodSel.addEventListener('change', () => {
     toggleAdvancedRows(methodSel.value);
   });
 
+  // Nút GPT: viết đoạn mô tả quy trình ngẫu nhiên hóa + trích dẫn AMA11
   suggestBtn.addEventListener('click', async () => {
     const pico = ctx.get('pico', {}) || {};
     const rq   = ctx.get('researchQuestion', '') || '';
     const obj  = ctx.get('mainObjective', '') || '';
 
-    const rr = readRatioFromUI(arms);
-    const nSuggest = parseInt(totalNInput.value || totalN0 || '0', 10) || undefined;
+    const method = methodSel.value;
+    const rr     = readRatioFromUI(arms);
+    const N      = parseInt(totalNInput.value || totalN0 || '0', 10) || null;
+    const strata = parseStrata(strataTA.value);
+    const blockSizes = parseBlockSizes(blockSizesI.value);
+    const conceal = (concealTA.value || '').trim();
 
     const prompt = `
-Bạn là điều phối viên RCT. Hãy GỢI Ý cấu hình ngẫu nhiên hoá (JSON, không kèm giải thích) dựa vào:
-PICO:
-- P: ${pico.p || ''}
-- I: ${pico.i || ''}
-- C: ${pico.c || ''}
-- O: ${pico.o || ''}
+You are writing the Methods section for an international randomized controlled trial paper.
 
-Thiết kế: ${JSON.stringify(design)}
-Câu hỏi: ${rq}
-Mục tiêu chính: ${obj}
-Nhánh: ${JSON.stringify(arms)}
-Tỷ lệ hiện tại: ${JSON.stringify(rr)}
-Tổng N (nếu có): ${nSuggest ?? 'chưa xác định'}
+Write a concise but detailed description (about 2–3 paragraphs) of the randomization and allocation concealment procedures in **formal academic English**, suitable for submission to a high–impact medical journal.
 
-YÊU CẦU JSON:
-{
-  "method": "simple|block|stratified",
-  "ratio": {"Arm A":1, "Arm B":1, "...":1},
-  "blockSizes": [4,6],
-  "strata": ["Nam<65","Nam≥65"],
-  "seed": 2025
-}
+Use the following information:
+- P (population): ${pico.p || 'not specified'}
+- I (intervention): ${pico.i || 'not specified'}
+- C (comparator): ${pico.c || 'not specified'}
+- O (primary outcome): ${pico.o || 'not specified'}
+- Study design (JSON from step 5): ${JSON.stringify(design)}
+- Research question: ${rq || 'not specified'}
+- Main objective: ${obj || 'not specified'}
+- Arms: ${JSON.stringify(arms)}
+- Allocation ratio: ${JSON.stringify(rr)}
+- Total sample size (if available): ${N ?? 'not specified'}
+- Randomization method: ${method} (simple vs block vs stratified)
+- Block sizes (if any): ${blockSizes.length ? JSON.stringify(blockSizes) : 'none'}
+- Stratification factors (if any): ${strata.length ? JSON.stringify(strata) : 'none'}
+- Allocation concealment notes from the user (optional, Vietnamese may appear): "${conceal || 'not specified'}"
+
+Requirements:
+1. Describe clearly: sequence generation, type of randomization, block sizes and stratification (if used), allocation ratio, who generated the sequence, and how allocation concealment was ensured.
+2. Do NOT mention any software that was not explicitly provided; if you need to mention software, use generic wording such as "a computer–generated random sequence".
+3. Include **2–5 REAL references** about randomization and allocation concealment methods (e.g., CONSORT, Schulz KF, ICH E9, etc.).
+4. Format references strictly in **AMA 11th edition** style and list them at the end under the heading "References".
+5. Only cite articles or guidelines that truly exist. If you are not sure a reference is real, do NOT invent it; instead, reduce the number of references.
+6. Do not include any JSON or bullet lists in the output, only continuous prose plus a numbered reference list.
     `.trim();
 
-    ctx.toast('Đang xin gợi ý từ GPT...');
+    ctx.toast('Đang để GPT viết mô tả quy trình ngẫu nhiên hoá...');
     const raw = await ctx.callGPT(prompt);
-    let cfg = null;
-    try {
-      cfg = JSON.parse(raw);
-    } catch {
-      cfg = null;
-    }
-    if (!cfg || !cfg.ratio) {
-      ctx.toast('GPT không trả JSON hợp lệ. Bạn chỉnh tay nhé.');
-      return;
-    }
-
-    if (cfg.method) {
-      methodSel.value = ['simple','block','stratified'].includes(cfg.method)
-        ? cfg.method
-        : 'simple';
-    }
-    if (cfg.seed != null && !Number.isNaN(+cfg.seed)) {
-      seedInput.value = String(parseInt(cfg.seed,10));
-    }
-    const ratio2 = normalizeRatio(cfg.ratio, arms);
-    renderArmRatioRows(armRows, arms, ratio2);
-
-    if (Array.isArray(cfg.blockSizes)) {
-      blockSizesI.value = cfg.blockSizes.join(',');
-    }
-    if (Array.isArray(cfg.strata)) {
-      strataTA.value = cfg.strata.join('\n');
-    }
-    toggleAdvancedRows(methodSel.value);
-    ctx.toast('Đã áp dụng gợi ý cấu hình.');
+    descTA.value = raw;
+    ctx.toast('Đã chèn mô tả quy trình ngẫu nhiên hoá vào ô phía trên.');
   });
 
   genBtn.addEventListener('click', () => {
@@ -309,6 +301,7 @@ YÊU CẦU JSON:
       blockSizes: bs.length ? bs : undefined,
       seed,
       strata: strata.length ? strata : undefined,
+      description: (descTA.value || '').trim(),
       concealment: (concealTA.value || '').trim(),
       sequence: seq,
       savedAt: new Date().toISOString()
