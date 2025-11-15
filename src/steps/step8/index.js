@@ -1,13 +1,5 @@
 // src/steps/step8/index.js
 // Step 8 – Ngẫu nhiên hoá (baseline)
-// - Lấy tên nhánh từ design.arms (bước 6). Nếu thiếu, fallback ['Arm A','Arm B'].
-// - Tỷ lệ per-arm (mặc định 1).
-// - Phương pháp: simple / block / stratified
-// - Block: blockSizes (ví dụ "4,6,8"), chọn ngẫu nhiên giữa các kích thước; yêu cầu block size chia hết tổng tỷ lệ
-// - Stratified: danh sách tầng (mỗi dòng 1 tầng), tạo ngẫu nhiên theo từng tầng như simple/block
-// - GPT gợi ý cấu hình ngẫu nhiên hoá (JSON) dựa trên PICO + thiết kế + cỡ mẫu
-// - Sinh chuỗi theo seed (LCG) → preview + download CSV
-// - Lưu state: randomization { method, ratio, totalN, blockSizes, seed, strata, concealment, sequence[], savedAt }
 
 export const id = 8;
 export const title = "Ngẫu nhiên hoá";
@@ -28,6 +20,7 @@ export async function mount(root, ctx) {
         </div>
       </div>
 
+      <!-- Phương pháp & seed -->
       <div class="card-body grid-2">
         <div>
           <label>Phương pháp
@@ -45,59 +38,67 @@ export async function mount(root, ctx) {
         </div>
       </div>
 
+      <!-- Arms & tỷ lệ -->
       <div class="card-body">
         <div class="rand-section-title">Nhánh can thiệp &amp; Tỷ lệ</div>
         <div id="arm-rows" class="grid-3"></div>
       </div>
 
-      <div class="card-body grid-3 rand-block-row" id="block-row">
+      <!-- Block sizes -->
+      <div class="card-body grid-3 hidden" id="block-row">
         <label>Block sizes (nếu block) – ngăn cách bởi dấu phẩy
           <input id="rand-blocksizes" type="text" placeholder="vd: 4,6,8" />
         </label>
-        <div class="muted rand-block-hint">
+        <div class="muted">
           * Mỗi block size cần chia hết tổng tỷ lệ (vd 1:1 → block = 2,4,6,...)
         </div>
         <div></div>
       </div>
 
-      <div class="card-body rand-strata-row" id="strata-row">
+      <!-- Strata -->
+      <div class="card-body hidden" id="strata-row">
         <label>Danh sách tầng (mỗi dòng 1 tầng, tuỳ chọn)
-          <textarea id="rand-strata" rows="4" placeholder="Nam - <65
-Nam - ≥65
-Nữ - <65
-Nữ - ≥65"></textarea>
+          <textarea id="rand-strata" rows="4"
+            placeholder="Nam - &lt;65&#10;Nam - ≥65&#10;Nữ - &lt;65&#10;Nữ - ≥65"></textarea>
         </label>
       </div>
 
+      <!-- Tổng N -->
       <div class="card-body grid-3">
         <label>Tổng N cần sinh (nếu trống sẽ lấy từ bước cỡ mẫu)
           <input id="rand-totalN" type="number" min="1" placeholder="vd: 120" />
         </label>
-        <div class="muted rand-totalN-hint">
+        <div class="muted">
           Nếu có N theo nhánh ở bước cỡ mẫu, hệ thống sẽ ưu tiên phân bổ theo tỷ lệ tương ứng.
         </div>
         <div></div>
       </div>
 
+      <!-- Che giấu phân bổ -->
       <div class="card-body">
         <label>Ghi chú che giấu phân bổ (allocation concealment)
-          <textarea id="rand-conceal" rows="3" placeholder="Ví dụ: Sử dụng phong bì mờ, niêm phong, đánh số thứ tự; chuỗi nắm giữ bởi điều phối độc lập..."></textarea>
+          <textarea id="rand-conceal" rows="3"
+            placeholder="Ví dụ: Sử dụng phong bì mờ, niêm phong, đánh số thứ tự; chuỗi nắm giữ bởi điều phối độc lập..."></textarea>
         </label>
       </div>
 
-      <div class="card-footer rand-footer">
-        <button id="rand-suggest" class="btn-secondary">GPT gợi ý cấu hình</button>
-        <button id="rand-generate" class="btn-primary">Tạo chuỗi phân bổ</button>
-        <button id="rand-download" class="btn-secondary">Tải CSV</button>
-        <button id="rand-save" class="btn-secondary">Lưu</button>
+      <!-- Nút hành động -->
+      <div class="card-footer">
+        <button id="rand-suggest" class="btn btn-secondary">GPT gợi ý cấu hình</button>
+        <button id="rand-generate" class="btn btn-primary">Tạo chuỗi phân bổ</button>
+        <button id="rand-download" class="btn btn-secondary">Tải CSV</button>
+        <button id="rand-save" class="btn btn-secondary">Lưu</button>
       </div>
 
-      <div class="card-body rand-out" id="rand-out">
+      <!-- Preview chuỗi -->
+      <div class="card-body hidden" id="rand-out">
         <div class="rand-section-title">Preview chuỗi phân bổ</div>
         <div class="muted rand-summary" id="rand-summary"></div>
         <div class="table-wrap">
           <table class="table" id="rand-table">
-            <thead><tr><th>#</th><th>Tầng</th><th>Nhánh</th></tr></thead>
+            <thead>
+              <tr><th>#</th><th>Tầng</th><th>Nhánh</th></tr>
+            </thead>
             <tbody></tbody>
           </table>
         </div>
@@ -191,8 +192,8 @@ YÊU CẦU JSON:
 {
   "method": "simple|block|stratified",
   "ratio": {"Arm A":1, "Arm B":1, "...":1},
-  "blockSizes": [4,6],              // chỉ nếu method="block" hoặc "stratified" (block-based)
-  "strata": ["Nam<65","Nam≥65"],    // chỉ nếu method="stratified"
+  "blockSizes": [4,6],
+  "strata": ["Nam<65","Nam≥65"],
   "seed": 2025
 }
     `.trim();
@@ -330,7 +331,8 @@ YÊU CẦU JSON:
   }
 
   function toggleAdvancedRows(method) {
-    blockRow.classList.toggle('hidden', !(method === 'block' || method === 'stratified'));
+    const showBlock = method === 'block' || method === 'stratified';
+    blockRow.classList.toggle('hidden', !showBlock);
     strataRow.classList.toggle('hidden', method !== 'stratified');
   }
 
