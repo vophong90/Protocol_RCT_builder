@@ -57,7 +57,7 @@
   font-size: 0.85rem;
 }
 
-/* ==== Hàng 2 nút GPT – luôn cùng chiều cao ==== */
+/* ==== Hàng 2 nút GPT – luôn cùng chiều cao (dùng chuẩn .btn global) ==== */
 [data-scope="step7"] .crit-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -71,18 +71,9 @@
   }
 }
 
+/* chỉ cần thế này là đủ */
 [data-scope="step7"] .crit-actions .btn {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-
-  height: 52px !important;
-  min-height: 52px !important;
-
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-
-  white-space: nowrap !important;  /* không cho xuống dòng */
+  width: 100%;
 }
 
 /* ==== Card nút Lưu – luôn ở dưới, bên trái ==== */
