@@ -1,106 +1,84 @@
 /* public/css/steps/step7.css */
-/* ============================
-   Scope riêng cho Step 7 – Tiêu chí chọn/loại
-   ============================ */
+/* Scope toàn bộ cho step 7 để tránh xung đột với components.css */
 
-/* ===== 1) Cặp textarea Tiêu chí chọn / Tiêu chí loại ===== */
-
-/* Grid 2 cột, luôn stretch theo cột cao nhất */
-.step[data-scope="step7"] #crit .card-body.grid-2{
-  display: grid;
-  grid-template-columns: minmax(0,1fr) minmax(0,1fr);
-  gap: 12px 16px;
-  align-items: stretch;
-}
-
-/* Mỗi label là 1 cột, flex-column để header + textarea xếp dọc */
-.step[data-scope="step7"] #crit .card-body.grid-2 > label{
+[data-scope="step7"] #crit {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  height: 100%;
+  gap: 12px;
 }
 
-/* Textarea giãn hết phần còn lại của label → đáy 2 ô thẳng hàng */
-.step[data-scope="step7"] #crit .card-body.grid-2 textarea{
-  flex: 1 1 auto;
-  min-height: 220px;
+/* Bảo đảm textarea/input full-width (components.css đã style chung) */
+[data-scope="step7"] #crit .form-input {
+  width: 100%;
 }
 
-/* “Mỗi dòng 1 tiêu chí” không bị xuống hàng lung tung */
-.step[data-scope="step7"] #crit .nowrap{
-  white-space: nowrap;
-}
-
-/* ===== 2) Ô ghi chú ===== */
-
-.step[data-scope="step7"] #crit #crit-notes{
-  min-height: 90px;
-}
-
-/* ===== 3) Hàng input file + trạng thái PDF ===== */
-
-/* Cho file + hint trên cùng một hàng, file rộng hơn */
-.step[data-scope="step7"] #crit .card-body .control-row{
+/* Khối 2 textarea: dùng grid-2 riêng trong scope step7 */
+[data-scope="step7"] #crit .card-body.grid-2 {
   display: grid;
-  grid-template-columns: minmax(0, 2.5fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px 16px;
-  align-items: center;
+  align-items: flex-start;
 }
-
-/* Hint PDF: chữ xám, nhẹ nhàng */
-.step[data-scope="step7"] #crit #crit-pdfhint{
-  font-size: .9rem;
-  color: var(--muted-foreground);
-}
-
-/* Trên màn nhỏ: cho file + hint xuống 2 dòng */
-@media (max-width: 900px){
-  .step[data-scope="step7"] #crit .card-body .control-row{
+@media (max-width: 900px) {
+  [data-scope="step7"] #crit .card-body.grid-2 {
     grid-template-columns: 1fr;
   }
 }
 
-/* ===== 4) Hàng nút GPT (2 nút trên cùng 1 hàng) ===== */
+[data-scope="step7"] #crit .nowrap {
+  white-space: nowrap;
+}
 
-.step[data-scope="step7"] #crit .crit-actions{
-  display: flex;
-  flex-wrap: wrap;
+/* Hàng PDF: input file + hint, canh hàng ngang */
+[data-scope="step7"] #crit .control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px 16px;
   align-items: center;
-  justify-content: stretch;
+}
+@media (max-width: 900px) {
+  [data-scope="step7"] #crit .control-row {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Mỗi nút GPT chiếm 1/2 hàng, rộng bằng nhau */
-.step[data-scope="step7"] #crit .crit-actions .btn{
-  flex: 1 1 0;
-  min-width: 200px;
+[data-scope="step7"] #crit-pdfhint {
+  font-size: 0.85rem;
 }
 
-/* ===== 5) Box GPT (gợi ý / đánh giá) – canh mép card chính ===== */
-
-.step[data-scope="step7"] #crit #crit-sugg-box,
-.step[data-scope="step7"] #crit #crit-eval-box{
-  max-width: 1100px;
-  margin: 16px auto 0;
+/* Hàng nút GPT: 2 cột bằng nhau */
+[data-scope="step7"] .crit-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  align-items: stretch;
+}
+@media (max-width: 900px) {
+  [data-scope="step7"] .crit-actions {
+    grid-template-columns: 1fr;
+  }
 }
 
-/* Hàng nút nhỏ trong header 2 box GPT */
-.step[data-scope="step7"] #crit #crit-sugg-box .inline-row,
-.step[data-scope="step7"] #crit #crit-eval-box .inline-row{
+/* Hàng nút Lưu: luôn ở đáy, nút nằm bên trái */
+[data-scope="step7"] .crit-save-row {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+[data-scope="step7"] .crit-save-row .btn {
+  min-width: 140px;
+}
+
+/* Card hiển thị kết quả GPT */
+[data-scope="step7"] .crit-gpt-card {
+  margin-top: 12px;
+}
+[data-scope="step7"] .crit-gpt-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-/* ===== 6) Hàng nút Lưu – luôn ở cuối cùng ===== */
-
-.step[data-scope="step7"] #crit .crit-save-row{
-  display: flex;
-  justify-content: flex-end; /* đổi thành center nếu muốn */
-}
-
-.step[data-scope="step7"] #crit .crit-save-row .btn{
-  min-width: 160px;
+/* Ẩn theo scope step7 (không ảnh hưởng step khác) */
+[data-scope="step7"] .hidden {
+  display: none !important;
 }
