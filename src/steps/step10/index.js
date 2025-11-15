@@ -1,13 +1,8 @@
 // src/steps/step10/index.js
 // Step 10 – Biến số nghiên cứu (phiên bản mới)
-// - Không còn CSV/kho biến; chỉ làm việc theo từng nhóm biến.
-// - Mỗi nhóm là một "card" full-width, xếp dọc:
-//   primary, secondary, baseline, confounder, mediator, moderator, safety
-// - Trong mỗi nhóm có:
-//   + Form thêm biến: name, timepoint, definition, measurement, unit, note
-//   + Danh sách biến đã thêm
-//   + Nút GPT gợi ý biến cho nhóm (dựa trên PICO + mục tiêu từ Step 2 + thiết kế/can thiệp nếu có)
-//   + Nút GPT đánh giá nhóm biến (theo chuẩn quốc tế, gợi ý bổ sung/chỉnh sửa)
+// - Mỗi nhóm biến là 1 card full-width, xếp dọc.
+// - Mỗi card có 3 nút: "Thêm biến" (mở/đóng form), "GPT gợi ý biến", "GPT đánh giá nhóm".
+// - Form thêm biến chỉ hiện khi nhấn "Thêm biến".
 // - Lưu state: variablesByGroup = { primary:[{...}], secondary:[{...}], ... }
 
 export const id = 10;
@@ -74,7 +69,9 @@ export async function mount(rootEl, ctx) {
   const saveBtn = rootEl.querySelector("#var-save");
 
   // ===== Load & chuẩn hóa state =====
-  let variablesByGroup = normalizeVariablesByGroup(ctx.get("variablesByGroup", {}));
+  let variablesByGroup = normalizeVariablesByGroup(
+    ctx.get("variablesByGroup", {})
+  );
 
   // ===== Render các card nhóm biến =====
   groupsWrap.innerHTML = "";
@@ -90,6 +87,9 @@ export async function mount(rootEl, ctx) {
           <div class="var-card-hint muted">${escapeHtml(meta.hint || "")}</div>
         </div>
         <div class="var-card-actions">
+          <button id="var-toggle-${key}" class="btn btn-secondary" type="button">
+            Thêm biến
+          </button>
           <button id="var-suggest-${key}" class="btn btn-primary" type="button">
             GPT gợi ý biến
           </button>
@@ -100,15 +100,17 @@ export async function mount(rootEl, ctx) {
       </div>
 
       <div class="var-card-body">
-        <div class="var-form">
+        <div class="var-form hidden" id="var-form-${key}">
           <div class="var-form-grid">
             <label>
               Tên biến <span class="required">*</span>
-              <input id="var-name-${key}" type="text" placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12" />
+              <input id="var-name-${key}" type="text"
+                placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12" />
             </label>
             <label>
               Thời điểm thu thập
-              <input id="var-time-${key}" type="text" placeholder="Ví dụ: Baseline, tuần 4, tuần 12" />
+              <input id="var-time-${key}" type="text"
+                placeholder="Ví dụ: Baseline, tuần 4, tuần 12" />
             </label>
             <label class="full-span">
               Định nghĩa biến
@@ -126,12 +128,13 @@ export async function mount(rootEl, ctx) {
             </label>
             <label>
               Ghi chú
-              <input id="var-note-${key}" type="text" placeholder="Quy tắc làm tròn, xử lý giá trị ngoại lai..." />
+              <input id="var-note-${key}" type="text"
+                placeholder="Quy tắc làm tròn, xử lý giá trị ngoại lai..." />
             </label>
           </div>
           <div class="var-form-actions">
-            <button id="var-add-${key}" class="btn btn-secondary" type="button">
-              Thêm biến vào nhóm
+            <button id="var-add-${key}" class="btn btn-primary" type="button">
+              Lưu biến này
             </button>
           </div>
         </div>
@@ -151,10 +154,12 @@ export async function mount(rootEl, ctx) {
     groupsWrap.appendChild(section);
 
     // ========== Wiring cho nhóm này ==========
+    const toggleBtn = section.querySelector(`#var-toggle-${key}`);
     const addBtn = section.querySelector(`#var-add-${key}`);
     const suggestBtn = section.querySelector(`#var-suggest-${key}`);
     const evalBtn = section.querySelector(`#var-eval-${key}`);
 
+    const formEl = section.querySelector(`#var-form-${key}`);
     const nameInput = section.querySelector(`#var-name-${key}`);
     const timeInput = section.querySelector(`#var-time-${key}`);
     const defTA = section.querySelector(`#var-def-${key}`);
@@ -168,6 +173,20 @@ export async function mount(rootEl, ctx) {
 
     // Render lần đầu danh sách biến cho nhóm
     renderGroupList(key, listEl);
+
+    // --- Nút toggle form thêm biến ---
+    toggleBtn.addEventListener("click", () => {
+      const isHidden = formEl.classList.contains("hidden");
+      if (isHidden) {
+        formEl.classList.remove("hidden");
+        toggleBtn.textContent = "Ẩn form thêm biến";
+        // Focus vào tên biến cho tiện nhập
+        nameInput?.focus();
+      } else {
+        formEl.classList.add("hidden");
+        toggleBtn.textContent = "Thêm biến";
+      }
+    });
 
     // --- Thêm biến thủ công ---
     addBtn.addEventListener("click", () => {
@@ -270,7 +289,7 @@ ${JSON.stringify(existingVars, null, 2).slice(0, 2000)}
 
         const suggested = parsed.variables
           .map(normVar)
-          .filter(v => v.name);
+          .filter((v) => v.name);
 
         if (!suggested.length) {
           ctx.toast("Không có biến nào được gợi ý hợp lệ.");
@@ -278,9 +297,11 @@ ${JSON.stringify(existingVars, null, 2).slice(0, 2000)}
         }
 
         // Gộp vào nhóm, tránh trùng tên
-        const existingNames = new Set((variablesByGroup[key] || []).map(v => v.name));
+        const existingNames = new Set(
+          (variablesByGroup[key] || []).map((v) => v.name)
+        );
         const merged = [...(variablesByGroup[key] || [])];
-        suggested.forEach(v => {
+        suggested.forEach((v) => {
           if (!existingNames.has(v.name)) {
             merged.push(v);
             existingNames.add(v.name);
@@ -291,7 +312,9 @@ ${JSON.stringify(existingVars, null, 2).slice(0, 2000)}
 
         // Nếu có refs, hiển thị kèm trong eval box như phần tham khảo
         if (Array.isArray(parsed.refs) && parsed.refs.length) {
-          const refsText = parsed.refs.map((r, i) => `${i + 1}) ${r}`).join("\n");
+          const refsText = parsed.refs
+            .map((r, i) => `${i + 1}) ${r}`)
+            .join("\n");
           evalText.textContent = `TLTK gợi ý:\n${refsText}`;
           evalWrap.classList.remove("hidden");
         }
