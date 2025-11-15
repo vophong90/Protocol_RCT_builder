@@ -4,7 +4,7 @@
 // - Mỗi nhánh có textarea mô tả + upload PDF (để trích text)
 // - GPT gợi ý mô tả (PICO + thiết kế + PDF nếu có)
 // - GPT đánh giá mô tả (theo CONSORT)
-// - Lưu state: interventions: [{ name, description, pdfText?, feedback? }, ...]
+// - Lưu state: interventions: [{ name, description, pdfText?, feedback? }, ... ]
 
 export const id = 9;
 export const title = "Mô tả can thiệp";
@@ -141,7 +141,8 @@ YÊU CẦU NỘI DUNG (theo khuyến cáo CONSORT khi phù hợp):
 `.trim();
 
       ctx.toast(`Đang gợi ý mô tả cho "${armName}"...`);
-      const content = await ctx.callGPT(prompt);
+      // ✅ dùng binding step9.suggest
+      const content = await ctx.callStepGPT("step9.suggest", prompt);
       if (content && content.trim()) {
         ta.value = content.trim();
         ctx.toast("Đã chèn gợi ý vào ô mô tả.");
@@ -174,7 +175,8 @@ ${cur}
 `.trim();
 
       ctx.toast(`Đang đánh giá mô tả nhánh "${armName}"...`);
-      const fb = await ctx.callGPT(prompt);
+      // ✅ dùng binding step9.evaluate
+      const fb = await ctx.callStepGPT("step9.evaluate", prompt);
       fbBox.textContent = fb || "Không nhận được phản hồi.";
       fbWrap.classList.remove("hidden");
     });
