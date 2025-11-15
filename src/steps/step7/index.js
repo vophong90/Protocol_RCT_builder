@@ -2,9 +2,9 @@
 // Step 7 – Tiêu chí vào/loại
 
 export const id = 7;
-export const title = "Tiêu chí vào/loại";
+export const title = "Tiêu chí chọn/loại";
 export const subtitle =
-  "Xác định tiêu chí vào và loại cho RCT; có thể đọc PDF, nhờ GPT gợi ý, đánh giá và kèm tài liệu tham khảo.";
+  "Xác định tiêu chí chọn và loại cho RCT; có thể đọc PDF, nhờ GPT gợi ý/đánh giá và lưu lại kèm tài liệu tham khảo.";
 export const css = "./public/css/steps/step7.css";
 
 export async function mount(rootEl, ctx) {
@@ -13,7 +13,7 @@ export async function mount(rootEl, ctx) {
 
   rootEl.innerHTML = `
     <div class="card-header">
-      <h3 class="card-title">Tiêu chí vào/loại</h3>
+      <h3 class="card-title">Tiêu chí chọn/loại</h3>
       <div class="card-subtitle">
         Mỗi dòng là một tiêu chí. Có thể đọc PDF để lấy bối cảnh, nhờ GPT gợi ý/đánh giá và lưu lại kèm tài liệu tham khảo.
       </div>
@@ -24,7 +24,7 @@ export async function mount(rootEl, ctx) {
       <div class="card-body grid-2">
         <label>
           <div class="inline-row" style="justify-content:space-between">
-            <span class="nowrap" style="font-weight:700">Tiêu chí Vào</span>
+            <span class="nowrap" style="font-weight:700">Tiêu chí chọn</span>
             <span class="muted">Mỗi dòng 1 tiêu chí</span>
           </div>
           <textarea id="crit-inc" class="form-input" rows="12" placeholder="- Tuổi 40–75
@@ -34,7 +34,7 @@ export async function mount(rootEl, ctx) {
 
         <label>
           <div class="inline-row" style="justify-content:space-between">
-            <span class="nowrap" style="font-weight:700">Tiêu chí Loại</span>
+            <span class="nowrap" style="font-weight:700">Tiêu chí loại</span>
             <span class="muted">Mỗi dòng 1 tiêu chí</span>
           </div>
           <textarea id="crit-exc" class="form-input" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
@@ -50,11 +50,10 @@ export async function mount(rootEl, ctx) {
         </label>
       </div>
 
-      <!-- PDF helper -->
+      <!-- PDF helper – KHÔNG còn nút Đọc PDF, chọn file là tự đọc -->
       <div class="card-body">
         <div class="control-row">
           <input id="crit-pdf" type="file" accept="application/pdf" />
-          <button id="crit-readpdf" class="btn btn-secondary" type="button">Đọc PDF</button>
           <span class="muted" id="crit-pdfhint">Chưa có nội dung PDF</span>
         </div>
       </div>
@@ -81,9 +80,9 @@ export async function mount(rootEl, ctx) {
             placeholder='Dòng đầu là JSON:
 {"inclusion":["..."],"exclusion":["..."]}
 
-Sau đó là mục "Tài liệu tham khảo (AMA 11th): ..."'></textarea>
+Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th): ..."'></textarea>
           <div class="muted">
-            Dòng đầu phải là JSON hợp lệ để nút “Áp dụng JSON” hoạt động. Phần dưới là TLTK theo AMA 11th (chỉ dùng để tham khảo, không parse).
+            Dòng đầu phải là JSON hợp lệ để nút “Áp dụng JSON” hoạt động. Phần TLTK phía dưới chỉ để tham khảo, không dùng để parse.
           </div>
         </div>
       </div>
@@ -108,7 +107,6 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
 
   // --- elements
   const fileEl   = rootEl.querySelector("#crit-pdf");
-  const readBtn  = rootEl.querySelector("#crit-readpdf");
   const hintEl   = rootEl.querySelector("#crit-pdfhint");
 
   const incTA    = rootEl.querySelector("#crit-inc");
@@ -192,27 +190,25 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
       btn.textContent = btn.dataset.prev || "";
     }
   }
-
   async function callAI(bindingKey, prompt, ctx_) {
     if (typeof ctx_.callStepGPT === "function") return ctx_.callStepGPT(bindingKey, prompt);
     if (typeof ctx_.callGPT === "function") return ctx_.callGPT(prompt);
     throw new Error("Chưa cấu hình GPT binding cho step 7");
   }
 
-  // ---- read PDF
-  readBtn.addEventListener("click", async () => {
+  // ---- auto-read PDF khi chọn file (không cần nút)
+  fileEl?.addEventListener("change", async () => {
     try {
       const f = fileEl.files && fileEl.files[0];
-      if (!f) {
-        ctx.toast("Chọn một file PDF trước đã.");
-        return;
-      }
+      if (!f) return;
+      hintEl.textContent = "Đang đọc PDF…";
       const text = await ctx.extractTextFromPDF(f);
       pdfContext = safeSlice(text, 20000);
       hintEl.textContent = `Đã nạp PDF (${pdfContext.length.toLocaleString()} ký tự)`;
       ctx.toast("Đã đọc PDF.");
     } catch (e) {
       console.error(e);
+      hintEl.textContent = "Không đọc được PDF";
       ctx.toast("Không đọc được PDF.");
     }
   });
