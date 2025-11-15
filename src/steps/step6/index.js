@@ -16,24 +16,18 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <style>
-      /* ===== Scoped styles cho Step 6 để canh cột không lệch ===== */
-      #ss .inline-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-      #ss .control-row{ display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; }
-      #ss .grid-3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
-      #ss .full-span{ grid-column:1 / -1; }
-      #ss .form-input{
-        width:100%;
-        font:500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial;
-        background:#fff; border:1px solid var(--border); border-radius:10px;
-        padding:.6rem .75rem; outline:0;
+   <style>
+      /* Chỉ giữ vài tiện ích nhỏ, phần layout chính đã chuyển sang step6.css */
+      #ss .inline-row {
+        display:flex;
+        gap:10px;
+        align-items:center;
+        flex-wrap:wrap;
       }
-      #ss textarea.form-input{ resize:vertical; }
-      #ss .muted{ color:var(--muted-foreground); font-size:.92rem; }
-      @media (max-width:900px){ #ss .grid-3{ grid-template-columns:1fr; } }
-      /* Bảng kết quả */
-      #ss table.ss-kv td{ border-top:1px solid var(--border); padding:.5rem .25rem; vertical-align:top; }
-      #ss table.ss-kv tr:first-child td{ border-top:0; }
+      #ss .muted{
+        color:var(--muted-foreground);
+        font-size:.92rem;
+      }
     </style>
 
     <div id="ss">
