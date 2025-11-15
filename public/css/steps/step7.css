@@ -1,36 +1,84 @@
 /* public/css/steps/step7.css */
-/* ============ Step 7 – Tiêu chí vào/loại ============ */
-
-.step[data-scope="step7"] #crit .hidden {
-  display: none !important;
+/* Scope riêng cho Step 7 để không ảnh hưởng step khác */
+.step[data-scope="step7"] #crit{
+  /* không cần gì thêm ở đây, giữ để scope các rule phía dưới */
 }
 
-/* Nhãn không xuống dòng cho "Tiêu chí Vào/Loại" */
-.step[data-scope="step7"] #crit .nowrap {
+/* ===== 1) Cặp textarea Tiêu chí chọn / loại – thẳng hàng ===== */
+.step[data-scope="step7"] #crit .card-body.grid-2{
+  align-items: stretch;                 /* hai cột cao bằng nhau */
+}
+
+/* label ô tiêu chí chiếm full chiều cao của cột */
+.step[data-scope="step7"] #crit .card-body.grid-2 > label{
+  height: 100%;
+}
+
+/* textarea bên trong label giãn hết chiều cao, cùng một min-height */
+.step[data-scope="step7"] #crit .card-body.grid-2 textarea{
+  flex: 1 1 auto;
+  min-height: 220px;                    /* chỉnh nếu muốn cao hơn/thấp hơn */
+}
+
+/* Dòng “Mỗi dòng 1 tiêu chí” không bị xuống hàng lung tung */
+.step[data-scope="step7"] #crit .nowrap{
   white-space: nowrap;
 }
 
-/* GPT cards thẳng hàng với nội dung chính của card (không thụt vào) */
-.step[data-scope="step7"] #crit .crit-gpt-card {
-  margin: 12px 0 0;  /* chỉ margin-top, hai bên = 0 để thẳng với các khối khác */
+/* ===== 2) Hàng ghi chú ===== */
+/* Chỉ đảm bảo textarea ghi chú nhìn thoáng hơn chút */
+.step[data-scope="step7"] #crit #crit-notes{
+  min-height: 90px;
 }
 
-/* Header GPT: các nút nằm trên 1 hàng, xuống hàng đẹp khi màn nhỏ */
-.step[data-scope="step7"] #crit .crit-gpt-header {
-  display: flex;
-  justify-content: space-between;
+/* ===== 3) Hàng input file + trạng thái PDF ===== */
+/* Dùng 2 cột: file (rộng hơn) + trạng thái (hẹp hơn) */
+.step[data-scope="step7"] #crit .card-body .control-row{
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+  gap: 12px 16px;
   align-items: center;
-  gap: 8px;
 }
 
-/* Textarea trong step 7 */
-.step[data-scope="step7"] #crit textarea.form-input {
-  min-height: 80px;
+/* Cho span hint PDF xám nhẹ, không chiếm cả chiều cao card */
+.step[data-scope="step7"] #crit #crit-pdfhint{
+  font-size: .9rem;
+  color: var(--muted-foreground);
 }
 
-/* Mobile: giữ card full-width, không bị chật */
-@media (max-width: 768px) {
-  .step[data-scope="step7"] #crit .crit-gpt-card {
-    margin: 12px 0 0;
+/* Trên màn nhỏ vẫn xuống 1 cột như layout chung */
+@media (max-width: 900px){
+  .step[data-scope="step7"] #crit .card-body .control-row{
+    grid-template-columns: 1fr;
   }
+}
+
+/* ===== 4) Hàng nút GPT + Lưu – thẳng hàng, chia đều ===== */
+.step[data-scope="step7"] #crit .card-body.inline-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: center;
+}
+
+/* Mỗi nút chiếm ~1/3 hàng, nhưng vẫn co giãn được */
+.step[data-scope="step7"] #crit .card-body.inline-row .btn{
+  flex: 1 1 0;
+  min-width: 180px;           /* để trên màn nhỏ không bị hẹp quá */
+}
+
+/* ===== 5) Box GPT (gợi ý / đánh giá) ===== */
+.step[data-scope="step7"] #crit #crit-sugg-box,
+.step[data-scope="step7"] #crit #crit-eval-box{
+  max-width: 1100px;
+  margin: 16px auto 0;        /* canh giữa giống card chính */
+}
+
+/* Hàng nút nhỏ trong header của 2 box GPT */
+.step[data-scope="step7"] #crit #crit-sugg-box .inline-row,
+.step[data-scope="step7"] #crit #crit-eval-box .inline-row{
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
