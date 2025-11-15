@@ -41,7 +41,7 @@ const GROUPS = [
 ];
 
 export async function mount(rootEl, ctx) {
-  // Gắn scope cho CSS riêng step10
+  // Scope cho CSS riêng step10
   rootEl.closest(".step")?.setAttribute("data-scope", "step10");
 
   rootEl.innerHTML = `
@@ -72,7 +72,6 @@ export async function mount(rootEl, ctx) {
   // ===== State =====
   let state = ctx.get("step10Vars", {});
   if (!state || typeof state !== "object") state = {};
-  // đảm bảo mỗi group có array
   GROUPS.forEach((g) => {
     if (!Array.isArray(state[g.key])) state[g.key] = [];
   });
@@ -123,52 +122,72 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
       </div>
 
       <!-- Form thêm biến (ẩn mặc định, chỉ hiện khi bấm + Thêm biến) -->
-      <div class="var-form grid-2">
+      <div class="var-form-wrap hidden">
+        <div class="var-form grid-2">
+          <!-- Tên biến -->
+          <div class="form-field">
+            <label class="field-label">
+              Tên biến <span class="required">*</span>
+            </label>
+            <input
+              type="text"
+              class="input-var-name"
+              placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12"
+            />
+          </div>
 
-  <!-- Tên biến -->
-  <div class="form-field">
-    <label class="field-label">
-      Tên biến <span class="required">*</span>
-    </label>
-    <input id="var-name" placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12">
-  </div>
+          <!-- Thời điểm thu thập -->
+          <div class="form-field">
+            <label class="field-label">Thời điểm thu thập</label>
+            <input
+              type="text"
+              class="input-var-time"
+              placeholder="Ví dụ: Baseline, tuần 4, tuần 12"
+            />
+          </div>
 
-  <!-- Thời điểm thu thập -->
-  <div class="form-field">
-    <label class="field-label">Thời điểm thu thập</label>
-    <input id="var-time" placeholder="Ví dụ: Baseline, tuần 4, tuần 12">
-  </div>
+          <!-- Đo lường / định nghĩa -->
+          <div class="form-field full-span">
+            <label class="field-label">Đo lường / định nghĩa</label>
+            <textarea
+              class="input-var-measure"
+              placeholder="Mô tả cách đo, thang điểm, điểm cắt, phương pháp tính..."></textarea>
+          </div>
 
-  <!-- Đo lường / định nghĩa -->
-  <div class="form-field full-span">
-    <label class="field-label">Đo lường / định nghĩa</label>
-    <textarea id="var-def" placeholder="Mô tả cách đo, thang điểm, điểm cắt, phương pháp tính..."></textarea>
-  </div>
+          <!-- Đơn vị -->
+          <div class="form-field">
+            <label class="field-label">Đơn vị</label>
+            <input
+              type="text"
+              class="input-var-unit"
+              placeholder="mm, kg, điểm, %, mL/phút... (nếu có)"
+            />
+          </div>
 
-  <!-- Đơn vị -->
-  <div class="form-field">
-    <label class="field-label">Đơn vị</label>
-    <input id="var-unit" placeholder="mm, kg, điểm, %, mL/phút... (nếu có)">
-  </div>
+          <!-- Công cụ / thang đo -->
+          <div class="form-field">
+            <label class="field-label">Công cụ / thang đo</label>
+            <input
+              type="text"
+              class="input-var-instrument"
+              placeholder="Ví dụ: Thang VAS 100 mm, WOMAC, SF-36,..."
+            />
+          </div>
 
-  <!-- Công cụ / thang đo -->
-  <div class="form-field">
-    <label class="field-label">Công cụ / thang đo</label>
-    <input id="var-tool" placeholder="Ví dụ: Thang VAS 100 mm, WOMAC, SF-36,...">
-  </div>
+          <!-- Ghi chú bổ sung -->
+          <div class="form-field full-span">
+            <label class="field-label">Ghi chú bổ sung</label>
+            <textarea
+              class="input-var-notes"
+              placeholder="Phương pháp xử lý số liệu đặc biệt, xử lý mất mẫu, v.v. (tuỳ chọn)"></textarea>
+          </div>
+        </div>
 
-  <!-- Ghi chú bổ sung -->
-  <div class="form-field full-span">
-    <label class="field-label">Ghi chú bổ sung</label>
-    <textarea id="var-note" placeholder="Phương pháp xử lý số liệu đặc biệt, xử lý mất mẫu, v.v. (tuỳ chọn)"></textarea>
-  </div>
-
-</div>
-
-<div class="var-form-actions">
-  <button class="btn-ghost" id="cancelAddVar">Hủy</button>
-  <button class="btn-primary" id="saveVar">Lưu biến vào nhóm</button>
-</div>
+        <div class="var-form-actions">
+          <button type="button" class="btn btn-ghost btn-cancel-var">Hủy</button>
+          <button type="button" class="btn btn-primary btn-save-var">Lưu biến vào nhóm</button>
+        </div>
+      </div>
 
       <!-- Danh sách biến trong nhóm -->
       <div class="var-list-wrap">
@@ -208,6 +227,7 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
     </div>
   `.trim();
 
+  // ===== Lấy element =====
   const formWrap = card.querySelector(".var-form-wrap");
   const listEl = card.querySelector(".var-list");
 
@@ -299,21 +319,9 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
           <button type="button" class="btn btn-ghost btn-del-var">Xoá</button>
         </div>
         <div class="var-item-meta">
-          ${
-            v.time
-              ? `<span>Thời điểm: ${escapeHtml(v.time)}</span>`
-              : ""
-          }
-          ${
-            v.unit
-              ? `<span>Đơn vị: ${escapeHtml(v.unit)}</span>`
-              : ""
-          }
-          ${
-            v.instrument
-              ? `<span>Công cụ: ${escapeHtml(v.instrument)}</span>`
-              : ""
-          }
+          ${v.time ? `<span>Thời điểm: ${escapeHtml(v.time)}</span>` : ""}
+          ${v.unit ? `<span>Đơn vị: ${escapeHtml(v.unit)}</span>` : ""}
+          ${v.instrument ? `<span>Công cụ: ${escapeHtml(v.instrument)}</span>` : ""}
         </div>
         ${
           v.measure
@@ -331,13 +339,11 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
         }
       `.trim();
 
-      item
-        .querySelector(".btn-del-var")
-        .addEventListener("click", () => {
-          vars.splice(idx, 1);
-          onChange(vars.slice());
-          renderList();
-        });
+      item.querySelector(".btn-del-var").addEventListener("click", () => {
+        vars.splice(idx, 1);
+        onChange(vars.slice());
+        renderList();
+      });
 
       listEl.appendChild(item);
     });
@@ -377,7 +383,10 @@ async function onSuggestGroup(group, ctx, wrapEl, taEl, btnEl) {
     toggleBusy(btnEl, true, "Đang gợi ý...");
     const mainObj = (ctx.get("mainObjective", "") || "").trim();
     const subs = Array.isArray(ctx.get("subObjectives", []))
-      ? ctx.get("subObjectives", []).map((x) => String(x || "").trim()).filter(Boolean)
+      ? ctx
+          .get("subObjectives", [])
+          .map((x) => String(x || "").trim())
+          .filter(Boolean)
       : [];
 
     const today = new Date().toISOString().slice(0, 10);
@@ -449,7 +458,10 @@ async function onEvaluateGroup(group, vars, ctx, wrapEl, taEl, btnEl) {
     toggleBusy(btnEl, true, "Đang đánh giá...");
     const mainObj = (ctx.get("mainObjective", "") || "").trim();
     const subs = Array.isArray(ctx.get("subObjectives", []))
-      ? ctx.get("subObjectives", []).map((x) => String(x || "").trim()).filter(Boolean)
+      ? ctx
+          .get("subObjectives", [])
+          .map((x) => String(x || "").trim())
+          .filter(Boolean)
       : [];
 
     const today = new Date().toISOString().slice(0, 10);
