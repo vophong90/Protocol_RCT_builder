@@ -58,7 +58,7 @@ export async function mount(rootEl, ctx) {
         </div>
       </div>
 
-      <!-- Actions – chỉ 2 nút GPT trên 1 hàng -->
+      <!-- Actions – 2 nút GPT trên 1 hàng -->
       <div class="card-body crit-actions">
         <button id="crit-suggest" class="btn btn-primary" type="button">
           GPT gợi ý tiêu chí
@@ -114,9 +114,9 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
         </div>
       </div>
 
-      <!-- Save – luôn ở cuối cùng -->
+      <!-- Save – luôn ở cuối cùng, canh trái -->
       <div class="card-body crit-save-row">
-        <button id="crit-save" class="btn btn-secondary" type="button">
+        <button id="crit-save" class="btn btn-primary" type="button">
           Lưu
         </button>
       </div>
@@ -216,7 +216,7 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
     throw new Error("Chưa cấu hình GPT binding cho step 7");
   }
 
-  // ---- auto-read PDF khi chọn file (không cần nút)
+  // ---- auto-read PDF khi chọn file
   fileEl?.addEventListener("change", async () => {
     try {
       const f = fileEl.files && fileEl.files[0];
@@ -233,7 +233,7 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
     }
   });
 
-  // ---- GPT suggest (kèm TLTK AMA 11th)
+  // ---- GPT suggest
   suggestBtn.addEventListener("click", async () => {
     try {
       toggleBusy(suggestBtn, true, "Đang gợi ý…");
@@ -290,12 +290,10 @@ Có thể dùng guideline CONSORT, sách/y văn chuẩn, nhưng KHÔNG cần URL
     }
   });
 
-  // Áp dụng JSON gợi ý vào 2 ô
+  // Áp dụng JSON gợi ý
   applySugg?.addEventListener("click", () => {
     try {
       const raw = sTA.value || "";
-
-      // Tách đoạn JSON đầu tiên (từ dấu { đầu tiên đến dấu } khớp)
       const match = raw.match(/\{[\s\S]*?\}/);
       if (!match) {
         ctx.toast("Không tìm thấy JSON hợp lệ trong kết quả GPT.");
@@ -323,7 +321,7 @@ Có thể dùng guideline CONSORT, sách/y văn chuẩn, nhưng KHÔNG cần URL
   copySugg?.addEventListener("click", () => copyText(sTA.value || ""));
   hideSugg?.addEventListener("click", () => suggBox.classList.add("hidden"));
 
-  // ---- GPT eval (kèm TLTK AMA 11th)
+  // ---- GPT eval
   evalBtn.addEventListener("click", async () => {
     try {
       toggleBusy(evalBtn, true, "Đang đánh giá…");
@@ -400,7 +398,7 @@ với tối thiểu 3 tài liệu tham khảo (guideline, sách, bài báo) trì
     const current   = ctx.get("criteria", {}) || {};
 
     ctx.save("criteria", {
-      ...current, // giữ evaluation nếu đã có
+      ...current,
       inclusion,
       exclusion,
       notes: (notesTA.value || "").trim(),
