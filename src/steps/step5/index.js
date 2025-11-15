@@ -84,7 +84,7 @@ export async function mount(rootEl, ctx) {
       </div>
 
       <!-- Kết quả GPT – Gợi ý (ĐỨNG SAU MÔ TẢ) -->
-      <div id="dsg-sugg-box" class="card hidden" style="margin:0 16px 12px">
+      <div id="dsg-sugg-box" class="card hidden">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Gợi ý</strong>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -101,7 +101,7 @@ export async function mount(rootEl, ctx) {
       </div>
 
       <!-- Kết quả GPT – Đánh giá (ĐỨNG SAU GỢI Ý) -->
-      <div id="dsg-eval-box" class="card hidden" style="margin:0 16px 12px">
+      <div id="dsg-eval-box" class="card hidden">
         <div class="card-header" style="display:flex;align-items:center;justify-content:space-between">
           <strong>Kết quả GPT – Đánh giá</strong>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
