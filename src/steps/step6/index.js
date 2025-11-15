@@ -16,20 +16,6 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-   <style>
-      /* Chỉ giữ vài tiện ích nhỏ, phần layout chính đã chuyển sang step6.css */
-      #ss .inline-row {
-        display:flex;
-        gap:10px;
-        align-items:center;
-        flex-wrap:wrap;
-      }
-      #ss .muted{
-        color:var(--muted-foreground);
-        font-size:.92rem;
-      }
-    </style>
-
     <div id="ss">
       <!-- Hàng chọn tham số chung -->
       <div class="card-body grid-3">
