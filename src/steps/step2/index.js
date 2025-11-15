@@ -4,64 +4,97 @@
 export const id = 2;
 export const title = "Mục tiêu nghiên cứu";
 export const subtitle = "Đặt mục tiêu chính/phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF";
-export const css = "./public/css/steps/step2.css"; // (tuỳ chọn)
+export const css = "./public/css/steps/step2.css";
 
 export async function mount(rootEl, ctx) {
+  // gắn scope cho CSS riêng step 2
+  rootEl.closest(".step")?.setAttribute("data-scope", "step2");
+
   // rootEl CHÍNH LÀ .card → không lồng .card mới
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Mục tiêu nghiên cứu</h3>
-      <div class="card-subtitle">Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.</div>
+      <div class="card-subtitle">
+        Đặt mục tiêu chính và các mục tiêu phụ; có thể nhờ GPT gợi ý từ PICO/Câu hỏi/PDF.
+      </div>
     </div>
 
     <div class="card-body">
-      <label>Mục tiêu chính
-        <textarea id="obj-main" rows="3" placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
+      <label class="obj-main-label">
+        Mục tiêu chính
+        <textarea
+          id="obj-main"
+          rows="3"
+          placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
       </label>
     </div>
 
     <div class="card-body">
-      <div style="font-weight:600;margin-bottom:.5rem">Mục tiêu phụ</div>
-      <div class="control-row" style="gap:8px">
-        <input id="obj-sub-input" type="text" placeholder="Nhập mục tiêu phụ..." />
-        <button id="obj-sub-add" class="btn btn-secondary" type="button">Thêm</button>
+      <div class="obj-sub-title">Mục tiêu phụ</div>
+      <div class="obj-sub-row">
+        <input
+          id="obj-sub-input"
+          type="text"
+          placeholder="Nhập mục tiêu phụ..." />
+        <button
+          id="obj-sub-add"
+          class="btn btn-secondary"
+          type="button">
+          Thêm
+        </button>
       </div>
-      <div id="obj-sub-list" style="margin-top:.5rem"></div>
+      <div id="obj-sub-list" class="obj-sub-list"></div>
     </div>
 
     <!-- File + 2 nút GPT -->
-    <div class="card-body control-row row-spaced">
-      <input id="obj-pdf" type="file" accept="application/pdf" />
-      <div class="inline-row" style="gap:8px">
-        <button id="obj-gpt"  class="btn btn-primary"  type="button">GPT gợi ý mục tiêu</button>
-        <button id="obj-eval" class="btn btn-secondary" type="button">GPT đánh giá mục tiêu</button>
+    <div class="card-body">
+      <label class="obj-file-row">
+        <span class="obj-file-label">Tài liệu tham khảo (PDF, tuỳ chọn)</span>
+        <input id="obj-pdf" type="file" accept="application/pdf" />
+      </label>
+
+      <div class="obj-gpt-row">
+        <button id="obj-gpt"  class="btn btn-primary"  type="button">
+          GPT gợi ý mục tiêu
+        </button>
+        <button id="obj-eval" class="btn btn-secondary" type="button">
+          GPT đánh giá mục tiêu
+        </button>
       </div>
     </div>
 
     <!-- Kết quả GPT – GỢI Ý -->
     <div id="obj-suggest-wrap" class="card-body" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+      <div class="obj-gpt-header">
         <strong>Kết quả GPT – Gợi ý</strong>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="obj-gpt-actions">
           <button id="obj-apply" class="btn btn-primary" type="button">Chèn vào ô</button>
           <button id="obj-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
           <button id="obj-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="obj-suggest-ta" rows="10" placeholder='{"main":"...","subs":["...","..."],"refs":["Tác giả… (năm). … DOI/PMID/URL"]}'></textarea>
-      <div class="muted" style="margin-top:.35rem">Khi chèn, chỉ lấy mục tiêu; TLTK chỉ để bạn tham khảo.</div>
+      <textarea
+        id="obj-suggest-ta"
+        rows="10"
+        placeholder='{"main":"...","subs":["...","..."],"refs":["Tác giả… (năm). … DOI/PMID/URL"]}'></textarea>
+      <div class="muted" style="margin-top:.35rem">
+        Khi chèn, chỉ lấy mục tiêu; TLTK chỉ để bạn tham khảo.
+      </div>
     </div>
 
     <!-- Kết quả GPT – ĐÁNH GIÁ -->
     <div id="obj-eval-wrap" class="card-body" style="display:none">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+      <div class="obj-gpt-header">
         <strong>Kết quả GPT – Đánh giá</strong>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <div class="obj-gpt-actions">
           <button id="obj-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
           <button id="obj-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
       </div>
-      <textarea id="obj-eval-ta" rows="11" placeholder="Đánh giá theo SMART + TLTK sẽ xuất hiện tại đây…"></textarea>
+      <textarea
+        id="obj-eval-ta"
+        rows="11"
+        placeholder="Đánh giá theo SMART + TLTK sẽ xuất hiện tại đây…"></textarea>
     </div>
 
     <div class="card-footer">
@@ -94,16 +127,22 @@ export async function mount(rootEl, ctx) {
 
   // ===== Load state =====
   mainEl.value = ctx.get('mainObjective', '') || '';
-  let subObjectives = Array.isArray(ctx.get('subObjectives', [])) ? ctx.get('subObjectives') : [];
+
+  const storedSubs = ctx.get('subObjectives', []);         // FIX: chỉ get một lần
+  let subObjectives = Array.isArray(storedSubs) ? storedSubs.slice() : [];
   renderSubList();
 
   const oldEval = ctx.get('objectivesEval', '');
-  if (oldEval) { eTA.value = String(oldEval); eWrap.style.display = ''; }
+  if (oldEval) {
+    eTA.value = String(oldEval);
+    eWrap.style.display = '';
+  }
 
   // ===== Sub objectives =====
   subAddBtn.addEventListener('click', () => {
     const v = (subInputEl.value || '').trim();
     if (!v) return;
+    if (!Array.isArray(subObjectives)) subObjectives = []; // guard
     subObjectives.push(v);
     subInputEl.value = '';
     renderSubList();
@@ -117,26 +156,23 @@ export async function mount(rootEl, ctx) {
     }
     subObjectives.forEach((txt, idx) => {
       const row = document.createElement('div');
-      row.style.display = 'flex';
-      row.style.justifyContent = 'space-between';
-      row.style.alignItems = 'center';
-      row.style.gap = '12px';
-      row.style.padding = '8px 0';
-      row.style.borderBottom = '1px dashed var(--border)';
+      row.className = 'obj-sub-item';
 
       const t = document.createElement('div');
       t.textContent = txt;
 
       const controls = document.createElement('div');
-      controls.style.display = 'flex';
-      controls.style.gap = '8px';
+      controls.className = 'obj-sub-controls';
 
       const up = document.createElement('button');
       up.className = 'btn btn-ghost';
       up.textContent = '↑';
       up.title = 'Lên';
       up.onclick = () => {
-        if (idx > 0) { [subObjectives[idx-1], subObjectives[idx]] = [subObjectives[idx], subObjectives[idx-1]]; renderSubList(); }
+        if (idx > 0) {
+          [subObjectives[idx - 1], subObjectives[idx]] = [subObjectives[idx], subObjectives[idx - 1]];
+          renderSubList();
+        }
       };
 
       const down = document.createElement('button');
@@ -144,13 +180,19 @@ export async function mount(rootEl, ctx) {
       down.textContent = '↓';
       down.title = 'Xuống';
       down.onclick = () => {
-        if (idx < subObjectives.length - 1) { [subObjectives[idx+1], subObjectives[idx]] = [subObjectives[idx], subObjectives[idx+1]]; renderSubList(); }
+        if (idx < subObjectives.length - 1) {
+          [subObjectives[idx + 1], subObjectives[idx]] = [subObjectives[idx], subObjectives[idx + 1]];
+          renderSubList();
+        }
       };
 
       const del = document.createElement('button');
       del.className = 'btn btn-ghost';
       del.textContent = 'Xóa';
-      del.onclick = () => { subObjectives.splice(idx, 1); renderSubList(); };
+      del.onclick = () => {
+        subObjectives.splice(idx, 1);
+        renderSubList();
+      };
 
       controls.append(up, down, del);
       row.append(t, controls);
@@ -165,7 +207,7 @@ export async function mount(rootEl, ctx) {
     ctx.toast('Đã lưu mục tiêu');
   });
 
-  // ===== File UI ===== (không còn chip “chưa chọn tệp”; chỉ set tooltip)
+  // ===== File UI =====
   pdfEl.addEventListener('change', () => {
     pdfEl.title = pdfEl.files?.[0]?.name || '';
   });
@@ -193,7 +235,7 @@ export async function mount(rootEl, ctx) {
         }
       }
 
-      const today = new Date().toISOString().slice(0,10);
+      const today = new Date().toISOString().slice(0, 10);
 
       const prompt = `
 Bạn là trợ lý xây dựng đề cương RCT. Dựa trên PICO, câu hỏi nghiên cứu và (nếu có) tài liệu PDF,
@@ -255,7 +297,10 @@ ${pdfText || '(không có)'}
   // Áp dụng gợi ý (chỉ lấy main/subs)
   sApply.addEventListener('click', () => {
     const obj = parseObjectives(sTA.value);
-    if (!obj) { ctx.toast('Không nhận diện được gợi ý hợp lệ.'); return; }
+    if (!obj) {
+      ctx.toast('Không nhận diện được gợi ý hợp lệ.');
+      return;
+    }
     if (obj.main) mainEl.value = obj.main;
     if (Array.isArray(obj.subs)) subObjectives = obj.subs.slice();
     renderSubList();
@@ -272,14 +317,16 @@ ${pdfText || '(không có)'}
   async function onEvaluate() {
     const main = (mainEl.value || '').trim();
     const subs = Array.isArray(subObjectives) ? subObjectives : [];
-    if (!main && subs.length === 0) { ctx.toast('Chưa có mục tiêu để đánh giá.'); return; }
+    if (!main && subs.length === 0) {
+      ctx.toast('Chưa có mục tiêu để đánh giá.');
+      return;
+    }
 
     try {
       toggleBusy(evalBtn, true, 'Đang đánh giá...');
       const pico = ctx.get('pico', {}) || {};
       const rq   = ctx.get('researchQuestion', '') || '';
 
-      // Đọc PDF để bám nguồn thật
       let pdfText = '';
       const f = pdfEl?.files?.[0];
       if (f) {
@@ -293,7 +340,7 @@ ${pdfText || '(không có)'}
         }
       }
 
-      const today = new Date().toISOString().slice(0,10);
+      const today = new Date().toISOString().slice(0, 10);
 
       const prompt = `
 Bạn là chuyên gia phương pháp RCT. Hãy đánh giá bộ mục tiêu theo **SMART** và **trích dẫn TLTK CÓ THẬT** (nếu có).
@@ -364,8 +411,12 @@ ${pdfText || '(không có)'}
       try {
         const j = JSON.parse(json);
         const main = String(j?.main || '').trim();
-        const subs = Array.isArray(j?.subs) ? j.subs.map(x => String(x || '').trim()).filter(Boolean) : [];
-        const refs = Array.isArray(j?.refs) ? j.refs.map(x => String(x || '').trim()).filter(Boolean) : [];
+        const subs = Array.isArray(j?.subs)
+          ? j.subs.map(x => String(x || '').trim()).filter(Boolean)
+          : [];
+        const refs = Array.isArray(j?.refs)
+          ? j.refs.map(x => String(x || '').trim()).filter(Boolean)
+          : [];
         if (main || subs.length || refs.length) return { main, subs, refs };
       } catch {}
     }
@@ -376,7 +427,10 @@ ${pdfText || '(không có)'}
     let inRefs = false;
     for (const line of Lraw) {
       const trimmed = line.trim();
-      if (/^(TLTK|Tham\s*khảo)\s*:?\s*$/iu.test(trimmed)) { inRefs = true; continue; }
+      if (/^(TLTK|Tham\s*khảo)\s*:?\s*$/iu.test(trimmed)) {
+        inRefs = true;
+        continue;
+      }
       if (!inRefs) L.push(trimmed);
     }
     const filtered = L
@@ -385,11 +439,16 @@ ${pdfText || '(không có)'}
 
     if (filtered.length === 0) return null;
 
-    let main = ''; const subs = [];
+    let main = '';
+    const subs = [];
     for (const ln of filtered) {
       const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/iu);
-      if (m) { main = m[1].trim(); continue; }
-      if (!main) main = ln; else subs.push(ln);
+      if (m) {
+        main = m[1].trim();
+        continue;
+      }
+      if (!main) main = ln;
+      else subs.push(ln);
     }
     return { main, subs, refs: [] };
   }
@@ -397,29 +456,45 @@ ${pdfText || '(không có)'}
   function extractJsonCandidate(s) {
     const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fenced) return stripBullets(fenced[1]);
-    const i1 = s.indexOf('{'); const i2 = s.lastIndexOf('}');
+    const i1 = s.indexOf('{');
+    const i2 = s.lastIndexOf('}');
     if (i1 >= 0 && i2 > i1) return stripBullets(s.slice(i1, i2 + 1));
     return '';
   }
   function stripBullets(raw) {
-    return raw.split(/\r?\n/).map(line => line.replace(/^\s*[-*•]\s?/, '')).join('\n').trim();
+    return raw
+      .split(/\r?\n/)
+      .map(line => line.replace(/^\s*[-*•]\s?/, ''))
+      .join('\n')
+      .trim();
   }
 
   function copyText(t) {
-    try { navigator.clipboard?.writeText(t); ctx.toast('Đã sao chép.'); }
-    catch { ctx.toast('Không sao chép được.'); }
+    try {
+      navigator.clipboard?.writeText(t);
+      ctx.toast('Đã sao chép.');
+    } catch {
+      ctx.toast('Không sao chép được.');
+    }
   }
   function toggleBusy(btn, busy, label) {
     if (!btn) return;
-    if (busy) { btn.disabled = true; btn.dataset.prev = btn.textContent || ''; btn.textContent = 'Đang xử lý...'; }
-    else { btn.disabled = false; btn.textContent = label || btn.dataset.prev || ''; }
+    if (busy) {
+      btn.disabled = true;
+      btn.dataset.prev = btn.textContent || '';
+      btn.textContent = 'Đang xử lý...';
+    } else {
+      btn.disabled = false;
+      btn.textContent = label || btn.dataset.prev || '';
+    }
   }
 
   // Gọi GPT theo binding; fallback callGPT nếu cần
   async function callAI(bindingKey, prompt, ctx_) {
     if (typeof ctx_.callStepGPT === 'function') {
-      try { return String(await ctx_.callStepGPT(bindingKey, prompt) ?? ''); }
-      catch (e) {
+      try {
+        return String((await ctx_.callStepGPT(bindingKey, prompt)) ?? '');
+      } catch (e) {
         if (typeof ctx_.callGPT === 'function') return String(await ctx_.callGPT(prompt));
         throw e;
       }
@@ -430,7 +505,7 @@ ${pdfText || '(không có)'}
 
   // Fallback đọc PDF bằng pdfjs nếu ctx chưa cung cấp
   async function fallbackExtractTextFromPDF(file, maxPages = 4) {
-    const pdfjs = (globalThis.pdfjsLib || window.pdfjsLib);
+    const pdfjs = globalThis.pdfjsLib || window.pdfjsLib;
     if (!pdfjs) throw new Error('pdfjsLib chưa được nạp');
     const buf = await file.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: buf }).promise;
