@@ -248,4 +248,32 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+  // src/config/ai-bindings.js
+
+  // ---------- STEP 9 ----------
+  'step9.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step9.suggest',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step9.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step9.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  
 };
