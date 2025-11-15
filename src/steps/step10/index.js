@@ -127,7 +127,7 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
           <!-- Tên biến -->
           <div class="form-field">
             <label class="field-label">
-              Tên biến <span class="required">*</span>
+              Tên biến
             </label>
             <input
               type="text"
