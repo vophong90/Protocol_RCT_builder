@@ -82,7 +82,7 @@ export async function mount(rootEl, ctx) {
       <div id="ss-sugg-box" class="card" style="display:none">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
           <strong>Kết quả GPT – Gợi ý công thức</strong>
-          <div class="control-row">
+          <div class="inline-row">
             <button id="ss-apply-method" class="btn btn-primary"  type="button">Áp dụng phương pháp gợi ý</button>
             <button id="ss-copy-sugg"    class="btn btn-ghost"    type="button">Sao chép</button>
             <button id="ss-hide-sugg"    class="btn btn-ghost"    type="button">Ẩn</button>
@@ -98,7 +98,7 @@ export async function mount(rootEl, ctx) {
       <div id="ss-eval-box" class="card" style="display:none">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
           <strong>Kết quả GPT – Đánh giá giả định</strong>
-          <div class="control-row">
+          <div class="inline-row">
             <button id="ss-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
             <button id="ss-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
           </div>
