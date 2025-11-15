@@ -194,4 +194,31 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 7 ----------
+  'step7.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Gợi ý tiêu chí vào/loại + kèm TLTK AMA 11th → trả về text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step7.suggest',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step7.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Đánh giá tiêu chí hiện có + TLTK AMA 11th → text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step7.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
 };
