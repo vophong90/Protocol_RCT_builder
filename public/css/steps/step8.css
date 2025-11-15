@@ -5,32 +5,33 @@
   display: none !important;
 }
 
-/* Tiêu đề các section nhỏ trong card */
+/* Tiêu đề các section nhỏ trong card (ví dụ: Nhánh can thiệp & Tỷ lệ, Preview...) */
 [data-scope="step8"] .rand-section-title{
   font-weight: 600;
   margin-bottom: 4px;
 }
 
-/* Ghi chú nhỏ dưới các ô (block size, tổng N) */
+/* Ghi chú nhỏ dưới các ô (block size, tổng N...) */
 [data-scope="step8"] .rand-note{
-  display:block;
-  font-size:0.85rem;
-  font-weight:400;          /* không in đậm, override label 600 */
-  color:var(--muted);
-  margin-top:4px;
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 400;          /* không in đậm, override label 600 */
+  color: var(--muted);
+  margin-top: 4px;
 }
 
-/* Tóm tắt preview */
+/* Tóm tắt preview chuỗi phân bổ */
 [data-scope="step8"] .rand-summary{
   margin-bottom: 8px;
 }
 
 /* Căn top cho 2 ô Phương pháp / Seed để thẳng hàng hơn */
 [data-scope="step8"] .control-row{
-  align-items:flex-start;
+  align-items: flex-start;
 }
 
-/* QUAN TRỌNG: bỏ margin-top của cột thứ hai trong control-row để không bị tụt xuống */
+/* QUAN TRỌNG: bỏ margin-top của cột thứ hai trong control-row để không bị tụt xuống
+   (override rule chung .card-body > * + * { margin-top:14px }) */
 [data-scope="step8"] .control-row > * + *{
-  margin-top:0;    /* override .card-body > * + * */
+  margin-top: 0;
 }
