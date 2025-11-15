@@ -221,4 +221,31 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 8 ----------
+  'step8.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Gợi ý đoạn mô tả quy trình ngẫu nhiên hoá + TLTK AMA 11th → text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step8.suggest',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step8.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Dự phòng: nếu sau này anh muốn GPT đánh giá/nhận xét đoạn mô tả randomization
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step8.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
 };
