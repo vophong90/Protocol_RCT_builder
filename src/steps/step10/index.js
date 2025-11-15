@@ -1,78 +1,77 @@
 // src/steps/step10/index.js
 // Step 10 – Biến số nghiên cứu (phiên bản mới)
-// - Không dùng CSV/kho biến.
-// - Mỗi nhóm biến (primary, secondary, baseline, confounder, mediator, moderator, safety)
-//   là 1 card full width, xếp dọc.
-// - Trong mỗi card:
-//   + Nút "Thêm biến" → khi click mới hiện form nhập biến.
-//   + Form nhập: name (bắt buộc), timepoint, definition, unit, note.
-//   + Danh sách biến đã thêm, có nút Xoá từng biến.
-//   + Nút "GPT gợi ý biến" & "GPT đánh giá nhóm biến" cho riêng nhóm đó.
-// - Lưu state vào ctx.save('selectedVariables', selected);
-//   selected = { primary:[{...}], secondary:[...], ... }.
+// - Mỗi nhóm biến là 1 card full-width, xếp dọc:
+//   primary, secondary, baseline, confounder, mediator, moderator, safety
+// - Mỗi card có:
+//    + Nút "Thêm biến" → click mới hiện form nhập biến mới
+//    + Nút "GPT gợi ý biến" → gợi ý dựa trên PICO + Mục tiêu (step2) + thiết kế, can thiệp
+//    + Nút "GPT đánh giá nhóm biến" → đánh giá nhóm hiện tại theo chuẩn quốc tế (CONSORT/SPIRIT...)
+// - Biến gồm các trường: name, timepoint, definition, measurement, unit
+// - Lưu state: variablesByGroup = { primary: Var[], secondary: Var[], ... }
 
 export const id = 10;
 export const title = "Biến số nghiên cứu";
 export const subtitle =
-  "Phân nhóm các biến (kết cục chính/phụ, nền, nhiễu...) và mô tả rõ cách đo lường.";
+  "Đặt và quản lý biến theo nhóm: kết cục chính, kết cục phụ, nền, nhiễu, trung gian, điều biến, an toàn.";
 export const css = "./public/css/steps/step10.css";
 
-const BUCKETS = [
-  {
-    key: "primary",
+const GROUP_CONFIG = {
+  primary: {
     title: "Kết cục chính (Primary)",
-    hint: "Biến kết cục chính duy nhất hoặc rất ít; dùng để tính cỡ mẫu và trả lời câu hỏi chính."
+    hint: "1–2 biến kết cục chính, bám sát mục tiêu chính.",
   },
-  {
-    key: "secondary",
+  secondary: {
     title: "Kết cục phụ (Secondary)",
-    hint: "Các kết cục bổ sung giúp hiểu rõ hơn hiệu quả can thiệp."
+    hint: "Các kết cục bổ sung, giúp hiểu sâu hơn hiệu quả can thiệp.",
   },
-  {
-    key: "baseline",
+  baseline: {
     title: "Biến nền (Baseline)",
-    hint: "Đặc điểm ban đầu của đối tượng, dùng mô tả dân số và cân bằng nhóm."
+    hint: "Đặc điểm ban đầu để mô tả quần thể và kiểm tra cân bằng giữa các nhánh.",
   },
-  {
-    key: "confounder",
+  confounder: {
     title: "Nhiễu (Confounder)",
-    hint: "Các yếu tố có thể gây nhiễu, cần thu thập để điều chỉnh trong phân tích."
+    hint: "Yếu tố có thể gây nhiễu mối liên hệ giữa can thiệp và kết cục.",
   },
-  {
-    key: "mediator",
+  mediator: {
     title: "Trung gian (Mediator)",
-    hint: "Biến nằm trên đường dẫn cơ chế giữa can thiệp và kết cục (nếu phù hợp giả thuyết)."
+    hint: "Biến trung gian giả định trong cơ chế tác động (nếu phù hợp).",
   },
-  {
-    key: "moderator",
+  moderator: {
     title: "Điều biến (Moderator)",
-    hint: "Biến có thể làm thay đổi hướng/độ lớn hiệu quả can thiệp (subgroup/interaction)."
+    hint: "Biến điều biến hiệu quả can thiệp giữa các phân nhóm (nếu phù hợp).",
   },
-  {
-    key: "safety",
+  safety: {
     title: "An toàn (Safety)",
-    hint: "Biến cố bất lợi (AE/SAE), xét nghiệm an toàn, chỉ số theo dõi độc tính."
-  }
-];
+    hint: "Biến cố bất lợi, AE/SAE, chỉ số an toàn quan trọng.",
+  },
+};
 
-export async function mount(root, ctx) {
-  // scope CSS
-  root.closest(".step")?.setAttribute("data-scope", "step10");
+const GROUP_KEYS = Object.keys(GROUP_CONFIG);
 
-  // khung chung
-  root.innerHTML = `
+export async function mount(rootEl, ctx) {
+  // scope CSS riêng cho step 10
+  rootEl.closest(".step")?.setAttribute("data-scope", "step10");
+
+  // ---------- Khung chung ----------
+  rootEl.innerHTML = `
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">Biến số nghiên cứu</h3>
         <div class="card-subtitle">
-          Phân nhóm biến theo vai trò (kết cục chính/phụ, nền, nhiễu, an toàn...).
-          Mỗi biến cần ghi rõ thời điểm thu thập, định nghĩa và cách đo lường.
+          Thiết kế và quản lý biến số theo từng nhóm chức năng. Mỗi nhóm có thể nhờ GPT
+          gợi ý hoặc đánh giá dựa trên PICO, mục tiêu nghiên cứu và hướng dẫn quốc tế
+          (CONSORT, SPIRIT, ICH E9...).
         </div>
       </div>
 
       <div class="card-body">
-        <div id="var-buckets" class="var-buckets"></div>
+        <div class="muted">
+          Gợi ý: với mỗi biến, nên ghi rõ <strong>tên biến, thời điểm thu thập, cách đo lường/định nghĩa và đơn vị</strong>,
+          để đảm bảo khả năng tái lập và phân tích thống nhất.
+        </div>
       </div>
+
+      ${GROUP_KEYS.map((k) => renderGroupCard(k)).join("")}
 
       <div class="card-footer">
         <button id="vars-save-all" class="btn btn-primary" type="button">
@@ -82,182 +81,97 @@ export async function mount(root, ctx) {
     </div>
   `.trim();
 
-  const bucketsWrap = root.querySelector("#var-buckets");
-  const saveAllBtn = root.querySelector("#vars-save-all");
+  // ---------- State ----------
+  const stored = ctx.get("variablesByGroup", {}) || {};
+  let groups = {};
+  GROUP_KEYS.forEach((k) => {
+    const arr = Array.isArray(stored[k]) ? stored[k] : [];
+    groups[k] = arr.map(normVar).filter((v) => v.name);
+  });
 
-  // ======= Load & chuẩn hóa state =======
-  let selected = normalizeSelected(ctx.get("selectedVariables", {}));
+  // ---------- DOM refs ----------
+  const saveAllBtn = rootEl.querySelector("#vars-save-all");
 
-  // ======= Render các card nhóm biến =======
-  const bucketDom = {}; // key -> { card, listEl, form, evalBox }
+  // render danh sách lần đầu
+  GROUP_KEYS.forEach((k) => renderGroupList(k));
 
-  BUCKETS.forEach((cfg) => {
-    const card = document.createElement("div");
-    card.className = "card var-bucket-card";
-    card.dataset.bucket = cfg.key;
+  // Wire nút Thêm / Lưu / Hủy form cho từng nhóm
+  GROUP_KEYS.forEach((groupKey) => {
+    const addBtn = rootEl.querySelector(`[data-add-var="${groupKey}"]`);
+    const formWrap = rootEl.querySelector(`[data-form="${groupKey}"]`);
+    const saveBtn = rootEl.querySelector(`[data-save-var="${groupKey}"]`);
+    const cancelBtn = rootEl.querySelector(`[data-cancel-var="${groupKey}"]`);
 
-    card.innerHTML = `
-      <div class="card-header var-bucket-header">
-        <div>
-          <div class="card-title">${escapeHtml(cfg.title)}</div>
-          <div class="card-subtitle">${escapeHtml(cfg.hint)}</div>
-        </div>
-        <div class="var-bucket-header-actions">
-          <button type="button" class="btn btn-secondary var-add-btn">+ Thêm biến</button>
-        </div>
-      </div>
-
-      <div class="card-body var-form hidden">
-        <div class="var-form-grid">
-          <label>
-            Tên biến <span class="required">*</span>
-            <input type="text" class="var-input-name"
-              placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12" />
-          </label>
-          <label>
-            Thời điểm thu thập
-            <input type="text" class="var-input-timepoint"
-              placeholder="Ví dụ: Baseline, tuần 4, tuần 12" />
-          </label>
-          <label class="full-span">
-            Định nghĩa / Đo lường
-            <textarea rows="3" class="var-input-definition"
-              placeholder="Mô tả cách đo, thang điểm, công thức tính, nguồn hướng dẫn chuẩn (nếu có)…"></textarea>
-          </label>
-          <label>
-            Đơn vị
-            <input type="text" class="var-input-unit"
-              placeholder="Ví dụ: điểm, mmHg, kg/m²" />
-          </label>
-          <label>
-            Ghi chú (tuỳ chọn)
-            <input type="text" class="var-input-note"
-              placeholder="Ví dụ: do bệnh nhân tự báo cáo; đo bởi điều dưỡng; đo buổi sáng nhịn đói…" />
-          </label>
-        </div>
-        <div class="var-form-actions">
-          <button type="button" class="btn btn-primary var-save-one">Lưu biến</button>
-          <button type="button" class="btn btn-ghost var-cancel-one">Hủy</button>
-        </div>
-      </div>
-
-      <div class="card-body">
-        <div class="var-list-title">Danh sách biến trong nhóm</div>
-        <div class="var-list" id="var-list-${cfg.key}"></div>
-      </div>
-
-      <div class="card-footer var-bucket-footer">
-        <button type="button" class="btn btn-primary var-gpt-suggest">GPT gợi ý biến</button>
-        <button type="button" class="btn btn-secondary var-gpt-evaluate">GPT đánh giá nhóm biến</button>
-      </div>
-
-      <div class="card-body var-eval hidden">
-        <div class="var-eval-title">Kết quả đánh giá nhóm biến</div>
-        <div class="var-eval-text"></div>
-      </div>
-    `;
-
-    bucketsWrap.appendChild(card);
-
-    bucketDom[cfg.key] = {
-      card,
-      cfg,
-      formWrap: card.querySelector(".var-form"),
-      listEl: card.querySelector(`#var-list-${cfg.key}`),
-      evalWrap: card.querySelector(".var-eval"),
-      evalText: card.querySelector(".var-eval-text")
-    };
-
-    // nút Thêm biến
-    const addBtn = card.querySelector(".var-add-btn");
-    const saveOneBtn = card.querySelector(".var-save-one");
-    const cancelBtn = card.querySelector(".var-cancel-one");
-
-    const nameInput = card.querySelector(".var-input-name");
-    const timeInput = card.querySelector(".var-input-timepoint");
-    const defInput = card.querySelector(".var-input-definition");
-    const unitInput = card.querySelector(".var-input-unit");
-    const noteInput = card.querySelector(".var-input-note");
-
-    addBtn.addEventListener("click", () => {
-      bucketDom[cfg.key].formWrap.classList.remove("hidden");
-      nameInput.focus();
+    addBtn?.addEventListener("click", () => {
+      // mở form, reset field
+      resetForm(groupKey);
+      formWrap?.classList.remove("hidden");
+      // scroll cho dễ thấy
+      formWrap?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
 
-    cancelBtn.addEventListener("click", () => {
-      clearForm();
-      bucketDom[cfg.key].formWrap.classList.add("hidden");
+    cancelBtn?.addEventListener("click", () => {
+      formWrap?.classList.add("hidden");
+      resetForm(groupKey);
     });
 
-    saveOneBtn.addEventListener("click", () => {
-      const v = {
-        name: (nameInput.value || "").trim(),
-        timepoint: (timeInput.value || "").trim(),
-        definition: (defInput.value || "").trim(),
-        unit: (unitInput.value || "").trim(),
-        note: (noteInput.value || "").trim()
-      };
-      if (!v.name) {
+    saveBtn?.addEventListener("click", () => {
+      const values = readForm(groupKey);
+      if (!values.name) {
         ctx.toast("Tên biến là bắt buộc.");
-        nameInput.focus();
         return;
       }
-      selected[cfg.key].push(v);
-      clearForm();
-      bucketDom[cfg.key].formWrap.classList.add("hidden");
-      renderBucketList(cfg.key);
-      ctx.toast("Đã thêm biến vào nhóm.");
+      groups[groupKey].push(values);
+      renderGroupList(groupKey);
+      formWrap?.classList.add("hidden");
+      resetForm(groupKey);
+      ctx.toast(`Đã thêm biến vào nhóm: ${GROUP_CONFIG[groupKey].title}.`);
     });
-
-    function clearForm() {
-      nameInput.value = "";
-      timeInput.value = "";
-      defInput.value = "";
-      unitInput.value = "";
-      noteInput.value = "";
-    }
-
-    // nút GPT gợi ý
-    const gptSuggestBtn = card.querySelector(".var-gpt-suggest");
-    gptSuggestBtn.addEventListener("click", () =>
-      onSuggestGroup(cfg.key, ctx)
-    );
-
-    // nút GPT đánh giá
-    const gptEvalBtn = card.querySelector(".var-gpt-evaluate");
-    gptEvalBtn.addEventListener("click", () =>
-      onEvaluateGroup(cfg.key, ctx)
-    );
   });
 
-  // render lần đầu danh sách
-  BUCKETS.forEach((b) => renderBucketList(b.key));
-
-  // ======= Save all =======
-  saveAllBtn.addEventListener("click", () => {
-    ctx.save("selectedVariables", selected);
-    ctx.toast("Đã lưu tất cả nhóm biến.");
+  // ---------- GPT: gợi ý & đánh giá theo từng nhóm ----------
+  const suggestButtons = rootEl.querySelectorAll("[data-gpt-suggest]");
+  suggestButtons.forEach((btn) => {
+    const groupKey = btn.getAttribute("data-gpt-suggest");
+    if (!groupKey) return;
+    btn.addEventListener("click", () => onSuggestGroup(groupKey));
   });
 
-  // ================== RENDER LIST ==================
-  function renderBucketList(bucketKey) {
-    const dom = bucketDom[bucketKey];
-    if (!dom) return;
-    const listEl = dom.listEl;
-    const arr = selected[bucketKey] || [];
+  const evalButtons = rootEl.querySelectorAll("[data-gpt-eval]");
+  evalButtons.forEach((btn) => {
+    const groupKey = btn.getAttribute("data-gpt-eval");
+    if (!groupKey) return;
+    btn.addEventListener("click", () => onEvaluateGroup(groupKey));
+  });
 
+  // ---------- Lưu tất cả ----------
+  saveAllBtn?.addEventListener("click", () => {
+    ctx.save("variablesByGroup", groups);
+    ctx.toast("Đã lưu toàn bộ các nhóm biến.");
+  });
+
+  // ============================================================
+  // ===============  FUNCTIONS – RENDER UI  ====================
+  // ============================================================
+
+  function renderGroupList(groupKey) {
+    const listEl = rootEl.querySelector(`[data-list="${groupKey}"]`);
+    if (!listEl) return;
+
+    const arr = groups[groupKey] || [];
     listEl.innerHTML = "";
+
     if (!arr.length) {
       listEl.innerHTML =
-        '<div class="muted">Chưa có biến nào trong nhóm này.</div>';
+        '<div class="muted">Chưa có biến trong nhóm này. Nhấn "Thêm biến" hoặc dùng GPT để gợi ý.</div>';
       return;
     }
 
     arr.forEach((v, idx) => {
-      const row = document.createElement("div");
-      row.className = "var-item";
+      const item = document.createElement("div");
+      item.className = "var-item";
 
-      row.innerHTML = `
+      item.innerHTML = `
         <div class="var-item-header">
           <div class="var-item-title">${idx + 1}. ${escapeHtml(v.name)}</div>
           <button type="button" class="btn btn-ghost var-item-delete">Xoá</button>
@@ -271,248 +185,287 @@ export async function mount(root, ctx) {
           ${v.unit ? `<span>Đơn vị: ${escapeHtml(v.unit)}</span>` : ""}
         </div>
         ${
-          v.definition
+          v.definition || v.measurement
             ? `<div class="var-item-def"><strong>Đo lường:</strong> ${escapeHtml(
-                v.definition
+                [v.definition, v.measurement].filter(Boolean).join(" — ")
               )}</div>`
             : ""
         }
-        ${
-          v.note
-            ? `<div class="var-item-note muted">${escapeHtml(v.note)}</div>`
-            : ""
-        }
-      `;
+      `.trim();
 
-      const delBtn = row.querySelector(".var-item-delete");
-      delBtn.addEventListener("click", () => {
-        selected[bucketKey].splice(idx, 1);
-        renderBucketList(bucketKey);
+      const delBtn = item.querySelector(".var-item-delete");
+      delBtn?.addEventListener("click", () => {
+        groups[groupKey].splice(idx, 1);
+        renderGroupList(groupKey);
       });
 
-      listEl.appendChild(row);
+      listEl.appendChild(item);
     });
   }
 
-  // ================== GPT: GỢI Ý BIẾN ==================
-  async function onSuggestGroup(bucketKey, ctx_) {
-    const cfg = BUCKETS.find((b) => b.key === bucketKey);
+  function resetForm(groupKey) {
+    const fields = rootEl.querySelectorAll(
+      `[data-group="${groupKey}"][data-field]`
+    );
+    fields.forEach((el) => {
+      if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
+        el.value = "";
+      }
+    });
+  }
+
+  function readForm(groupKey) {
+    const obj = {
+      name: "",
+      timepoint: "",
+      definition: "",
+      measurement: "",
+      unit: "",
+    };
+
+    const fields = rootEl.querySelectorAll(
+      `[data-group="${groupKey}"][data-field]`
+    );
+    fields.forEach((el) => {
+      const key = el.getAttribute("data-field");
+      if (!key) return;
+      const val = (el.value || "").trim();
+      if (key in obj) obj[key] = val;
+    });
+
+    return normVar(obj);
+  }
+
+  // ============================================================
+  // ===============  GPT – GỢI Ý VÀ ĐÁNH GIÁ  ==================
+  // ============================================================
+
+  async function onSuggestGroup(groupKey) {
+    const cfg = GROUP_CONFIG[groupKey];
     if (!cfg) return;
 
-    const pico = ctx_.get("pico", {}) || {};
-    const mainObj = ctx_.get("mainObjective", "") || "";
-    const subObjs = Array.isArray(ctx_.get("subObjectives", []))
-      ? ctx_.get("subObjectives", [])
-      : [];
-    const design = ctx_.get("design", {}) || {};
-    const interventions = ctx_.get("interventions", []) || [];
+    const btn = rootEl.querySelector(`[data-gpt-suggest="${groupKey}"]`);
+    toggleBusy(btn, true, "Đang gợi ý...");
 
-    const existing = (selected[bucketKey] || []).map((v) => v.name);
+    try {
+      const pico = ctx.get("pico", {}) || {};
+      const mainObj = (ctx.get("mainObjective", "") || "").trim();
+      const subObjs =
+        (Array.isArray(ctx.get("subObjectives"))
+          ? ctx.get("subObjectives")
+          : []
+        ).map((s) => String(s || "").trim());
+      const design = ctx.get("design", {}) || {};
+      const interventions = ctx.get("interventions", []) || [];
 
-    const today = new Date().toISOString().slice(0, 10);
+      const now = new Date().toISOString().slice(0, 10);
 
-    const prompt = `
-Bạn là chuyên gia phương pháp RCT. Hãy gợi ý các **biến thuộc nhóm "${cfg.title}"**
-cho một thử nghiệm lâm sàng ngẫu nhiên, dựa trên PICO, mục tiêu nghiên cứu, thiết kế và mô tả can thiệp.
+      const prompt = `
+Bạn là chuyên gia phương pháp RCT. Hãy đề xuất các biến cho NHÓM "${cfg.title}"
+trong nghiên cứu dưới đây, bám sát mục tiêu và hướng dẫn quốc tế (CONSORT, SPIRIT, ICH E9,…).
 
-YÊU CẦU VỀ NGUỒN:
-- Mọi gợi ý phải bám theo hướng dẫn/quy trình chuẩn quốc tế (ví dụ: CONSORT, SPIRIT, ICH E9, hướng dẫn của FDA/EMA, guideline chuyên ngành).
-- Chỉ liệt kê tối đa 5 tài liệu tham khảo CÓ THẬT mà bạn chắc chắn ≥90% (ưu tiên guideline, consensus).
-- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên tác giả hay tên tạp chí.
-- Nếu không tìm được nguồn phù hợp, đặt: ["Không tìm thấy nguồn phù hợp để trích dẫn."].
+YÊU CẦU NGHIÊM VỀ NGUỒN:
+- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên tác giả hoặc tiêu đề bài báo.
+- Chỉ liệt kê tối đa 10 nguồn bạn chắc chắn ≥90% là có thật (ưu tiên guideline, consensus, trial lớn).
+- Nếu không tìm được nguồn phù hợp, hãy ghi đúng câu:
+  "Không tìm thấy nguồn phù hợp để trích dẫn."
 
-ĐỊNH DẠNG TRẢ LỜI – CHỈ TRẢ VỀ JSON HỢP LỆ, KHÔNG GIẢI THÍCH:
+YÊU CẦU ĐỊNH DẠNG (CHỈ TRẢ VỀ 1 JSON HỢP LỆ, KHÔNG GIẢI THÍCH THÊM):
 {
   "variables": [
     {
-      "name": "Tên biến",
+      "name": "Tên biến rõ ràng, bám PICO/mục tiêu",
       "timepoint": "Thời điểm thu thập (ví dụ: Baseline, tuần 4, tuần 12)",
-      "definition": "Định nghĩa/đo lường chi tiết (thang điểm, công thức, ai đo, trong điều kiện nào...)",
-      "unit": "Đơn vị đo (ví dụ: điểm, mmHg, kg/m²)",
-      "note": "Ghi chú tuỳ chọn"
+      "definition": "Định nghĩa/diễn giải biến, tiêu chuẩn phân loại nếu có",
+      "measurement": "Cách đo lường / công cụ / thang điểm / phép đo",
+      "unit": "Đơn vị (mm, điểm, ml, kg, ... hoặc 'không đơn vị')"
     }
   ],
   "refs": [
-    "Họ Tên. Năm. Tiêu đề. Tạp chí/Sách. DOI/PMID/URL",
+    "Tác giả. Năm. Tiêu đề. Tạp chí/Sách. DOI/PMID/URL",
     "..."
   ]
 }
 
-CHỈ GỢI Ý CÁC BIẾN CHƯA CÓ trong nhóm này (hiện tại: ${JSON.stringify(
-      existing
-    )}).
-
-Ngày: ${today}
+Ngữ cảnh nghiên cứu:
+Ngày: ${now}
 
 PICO:
-- P: ${pico.p || "(chưa có)"}
-- I: ${pico.i || "(chưa có)"}
-- C: ${pico.c || "(chưa có)"}
-- O: ${pico.o || "(chưa có)"}
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
 
 Mục tiêu chính:
-${mainObj || "(chưa có)"}
+${mainObj || "(chưa nhập)"}
 
 Mục tiêu phụ:
-${subObjs.length ? subObjs.join("; ") : "(chưa có)"}
+${subObjs.length ? subObjs.map((x, i) => (i + 1) + ". " + x).join("\\n") : "(chưa có)"}
 
 Thiết kế (JSON rút gọn):
 ${jsonSafe(design)}
 
-Mô tả can thiệp (JSON rút gọn):
+Can thiệp (JSON rút gọn):
 ${jsonSafe(interventions)}
+
+Các biến hiện đã có trong nhóm "${cfg.title}":
+${jsonSafe(groups[groupKey] || [])}
 `.trim();
 
-    try {
-      const label =
-        cfg.key === "primary"
-          ? "GPT gợi ý biến (primary)"
-          : `GPT gợi ý biến (${cfg.key})`;
-      ctx_.toast(`Đang gợi ý biến cho nhóm "${cfg.title}"...`);
-      const raw = await callAI("step10.suggest", prompt, ctx_);
+      const raw = await callAI("step10.suggest", prompt, ctx);
       const j = safeParse(raw);
       if (!j || !Array.isArray(j.variables)) {
-        ctx_.toast("GPT không trả về JSON biến hợp lệ.");
+        ctx.toast("GPT không trả về JSON biến hợp lệ.");
         console.warn("step10.suggest raw:", raw);
         return;
       }
 
-      const newVars = j.variables
-        .map(normVar)
-        .filter((v) => v.name && !existing.includes(v.name));
-
-      if (!newVars.length) {
-        ctx_.toast("Không có biến mới được gợi ý (có thể đã trùng với danh sách hiện tại).");
+      const vars = j.variables.map(normVar).filter((v) => v.name);
+      if (!vars.length) {
+        ctx.toast("Không có biến nào được gợi ý.");
         return;
       }
 
-      selected[bucketKey].push(...newVars);
-      renderBucketList(bucketKey);
-      ctx_.toast(
-        `Đã thêm ${newVars.length} biến gợi ý vào nhóm "${cfg.title}".`
+      // gộp thêm vào nhóm hiện tại
+      const existingNames = new Set(
+        (groups[groupKey] || []).map((v) => v.name)
       );
+      vars.forEach((v) => {
+        if (!existingNames.has(v.name)) {
+          groups[groupKey].push(v);
+          existingNames.add(v.name);
+        }
+      });
 
-      // nếu có refs, log ra console cho bạn xem (tạm thời chưa có UI riêng)
-      if (Array.isArray(j.refs) && j.refs.length) {
-        console.log("TLTK gợi ý cho", bucketKey, ":", j.refs);
-      }
+      renderGroupList(groupKey);
+      ctx.toast(`Đã chèn gợi ý biến cho nhóm "${cfg.title}".`);
     } catch (e) {
       console.error(e);
-      ctx_.toast("Lỗi khi gọi GPT gợi ý biến.");
+      ctx.toast("Lỗi khi gọi GPT gợi ý biến.");
+    } finally {
+      toggleBusy(btn, false, "GPT gợi ý biến");
     }
   }
 
-  // ================== GPT: ĐÁNH GIÁ NHÓM ==================
-  async function onEvaluateGroup(bucketKey, ctx_) {
-    const cfg = BUCKETS.find((b) => b.key === bucketKey);
+  async function onEvaluateGroup(groupKey) {
+    const cfg = GROUP_CONFIG[groupKey];
     if (!cfg) return;
 
-    const arr = selected[bucketKey] || [];
+    const arr = groups[groupKey] || [];
     if (!arr.length) {
-      ctx_.toast("Nhóm này chưa có biến để đánh giá.");
+      ctx.toast(`Nhóm "${cfg.title}" chưa có biến để đánh giá.`);
       return;
     }
 
-    const pico = ctx_.get("pico", {}) || {};
-    const mainObj = ctx_.get("mainObjective", "") || "";
-    const subObjs = Array.isArray(ctx_.get("subObjectives", []))
-      ? ctx_.get("subObjectives", [])
-      : [];
-    const design = ctx_.get("design", {}) || {};
-    const interventions = ctx_.get("interventions", []) || [];
-    const today = new Date().toISOString().slice(0, 10);
+    const btn = rootEl.querySelector(`[data-gpt-eval="${groupKey}"]`);
+    toggleBusy(btn, true, "Đang đánh giá...");
 
-    const payload = arr.map((v, i) => ({
-      index: i + 1,
-      name: v.name,
-      timepoint: v.timepoint,
-      definition: v.definition,
-      unit: v.unit,
-      note: v.note
-    }));
+    try {
+      const pico = ctx.get("pico", {}) || {};
+      const mainObj = (ctx.get("mainObjective", "") || "").trim();
+      const subObjs =
+        (Array.isArray(ctx.get("subObjectives"))
+          ? ctx.get("subObjectives")
+          : []
+        ).map((s) => String(s || "").trim());
+      const design = ctx.get("design", {}) || {};
+      const interventions = ctx.get("interventions", []) || [];
 
-    const prompt = `
-Bạn là chuyên gia phương pháp RCT. Hãy **đánh giá riêng nhóm biến "${cfg.title}"**
-về mức độ phù hợp với PICO, mục tiêu nghiên cứu và guideline quốc tế (CONSORT, SPIRIT, ICH E9…).
+      const now = new Date().toISOString().slice(0, 10);
 
-YÊU CẦU:
-1) Nhận xét chung (1–2 đoạn) về nhóm biến này: ưu điểm, hạn chế.
-2) Liệt kê rõ:
-   - Biến quan trọng còn thiếu (nếu có) và nên bổ sung vào đâu, đo thế nào.
-   - Biến trùng lặp/không cần thiết (nếu có).
-   - Gợi ý cải thiện định nghĩa, thời điểm thu thập, đơn vị đo để dễ so sánh với nghiên cứu khác.
-3) Đưa ra khuyến nghị tổng thể (1 đoạn ngắn).
+      const variablesText = arr
+        .map(
+          (v, i) =>
+            `${i + 1}. ${v.name} — Thời điểm: ${
+              v.timepoint || "(chưa ghi)"
+            }; Đo lường: ${
+              v.measurement || v.definition || "(chưa ghi)"
+            }; Đơn vị: ${v.unit || "(chưa ghi)"}`
+        )
+        .join("\n");
 
-VỀ TÀI LIỆU THAM KHẢO:
-- Nếu có guideline/khuyến cáo chuẩn thật sự liên quan, liệt kê tối đa 5 nguồn CÓ THẬT (không bịa).
-- Nếu không có nguồn chắc chắn, ghi chính xác câu: "Không tìm thấy nguồn phù hợp để trích dẫn."
+      const prompt = `
+Bạn là chuyên gia phương pháp và báo cáo RCT (CONSORT/SPIRIT/ICH E9,...).
+Hãy ĐÁNH GIÁ NHÓM BIẾN "${cfg.title}" trong nghiên cứu dưới đây.
+
+MỤC TIÊU:
+- Nhận xét nhóm biến đã đủ/thiếu/thừa so với mục tiêu và PICO?
+- Biến nào nên là primary/secondary/safety/... (nếu đặt nhầm nhóm thì góp ý).
+- Gợi ý thêm các biến quan trọng còn thiếu (nếu có).
+- Nêu các lưu ý về cách đo lường, định nghĩa, thời điểm thu thập để đảm bảo chuẩn mực quốc tế.
+
+YÊU CẦU NGUỒN:
+- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên tác giả hoặc bài báo.
+- Nếu dùng guideline (CONSORT, SPIRIT, ICH E9, ...), hãy trích dẫn với thông tin thật.
+- Tối đa 10 nguồn. Nếu không có nguồn phù hợp, hãy ghi đúng câu:
+  "Không tìm thấy nguồn phù hợp để trích dẫn."
 
 ĐỊNH DẠNG TRẢ LỜI (không JSON):
-- Nhận xét chi tiết (có thể gạch đầu dòng).
-- Đoạn kết luận.
-- Mục "TLTK:" ở cuối, đánh số 1),2),… (hoặc câu trên nếu không có nguồn).
+1) Nhận xét tổng quan nhóm biến (1–2 đoạn).
+2) Danh sách góp ý chi tiết dạng gạch đầu dòng (mỗi dòng 1 góp ý cụ thể).
+3) Kết luận ngắn (1 đoạn).
+4) Mục "TLTK" liệt kê các tài liệu tham khảo (hoặc câu "Không tìm thấy nguồn phù hợp để trích dẫn.").
 
-Ngày đánh giá: ${today}
+Ngữ cảnh:
+Ngày đánh giá: ${now}
 
 PICO:
-P: ${pico.p || "(chưa có)"}
-I: ${pico.i || "(chưa có)"}
-C: ${pico.c || "(chưa có)"}
-O: ${pico.o || "(chưa có)"}
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
 
-Mục tiêu chính: ${mainObj || "(chưa có)"}
-Mục tiêu phụ: ${subObjs.length ? subObjs.join("; ") : "(chưa có)"}
+Mục tiêu chính:
+${mainObj || "(chưa nhập)"}
+
+Mục tiêu phụ:
+${subObjs.length ? subObjs.map((x, i) => (i + 1) + ". " + x).join("\\n") : "(chưa có)"}
 
 Thiết kế (JSON rút gọn):
 ${jsonSafe(design)}
 
-Mô tả can thiệp (JSON rút gọn):
+Can thiệp (JSON rút gọn):
 ${jsonSafe(interventions)}
 
-Nhóm biến cần đánh giá (JSON):
-${JSON.stringify(payload, null, 2).slice(0, 4000)}
+Nhóm biến "${cfg.title}" hiện tại:
+${variablesText}
 `.trim();
 
-    try {
-      ctx_.toast(`Đang đánh giá nhóm biến "${cfg.title}"...`);
-      const raw = await callAI("step10.evaluate", prompt, ctx_);
+      const raw = await callAI("step10.evaluate", prompt, ctx);
       const text = String(raw || "").trim() || "Không nhận được phản hồi.";
-      const dom = bucketDom[bucketKey];
-      dom.evalText.textContent = text;
-      dom.evalWrap.classList.remove("hidden");
+      showFeedbackDialog(
+        `Đánh giá nhóm biến – ${cfg.title}`,
+        text
+      );
     } catch (e) {
       console.error(e);
-      ctx_.toast("Lỗi khi gọi GPT đánh giá nhóm biến.");
+      ctx.toast("Lỗi khi gọi GPT đánh giá nhóm biến.");
+    } finally {
+      toggleBusy(btn, false, "GPT đánh giá nhóm");
     }
   }
 
-  // ================== Helpers ==================
-  function normalizeSelected(sel) {
-    const out = {};
-    BUCKETS.forEach((b) => {
-      const arr = Array.isArray(sel?.[b.key]) ? sel[b.key] : [];
-      out[b.key] = arr.map(normVar).filter((v) => !!v.name);
-    });
-    return out;
-  }
+  // ============================================================
+  // ================== Helpers – dữ liệu, GPT ===================
+  // ============================================================
 
   function normVar(v) {
     if (!v || typeof v !== "object") {
       const s = String(v ?? "").trim();
-      return s ? { name: s } : { name: "" };
+      return s ? { name: s, timepoint: "", definition: "", measurement: "", unit: "" } : { name: "" };
     }
     return {
       name: (v.name ?? "").toString().trim(),
       timepoint: (v.timepoint ?? "").toString().trim(),
       definition: (v.definition ?? "").toString().trim(),
+      measurement: (v.measurement ?? "").toString().trim(),
       unit: (v.unit ?? "").toString().trim(),
-      note: (v.note ?? "").toString().trim()
     };
   }
 
   function safeParse(s) {
     try {
-      return JSON.parse(String(s || ""));
+      return JSON.parse(String(s));
     } catch {
       return null;
     }
@@ -520,7 +473,8 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
 
   function jsonSafe(x) {
     try {
-      return JSON.stringify(x).slice(0, 2000);
+      const s = JSON.stringify(x);
+      return s.length > 2000 ? s.slice(0, 2000) + "...[cắt bớt]" : s;
     } catch {
       return String(x);
     }
@@ -535,7 +489,6 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
       .replace(/'/g, "&#39;");
   }
 
-  // dùng binding nếu có, fallback callGPT
   async function callAI(bindingKey, prompt, ctx_) {
     if (typeof ctx_.callStepGPT === "function") {
       try {
@@ -552,4 +505,154 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
     }
     throw new Error("Chưa cấu hình GPT cho step10.");
   }
+
+  function toggleBusy(btn, busy, labelWhenIdle) {
+    if (!btn) return;
+    if (busy) {
+      btn.disabled = true;
+      btn.dataset.prev = btn.textContent || "";
+      btn.textContent = "Đang xử lý...";
+    } else {
+      btn.disabled = false;
+      btn.textContent = labelWhenIdle || btn.dataset.prev || "";
+    }
+  }
+
+  function showFeedbackDialog(title, text) {
+    const id = "step10-vars-feedback-dialog";
+    let dlg = document.getElementById(id);
+    if (!dlg) {
+      dlg = document.createElement("div");
+      dlg.id = id;
+      dlg.style.position = "fixed";
+      dlg.style.inset = "0";
+      dlg.style.background = "rgba(0,0,0,.4)";
+      dlg.style.zIndex = "60";
+      dlg.style.display = "flex";
+      dlg.style.alignItems = "center";
+      dlg.style.justifyContent = "center";
+      dlg.innerHTML = `
+        <div class="vars-dialog">
+          <div class="vars-dialog-header">
+            <div class="vars-dialog-title"></div>
+            <button type="button" class="btn btn-ghost vars-dialog-close">✕</button>
+          </div>
+          <div class="vars-dialog-body" id="step10-vars-fb-text"></div>
+          <div class="vars-dialog-footer">
+            <button type="button" class="btn btn-primary vars-dialog-close">Đóng</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(dlg);
+      dlg.querySelectorAll(".vars-dialog-close").forEach((b) =>
+        b.addEventListener("click", () => dlg.remove())
+      );
+    }
+    const titleEl = dlg.querySelector(".vars-dialog-title");
+    const bodyEl = dlg.querySelector("#step10-vars-fb-text");
+    if (titleEl) titleEl.textContent = title || "Đánh giá nhóm biến";
+    if (bodyEl) {
+      bodyEl.textContent = text;
+      bodyEl.style.whiteSpace = "pre-wrap";
+    }
+  }
+}
+
+// ---------- Markup helper: mỗi nhóm = 1 card full-width ----------
+function renderGroupCard(key) {
+  const cfg = GROUP_CONFIG[key];
+  return `
+    <div class="card var-group-card" data-group-card="${key}">
+      <div class="card-header var-group-header">
+        <div class="var-group-titles">
+          <div class="var-group-title">${cfg.title}</div>
+          <div class="var-group-hint muted">${cfg.hint}</div>
+        </div>
+        <div class="var-group-actions">
+          <button type="button" class="btn btn-secondary" data-gpt-suggest="${key}">
+            GPT gợi ý biến
+          </button>
+          <button type="button" class="btn btn-secondary" data-gpt-eval="${key}">
+            GPT đánh giá nhóm
+          </button>
+          <button type="button" class="btn btn-primary" data-add-var="${key}">
+            + Thêm biến
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body">
+        <!-- Form thêm biến (ẩn cho tới khi bấm Thêm) -->
+        <div class="var-form hidden" data-form="${key}">
+          <div class="var-form-row grid-2">
+            <label class="form-field">
+              <span class="field-label">
+                Tên biến <span class="required">*</span>
+              </span>
+              <input
+                type="text"
+                data-group="${key}"
+                data-field="name"
+                placeholder="Ví dụ: Thay đổi điểm VAS đau từ ban đầu đến tuần 12" />
+            </label>
+
+            <label class="form-field">
+              <span class="field-label">Thời điểm thu thập</span>
+              <input
+                type="text"
+                data-group="${key}"
+                data-field="timepoint"
+                placeholder="Ví dụ: Baseline, tuần 4, tuần 12" />
+            </label>
+          </div>
+
+          <div class="var-form-row grid-2">
+            <label class="form-field">
+              <span class="field-label">Cách đo lường / định nghĩa biến</span>
+              <textarea
+                rows="3"
+                data-group="${key}"
+                data-field="definition"
+                placeholder="Mô tả rõ cách tính/đánh giá biến, tiêu chuẩn chẩn đoán/thang điểm, cách tổng hợp..."></textarea>
+            </label>
+
+            <label class="form-field">
+              <span class="field-label">Đơn vị</span>
+              <input
+                type="text"
+                data-group="${key}"
+                data-field="unit"
+                placeholder="mm, điểm, %, ml, kg, lần/tuần, ..." />
+            </label>
+          </div>
+
+          <div class="var-form-row">
+            <label class="form-field">
+              <span class="field-label">Cách đo lường (công cụ/thang đo cụ thể)</span>
+              <input
+                type="text"
+                data-group="${key}"
+                data-field="measurement"
+                placeholder="Ví dụ: Thang VAS 0–100 mm, WOMAC tổng điểm, SF-36 PF, EMG RMS cơ tứ đầu..." />
+            </label>
+          </div>
+
+          <div class="var-form-actions">
+            <button type="button" class="btn btn-primary" data-save-var="${key}">
+              Lưu biến vào nhóm
+            </button>
+            <button type="button" class="btn btn-ghost" data-cancel-var="${key}">
+              Hủy
+            </button>
+          </div>
+        </div>
+
+        <!-- Danh sách biến trong nhóm -->
+        <div class="var-list-wrap">
+          <div class="var-list-title">Danh sách biến trong nhóm</div>
+          <div class="var-list" data-list="${key}"></div>
+        </div>
+      </div>
+    </div>
+  `;
 }
