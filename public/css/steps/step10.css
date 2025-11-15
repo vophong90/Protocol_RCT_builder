@@ -1,155 +1,219 @@
 /* public/css/steps/step10.css */
-/* Scope riêng cho step 10 */
+/* Scope riêng cho Step 10 – Biến số nghiên cứu */
+
 [data-scope="step10"] .hidden {
   display: none !important;
 }
 
-/* Lưới các card nhóm biến */
-[data-scope="step10"] .var-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+/* Khoảng cách giữa các nhóm biến */
+[data-scope="step10"] .var-groups {
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 
-@media (min-width: 960px) {
-  [data-scope="step10"] .var-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
-/* Footer chung step */
-[data-scope="step10"] .var-footer {
+/* Card của từng nhóm biến (sub-card) */
+[data-scope="step10"] .var-card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  background: var(--muted-soft, #f9fafb);
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 10px;
 }
 
-/* Card nhóm biến */
-[data-scope="step10"] .var-bucket .bucket-title {
+/* Header của card nhóm */
+[data-scope="step10"] .var-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+[data-scope="step10"] .var-card-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-scope="step10"] .var-card-title {
   font-weight: 600;
-  margin-bottom: 2px;
+  font-size: 0.98rem;
 }
 
-[data-scope="step10"] .var-bucket .bucket-hint {
+[data-scope="step10"] .var-card-hint {
   font-size: 0.85rem;
-  font-weight: 400;
 }
 
-/* Danh sách biến trong nhóm */
-[data-scope="step10"] .bucket-list {
+/* Nút GPT trên header card */
+[data-scope="step10"] .var-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* Body của card nhóm */
+[data-scope="step10"] .var-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Form thêm biến */
+[data-scope="step10"] .var-form {
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  padding: 10px 10px 8px;
+  background: #fff;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Lưới input cho form thêm biến */
+[data-scope="step10"] .var-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 14px;
+  align-items: flex-start;
+}
+
+[data-scope="step10"] .var-form-grid .full-span {
+  grid-column: 1 / -1;
+}
+
+[data-scope="step10"] .var-form-grid label {
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Nhấn mạnh ô bắt buộc */
+[data-scope="step10"] .var-form-grid .required {
+  color: #e02424;
+}
+
+/* Hàng nút thêm biến */
+[data-scope="step10"] .var-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+/* Danh sách biến */
+[data-scope="step10"] .var-list-wrap {
+  padding: 6px 2px 0;
+  border-top: 1px solid var(--border);
+}
+
+[data-scope="step10"] .var-list-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+[data-scope="step10"] .var-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 /* Item biến */
 [data-scope="step10"] .var-item {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, #e5e7eb);
+  background: #fff;
   padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--muted-soft, #f3f4f6);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  align-items: flex-start;
 }
 
 [data-scope="step10"] .var-item-main {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+[data-scope="step10"] .var-item-index {
+  color: var(--muted);
 }
 
 [data-scope="step10"] .var-item-name {
-  font-weight: 600;
+  word-break: break-word;
 }
 
 [data-scope="step10"] .var-item-meta {
-  font-size: 0.85rem;
-}
-
-[data-scope="step10"] .var-item-def {
-  font-size: 0.85rem;
-}
-
-[data-scope="step10"] .var-item-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* Nút ghost nhỏ */
-[data-scope="step10"] .btn-ghost {
-  border: none;
-  background: transparent;
-  padding: 2px 6px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  color: var(--muted-foreground, #4b5563);
-}
-
-[data-scope="step10"] .btn-ghost:hover {
-  text-decoration: underline;
-}
-
-/* Editor thêm/sửa biến */
-[data-scope="step10"] .bucket-editor {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.6);
-}
-
-[data-scope="step10"] .bucket-editor-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 10px 16px;
-}
-
-[data-scope="step10"] .bucket-editor-grid .full-span {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
-[data-scope="step10"] .bucket-editor .form-group {
+[data-scope="step10"] .var-item-detail {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  font-size: 0.84rem;
 }
 
-[data-scope="step10"] .bucket-editor label {
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-[data-scope="step10"] .bucket-editor input,
-[data-scope="step10"] .bucket-editor textarea {
-  width: 100%;
-}
-
-[data-scope="step10"] .bucket-editor-footer {
-  margin-top: 10px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-[data-scope="step10"] .required {
-  color: #dc2626;
-}
-
-/* Footer mỗi nhóm biến */
-[data-scope="step10"] .bucket-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* Vùng feedback GPT */
-[data-scope="step10"] .bucket-feedback {
-  margin-top: 6px;
-  border-top: 1px dashed rgba(148, 163, 184, 0.6);
-  padding-top: 8px;
-}
-
-[data-scope="step10"] .bucket-feedback-title {
+[data-scope="step10"] .var-item-detail strong {
   font-weight: 600;
+}
+
+/* Nút xoá biến */
+[data-scope="step10"] .var-item-actions {
+  grid-row: 1 / span 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+[data-scope="step10"] .var-item-actions .btn-ghost {
+  font-size: 0.8rem;
+  padding-inline: 0.5rem;
+}
+
+/* Khối đánh giá của GPT */
+[data-scope="step10"] .var-eval-wrap {
+  margin-top: 4px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  background: #fff;
+  padding: 8px 10px;
+}
+
+[data-scope="step10"] .var-eval-title {
+  font-weight: 600;
+  font-size: 0.9rem;
   margin-bottom: 4px;
+}
+
+[data-scope="step10"] .var-eval-text {
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+/* Footer chính của step10 */
+[data-scope="step10"] .var-footer-main {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Responsive: form co lại 1 cột trên màn nhỏ */
+@media (max-width: 768px) {
+  [data-scope="step10"] .var-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
