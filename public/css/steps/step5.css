@@ -72,6 +72,12 @@
 [data-scope="step5"] #dsg-summary{ display:flex; flex-wrap:wrap; gap:8px; }
 [data-scope="step5"] .card-body + .card-body{ margin-top:8px; }
 
+/* Khoảng cách giữa mô tả và các card GPT */
+[data-scope="step5"] #dsg-sugg-box,
+[data-scope="step5"] #dsg-eval-box{
+  margin-top: 12px;
+}
+
 /* Responsive */
 @media (max-width:900px){
   [data-scope="step5"] .grid-2{ grid-template-columns:1fr; }
