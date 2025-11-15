@@ -1,5 +1,5 @@
 // src/steps/step7/index.js
-// Step 7 – Tiêu chí vào/loại
+// Step 7 – Tiêu chí chọn/loại
 
 export const id = 7;
 export const title = "Tiêu chí chọn/loại";
@@ -50,19 +50,22 @@ export async function mount(rootEl, ctx) {
         </label>
       </div>
 
-      <!-- PDF helper – KHÔNG còn nút Đọc PDF, chọn file là tự đọc -->
+      <!-- PDF helper – chọn file là tự đọc -->
       <div class="card-body">
         <div class="control-row">
           <input id="crit-pdf" type="file" accept="application/pdf" />
-          <span class="muted" id="crit-pdfhint">Chưa có nội dung PDF</span>
+          <span class="muted" id="crit-pdfhint"></span>
         </div>
       </div>
 
-      <!-- Actions -->
-      <div class="card-body inline-row">
-        <button id="crit-suggest" class="btn btn-primary" type="button">GPT gợi ý tiêu chí</button>
-        <button id="crit-eval"    class="btn btn-primary" type="button">GPT đánh giá tiêu chí hiện có</button>
-        <button id="crit-save"    class="btn btn-secondary" type="button">Lưu</button>
+      <!-- Actions – chỉ 2 nút GPT trên 1 hàng -->
+      <div class="card-body crit-actions">
+        <button id="crit-suggest" class="btn btn-primary" type="button">
+          GPT gợi ý tiêu chí
+        </button>
+        <button id="crit-eval" class="btn btn-primary" type="button">
+          GPT đánh giá tiêu chí hiện có
+        </button>
       </div>
 
       <!-- GPT Suggest Box -->
@@ -76,11 +79,15 @@ export async function mount(rootEl, ctx) {
           </div>
         </div>
         <div class="card-body">
-          <textarea id="crit-sugg-ta" class="form-input" rows="12"
+          <textarea
+            id="crit-sugg-ta"
+            class="form-input"
+            rows="12"
             placeholder='Dòng đầu là JSON:
 {"inclusion":["..."],"exclusion":["..."]}
 
-Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th): ..."'></textarea>
+Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th): ..."'
+          ></textarea>
           <div class="muted">
             Dòng đầu phải là JSON hợp lệ để nút “Áp dụng JSON” hoạt động. Phần TLTK phía dưới chỉ để tham khảo, không dùng để parse.
           </div>
@@ -97,10 +104,21 @@ Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th):
           </div>
         </div>
         <div class="card-body">
-          <textarea id="crit-eval-ta" class="form-input" rows="12"
+          <textarea
+            id="crit-eval-ta"
+            class="form-input"
+            rows="12"
             placeholder="Nhận xét tổng quát, điểm thiếu/mơ hồ, gợi ý tinh chỉnh...
-Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh sách TLTK."></textarea>
+Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh sách TLTK."
+          ></textarea>
         </div>
+      </div>
+
+      <!-- Save – luôn ở cuối cùng -->
+      <div class="card-body crit-save-row">
+        <button id="crit-save" class="btn btn-secondary" type="button">
+          Lưu
+        </button>
       </div>
     </div>
   `.trim();
@@ -137,6 +155,8 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
   let pdfContext = st.sources || "";
   if (pdfContext && pdfContext.length > 0) {
     hintEl.textContent = `Đã nạp PDF (${pdfContext.length.toLocaleString()} ký tự)`;
+  } else {
+    hintEl.textContent = "";
   }
   if (st.evaluation) {
     eTA.value = st.evaluation;
@@ -179,12 +199,12 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
       ctx.toast("Không sao chép được.");
     }
   }
-  function toggleBusy(btn, busy, label) {
+  function toggleBusy(btn, busy, labelWhenBusy) {
     if (!btn) return;
     if (busy) {
       btn.disabled = true;
       btn.dataset.prev = btn.textContent || "";
-      btn.textContent = label || "Đang xử lý...";
+      btn.textContent = labelWhenBusy || "Đang xử lý...";
     } else {
       btn.disabled = false;
       btn.textContent = btn.dataset.prev || "";
