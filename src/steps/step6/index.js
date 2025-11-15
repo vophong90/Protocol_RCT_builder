@@ -59,7 +59,7 @@ export async function mount(rootEl, ctx) {
       </div>
 
       <!-- Cụm nút GPT -->
-      <div class="card-body control-row">
+      <div class="card-body gpt-row">
         <button id="ss-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý công thức</button>
         <button id="ss-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá giả định</button>
       </div>
