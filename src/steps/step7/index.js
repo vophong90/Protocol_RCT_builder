@@ -20,52 +20,55 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <div id="crit">
-      <!-- Inclusion / Exclusion -->
-      <div class="card-body grid-2">
-        <label>
-          <div class="inline-row" style="justify-content:space-between">
-            <span class="nowrap" style="font-weight:700">Tiêu chí chọn</span>
-            <span class="muted">Mỗi dòng 1 tiêu chí</span>
-          </div>
-          <textarea id="crit-inc" class="form-input" rows="12" placeholder="- Tuổi 40–75
+      <!-- CARD 1: Inclusion / Exclusion -->
+      <div class="card-body crit-pairs">
+        <div class="crit-grid-2">
+          <label class="crit-label">
+            <div class="inline-row" style="justify-content:space-between">
+              <span class="nowrap" style="font-weight:700">Tiêu chí chọn</span>
+              <span class="muted">Mỗi dòng 1 tiêu chí</span>
+            </div>
+            <textarea id="crit-inc" class="form-input crit-textarea" rows="12" placeholder="- Tuổi 40–75
 - Chẩn đoán THK gối theo ACR
 - Đồng ý tham gia và ký consent"></textarea>
-        </label>
+          </label>
 
-        <label>
-          <div class="inline-row" style="justify-content:space-between">
-            <span class="nowrap" style="font-weight:700">Tiêu chí loại</span>
-            <span class="muted">Mỗi dòng 1 tiêu chí</span>
-          </div>
-          <textarea id="crit-exc" class="form-input" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
+          <label class="crit-label">
+            <div class="inline-row" style="justify-content:space-between">
+              <span class="nowrap" style="font-weight:700">Tiêu chí loại</span>
+              <span class="muted">Mỗi dòng 1 tiêu chí</span>
+            </div>
+            <textarea id="crit-exc" class="form-input crit-textarea" rows="12" placeholder="- Phẫu thuật khớp gối gần đây
 - Bệnh kèm theo nặng (suy tim, suy thận giai đoạn cuối)
 - Phụ nữ có thai/cho con bú"></textarea>
-        </label>
+          </label>
+        </div>
       </div>
 
-      <!-- Notes -->
+      <!-- CARD 2: Notes -->
       <div class="card-body">
         <label>Ghi chú (tuỳ chọn)
           <textarea id="crit-notes" class="form-input" rows="4" placeholder="Ví dụ: Quy trình sàng lọc, kiểm tra tiêu chí tại lần khám 0..."></textarea>
         </label>
       </div>
 
-      <!-- PDF helper – chọn file là tự đọc -->
+      <!-- CARD 3: PDF helper – input file riêng một hàng -->
       <div class="card-body">
-        <div class="control-row">
+        <div class="crit-file-row">
           <input id="crit-pdf" type="file" accept="application/pdf" />
           <span class="muted" id="crit-pdfhint"></span>
         </div>
       </div>
 
-      <!-- Actions – 2 nút GPT trên 1 hàng -->
+      <!-- CARD 4: 2 nút GPT trên cùng một hàng -->
       <div class="card-body crit-actions">
-        <button id="crit-suggest" class="btn btn-primary" type="button">
-          GPT gợi ý tiêu chí
-        </button>
-        <button id="crit-eval" class="btn btn-primary" type="button">
-          GPT đánh giá tiêu chí hiện có
-        </button>
+        <button id="crit-suggest" class="btn btn-primary" type="button">GPT gợi ý tiêu chí</button>
+        <button id="crit-eval"    class="btn btn-primary" type="button">GPT đánh giá tiêu chí hiện có</button>
+      </div>
+
+      <!-- CARD 5: Nút Lưu – luôn ở dưới cùng, bên trái -->
+      <div class="card-body crit-save-row">
+        <button id="crit-save" class="btn btn-primary" type="button">Lưu</button>
       </div>
 
       <!-- GPT Suggest Box -->
@@ -79,15 +82,11 @@ export async function mount(rootEl, ctx) {
           </div>
         </div>
         <div class="card-body">
-          <textarea
-            id="crit-sugg-ta"
-            class="form-input"
-            rows="12"
+          <textarea id="crit-sugg-ta" class="form-input" rows="12"
             placeholder='Dòng đầu là JSON:
 {"inclusion":["..."],"exclusion":["..."]}
 
-Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th): ..."'
-          ></textarea>
+Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th): ..."'></textarea>
           <div class="muted">
             Dòng đầu phải là JSON hợp lệ để nút “Áp dụng JSON” hoạt động. Phần TLTK phía dưới chỉ để tham khảo, không dùng để parse.
           </div>
@@ -104,21 +103,10 @@ Sau đó là giải thích ngắn và mục "Tài liệu tham khảo (AMA 11th):
           </div>
         </div>
         <div class="card-body">
-          <textarea
-            id="crit-eval-ta"
-            class="form-input"
-            rows="12"
+          <textarea id="crit-eval-ta" class="form-input" rows="12"
             placeholder="Nhận xét tổng quát, điểm thiếu/mơ hồ, gợi ý tinh chỉnh...
-Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh sách TLTK."
-          ></textarea>
+Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh sách TLTK."></textarea>
         </div>
-      </div>
-
-      <!-- Save – luôn ở cuối cùng, canh trái -->
-      <div class="card-body crit-save-row">
-        <button id="crit-save" class="btn btn-primary" type="button">
-          Lưu
-        </button>
       </div>
     </div>
   `.trim();
@@ -199,12 +187,12 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
       ctx.toast("Không sao chép được.");
     }
   }
-  function toggleBusy(btn, busy, labelWhenBusy) {
+  function toggleBusy(btn, busy, label) {
     if (!btn) return;
     if (busy) {
       btn.disabled = true;
       btn.dataset.prev = btn.textContent || "";
-      btn.textContent = labelWhenBusy || "Đang xử lý...";
+      btn.textContent = label || "Đang xử lý...";
     } else {
       btn.disabled = false;
       btn.textContent = btn.dataset.prev || "";
@@ -216,7 +204,7 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
     throw new Error("Chưa cấu hình GPT binding cho step 7");
   }
 
-  // ---- auto-read PDF khi chọn file
+  // ---- auto-read PDF khi chọn file (không cần nút)
   fileEl?.addEventListener("change", async () => {
     try {
       const f = fileEl.files && fileEl.files[0];
@@ -233,7 +221,7 @@ Cuối cùng phải có mục 'Tài liệu tham khảo (AMA 11th):' với danh s
     }
   });
 
-  // ---- GPT suggest
+  // ---- GPT suggest (kèm TLTK AMA 11th)
   suggestBtn.addEventListener("click", async () => {
     try {
       toggleBusy(suggestBtn, true, "Đang gợi ý…");
@@ -290,10 +278,12 @@ Có thể dùng guideline CONSORT, sách/y văn chuẩn, nhưng KHÔNG cần URL
     }
   });
 
-  // Áp dụng JSON gợi ý
+  // Áp dụng JSON gợi ý vào 2 ô
   applySugg?.addEventListener("click", () => {
     try {
       const raw = sTA.value || "";
+
+      // Tách đoạn JSON đầu tiên (từ dấu { đầu tiên đến dấu } khớp)
       const match = raw.match(/\{[\s\S]*?\}/);
       if (!match) {
         ctx.toast("Không tìm thấy JSON hợp lệ trong kết quả GPT.");
@@ -321,7 +311,7 @@ Có thể dùng guideline CONSORT, sách/y văn chuẩn, nhưng KHÔNG cần URL
   copySugg?.addEventListener("click", () => copyText(sTA.value || ""));
   hideSugg?.addEventListener("click", () => suggBox.classList.add("hidden"));
 
-  // ---- GPT eval
+  // ---- GPT eval (kèm TLTK AMA 11th)
   evalBtn.addEventListener("click", async () => {
     try {
       toggleBusy(evalBtn, true, "Đang đánh giá…");
@@ -398,7 +388,7 @@ với tối thiểu 3 tài liệu tham khảo (guideline, sách, bài báo) trì
     const current   = ctx.get("criteria", {}) || {};
 
     ctx.save("criteria", {
-      ...current,
+      ...current, // giữ evaluation nếu đã có
       inclusion,
       exclusion,
       notes: (notesTA.value || "").trim(),
