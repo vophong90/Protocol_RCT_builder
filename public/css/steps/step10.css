@@ -200,3 +200,8 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Field full-span chiếm cả 2 cột trong grid-2 */
+[data-scope="step10"] .grid-2 .full-span {
+  grid-column: 1 / -1;
+}
