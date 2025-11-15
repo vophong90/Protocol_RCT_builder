@@ -1,0 +1,159 @@
+/* public/css/steps/step10.css */
+/* Scope riêng cho step 10 */
+[data-scope="step10"] .hidden {
+  display: none !important;
+}
+
+/* Layout tổng: trái – phải */
+[data-scope="step10"] .var-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+[data-scope="step10"] .var-left {
+  flex: 1 1 340px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-scope="step10"] .var-right {
+  flex: 2 1 520px;
+  min-width: 420px;
+  display: grid;
+  gap: 12px;
+}
+
+/* CSV card */
+[data-scope="step10"] .var-csv-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Kho biến */
+[data-scope="step10"] .var-pool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+[data-scope="step10"] .card-title-sm {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+[data-scope="step10"] .var-filter-input {
+  max-width: 180px;
+}
+
+/* Drop zones (pool + buckets) */
+[data-scope="step10"] .droptarget {
+  min-height: 120px;
+  display: grid;
+  gap: 8px;
+}
+
+[data-scope="step10"] .droptarget.dropping {
+  outline: 2px dashed var(--accent, #3b82f6);
+  outline-offset: 2px;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+/* Bucket card */
+[data-scope="step10"] .var-bucket .bucket-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+[data-scope="step10"] .var-bucket .bucket-hint {
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* Biến – chip */
+[data-scope="step10"] .var-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--muted-soft, #f3f4f6);
+  font-size: 0.9rem;
+}
+
+[data-scope="step10"] .var-chip-main {
+  display: flex;
+  flex-direction: column;
+}
+
+[data-scope="step10"] .var-chip-title {
+  font-weight: 600;
+}
+
+[data-scope="step10"] .var-chip-meta {
+  font-size: 0.8rem;
+}
+
+/* Nút xoá trên chip */
+[data-scope="step10"] .btn-ghost.var-chip-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* Footer nút GPT + Lưu */
+[data-scope="step10"] .var-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Dialog đánh giá bộ biến */
+[data-scope="step10"] .vars-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+
+[data-scope="step10"] .vars-dialog {
+  background: #fff;
+  max-width: 720px;
+  width: 90vw;
+  max-height: 70vh;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+}
+
+[data-scope="step10"] .vars-dialog-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+[data-scope="step10"] .vars-dialog-body {
+  white-space: pre-wrap;
+  line-height: 1.4;
+  overflow: auto;
+  flex: 1 1 auto;
+}
+
+[data-scope="step10"] .vars-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
