@@ -1,6 +1,6 @@
 /* public/css/steps/step8.css */
 
-/* Scope riêng cho step 8; dùng .hidden để JS show/hide */
+/* Scope riêng cho step 8 */
 [data-scope="step8"] .hidden{
   display: none !important;
 }
@@ -9,6 +9,12 @@
 [data-scope="step8"] .rand-section-title{
   font-weight: 600;
   margin-bottom: 4px;
+}
+
+/* Ghi chú nhỏ dưới ô N */
+[data-scope="step8"] .rand-note{
+  font-size: 0.9rem;
+  margin-top: 4px;
 }
 
 /* Tóm tắt preview */
