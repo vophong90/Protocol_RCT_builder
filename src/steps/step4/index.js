@@ -13,13 +13,6 @@ export async function mount(rootEl, ctx) {
 
   // ---- UI ----
   rootEl.innerHTML = `
-    <style>
-      /* Ẩn phần text tên tệp, chỉ hiển thị nút Choose file trong step4 */
-      [data-scope="step4"] input[type="file"].file-btn-only { font-size: 0; }
-      [data-scope="step4"] input[type="file"].file-btn-only::file-selector-button { font-size: 14px; }
-      [data-scope="step4"] input[type="file"].file-btn-only::-webkit-file-upload-button { font-size: 14px; }
-    </style>
-
     <div class="card-header">
       <h3 class="card-title">Tổng quan tài liệu</h3>
       <div class="card-subtitle">
