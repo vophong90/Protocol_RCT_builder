@@ -1,117 +1,62 @@
 /* public/css/steps/step6.css */
-/* ===== Scope riêng cho Step 6 ===== */
+/* ============ Step 6 – Cỡ mẫu (scoped) ============ */
+
+/* Phạm vi chung Step 6 */
 .step[data-scope="step6"] #ss {
   --gap: 12px;
 }
 
-/* ===== Lưới 3 cột cho inputs ===== */
-.step[data-scope="step6"] #ss .grid-3 {
+/* Lưới 3 cột cho các khối input trong card-body */
+.step[data-scope="step6"] #ss .card-body.grid-3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--gap);
-  align-items: start;
+  gap: var(--gap) 16px;
+  align-items: flex-start;
 }
-.step[data-scope="step6"] #ss .grid-3 > * {
-  min-width: 0;
-}
+
+/* Bỏ margin dọc mặc định trong grid để các ô dính nhau gọn hơn */
 .step[data-scope="step6"] #ss .card-body.grid-3 > * {
   margin-top: 0 !important;
 }
+
+/* Cho phép phần tử chiếm full hàng */
 .step[data-scope="step6"] #ss .full-span {
   grid-column: 1 / -1;
 }
 
-/* ===== Label & control đồng nhất ===== */
-.step[data-scope="step6"] #ss label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.step[data-scope="step6"] #ss .form-input {
-  width: 100%;
-  box-sizing: border-box;
-  font: 500 15px/1.4 Inter, ui-sans-serif, -apple-system, "Segoe UI", Roboto,
-    Helvetica, Arial;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.6rem 0.75rem;
-  outline: 0;
-}
-.step[data-scope="step6"] #ss input.form-input,
-.step[data-scope="step6"] #ss select.form-input {
-  height: 44px;
-}
-.step[data-scope="step6"] #ss textarea.form-input {
-  resize: vertical;
+/* Chú thích nhỏ */
+.step[data-scope="step6"] #ss .muted {
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
 }
 
-/* ===== Hàng nút nhỏ trong header (Áp dụng / Sao chép / Ẩn…) ===== */
-.step[data-scope="step6"] #ss .inline-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* ===== Hàng 2 nút GPT – giống các step khác, không full width ===== */
-.step[data-scope="step6"] #ss .card-body.control-row {
-  display: flex;
-  gap: var(--gap);
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 8px;
-  margin-bottom: 12px;
-}
-
-.step[data-scope="step6"] #ss .card-body.control-row .btn {
-  flex: 0 0 auto;
-  min-height: 40px;
-  padding: 0 16px;
-}
-
-/* ===== Footer: 2 nút Tính / Lưu, không full width ===== */
-.step[data-scope="step6"] #ss .card-footer {
-  margin-top: 16px;
-  display: flex;
-  gap: var(--gap);
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.step[data-scope="step6"] #ss .card-footer .btn {
-  flex: 0 0 auto;
-  min-width: 160px;
-  min-height: 40px;
-  padding: 0 16px;
-}
-
-/* ===== Bảng kết quả ===== */
+/* Bảng key–value hiển thị kết quả */
 .step[data-scope="step6"] #ss table.ss-kv {
   width: 100%;
   border-collapse: collapse;
 }
+
 .step[data-scope="step6"] #ss table.ss-kv td {
   border-top: 1px solid var(--border);
   padding: 0.5rem 0.25rem;
   vertical-align: top;
 }
+
 .step[data-scope="step6"] #ss table.ss-kv tr:first-child td {
   border-top: 0;
 }
 
-/* ===== Responsive ===== */
-@media (max-width: 900px) {
-  .step[data-scope="step6"] #ss .grid-3 {
-    grid-template-columns: 1fr;
-  }
+/* Hàng nút GPT: vẫn dùng .control-row global, chỉ chỉnh nhẹ margin cho cân với form */
+.step[data-scope="step6"] #ss .card-body.control-row {
+  margin-top: 4px;
+  margin-bottom: 8px;
 }
 
-@media (max-width: 720px) {
-  /* GPT row và footer xếp 1 cột trên mobile */
-  .step[data-scope="step6"] #ss .card-body.control-row,
-  .step[data-scope="step6"] #ss .card-footer {
-    flex-direction: column;
-    align-items: stretch;
+/* Không chỉnh kích thước .btn, .card-footer nữa để đồng bộ với các bước khác */
+
+/* Responsive: khi màn nhỏ, grid-3 thành 1 cột */
+@media (max-width: 900px) {
+  .step[data-scope="step6"] #ss .card-body.grid-3 {
+    grid-template-columns: 1fr;
   }
 }
