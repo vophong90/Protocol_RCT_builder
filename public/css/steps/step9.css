@@ -1,0 +1,50 @@
+/* public/css/steps/step9.css */
+
+/* Scope riêng cho step 9 */
+[data-scope="step9"] .hidden{
+  display: none !important;
+}
+
+/* Container list các nhánh can thiệp */
+[data-scope="step9"] .intv-list{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* “Sub-card” cho từng nhánh – bám theo style card chung */
+[data-scope="step9"] .intv-card{
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: var(--space-md);
+  box-shadow: 0 1px 0 rgba(0,0,0,.02);
+}
+
+/* Note nhỏ dưới input file */
+[data-scope="step9"] .intv-note{
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Footer nút trong từng nhánh – dùng flex chuẩn */
+[data-scope="step9"] .intv-footer{
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+/* Tiêu đề khu vực phản hồi */
+[data-scope="step9"] .intv-fb-title{
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+/* Đảm bảo textarea nhìn thoáng hơn trong block mô tả */
+[data-scope="step9"] textarea{
+  min-height: 120px;
+}
