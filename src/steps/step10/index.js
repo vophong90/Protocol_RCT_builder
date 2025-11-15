@@ -1,559 +1,532 @@
 // src/steps/step10/index.js
-// Step 10 – Biến số nghiên cứu
-// - Đọc CSV qua PapaParse -> allVariables: [{name,type,unit,note}]
-// - Quản lý selectedVariables: primary, secondary, baseline, confounder, mediator, moderator, safety
-// - Kéo-thả giữa kho biến và các nhóm; nút xóa trả về kho
-// - GPT gợi ý cấu hình nhóm biến từ PICO + Mục tiêu + Thiết kế/Can thiệp
-// - GPT đánh giá bộ biến hiện tại
-// - Lưu state & xuất JSON
+// Step 10 – Biến số nghiên cứu (phiên bản không dùng CSV/kho biến)
+// - Mỗi nhóm biến (primary, secondary, baseline, confounder, mediator, moderator, safety)
+//   là một card riêng.
+// - Mỗi card: danh sách biến + form "Thêm/Sửa biến" + GPT gợi ý + GPT đánh giá.
+// - Lưu state: variables = {
+//     primary:   [{ name, timepoint, definition, measurement, unit, datatype, notes }, ...],
+//     secondary: [...],
+//     ...
+//   }
 
 export const id = 10;
 export const title = "Biến số nghiên cứu";
 export const subtitle =
-  "Tải CSV danh sách biến, sau đó kéo-thả để phân nhóm (kết cục chính/phụ, nền, nhiễu...). CSV gợi ý cột: name,type,unit,note.";
+  "Xác định các biến theo nhóm (kết cục chính/phụ, nền, nhiễu, trung gian, điều biến, an toàn) và mô tả chi tiết từng biến.";
 export const css = "./public/css/steps/step10.css";
 
-export async function mount(root, ctx) {
-  const Papa = ctx.vendor?.Papa || window.Papa;
+const BUCKETS = [
+  "primary",
+  "secondary",
+  "baseline",
+  "confounder",
+  "mediator",
+  "moderator",
+  "safety",
+];
 
-  // scope riêng cho step 10
-  root.closest(".step")?.setAttribute("data-scope", "step10");
+const BUCKET_META = {
+  primary: {
+    title: "Kết cục chính (Primary)",
+    hint: "Biến kết cục chính, dùng để tính cỡ mẫu và trả lời câu hỏi nghiên cứu.",
+  },
+  secondary: {
+    title: "Kết cục phụ (Secondary)",
+    hint: "Biến kết cục phụ, bổ sung và giải thích thêm cho kết quả.",
+  },
+  baseline: {
+    title: "Biến nền (Baseline)",
+    hint: "Đặc điểm ban đầu của người tham gia, mô tả dân số và so sánh nhóm.",
+  },
+  confounder: {
+    title: "Nhiễu (Confounder)",
+    hint: "Yếu tố có thể gây nhiễu mối liên hệ giữa can thiệp và kết cục, cần điều chỉnh.",
+  },
+  mediator: {
+    title: "Trung gian (Mediator)",
+    hint: "Biến nằm trên đường dẫn cơ chế giữa can thiệp và kết cục (nếu phù hợp giả thuyết).",
+  },
+  moderator: {
+    title: "Điều biến (Moderator)",
+    hint: "Biến làm thay đổi cường độ/hướng tác động của can thiệp (nếu phù hợp giả thuyết).",
+  },
+  safety: {
+    title: "An toàn (Safety)",
+    hint: "Biến cố bất lợi, AE/SAE và các chỉ số an toàn khác.",
+  },
+};
+
+export async function mount(root, ctx) {
+  // Scope CSS riêng cho step 10
+  const stepEl = root.closest(".step");
+  stepEl?.setAttribute("data-scope", "step10");
 
   root.innerHTML = `
     <div class="card">
       <div class="card-header">
         <h3 class="card-title">Biến số nghiên cứu</h3>
         <div class="card-subtitle">
-          Tải CSV danh sách biến, sau đó kéo-thả để phân nhóm (kết cục chính/phụ, nền, nhiễu...).
-          CSV gợi ý cột: <code>name,type,unit,note</code>.
+          Xác định rõ các biến cho từng nhóm và mô tả chi tiết (thời điểm thu thập, định nghĩa,
+          cách đo lường, đơn vị...). GPT có thể gợi ý danh mục biến và đánh giá tính đầy đủ
+          theo chuẩn quốc tế (CONSORT, SPIRIT, ICH E9...).
         </div>
       </div>
 
-      <div class="card-body var-layout">
-        <!-- Panel trái: CSV & Kho biến -->
-        <div class="var-left">
-          <div class="card muted var-csv-card">
-            <div class="card-header">
-              <div class="card-title-sm">Tải CSV biến</div>
-            </div>
-            <div class="card-body var-csv-body">
-              <input id="var-csv" type="file" accept=".csv,text/csv" />
-              <button id="var-load" class="btn btn-secondary" type="button">Nạp CSV</button>
-              <button id="var-export" class="btn btn-secondary" type="button">Xuất JSON</button>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header var-pool-header">
-              <div class="card-title-sm">Kho biến</div>
-              <input id="var-filter" type="text" placeholder="Lọc..." class="var-filter-input" />
-            </div>
-            <div id="pool" class="card-body droptarget var-pool-body"></div>
-          </div>
-        </div>
-
-        <!-- Panel phải: nhóm biến -->
-        <div class="var-right">
-          ${renderBucketsHTML()}
-        </div>
+      <div class="card-body var-grid">
+        ${renderBucketsHTML()}
       </div>
 
       <div class="card-footer var-footer">
-        <button id="var-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý nhóm biến</button>
-        <button id="var-gpt-eval" class="btn btn-primary" type="button">GPT đánh giá bộ biến</button>
-        <button id="var-save" class="btn btn-secondary" type="button">Lưu</button>
+        <button id="vars-save" class="btn btn-secondary" type="button">Lưu tất cả biến</button>
       </div>
     </div>
   `.trim();
 
   // ---------- State ----------
-  let allVars = normalizeAll(ctx.get("allVariables", []));
-  let selected = normalizeSelected(ctx.get("selectedVariables", {}));
+  let variables = normalizeVariables(ctx.get("variables", {}));
+  // Lưu trạng thái đang sửa cho mỗi bucket (index hoặc null)
+  const editIndex = {};
+  BUCKETS.forEach((b) => (editIndex[b] = null));
 
   // ---------- DOM ----------
-  const poolEl = root.querySelector("#pool");
-  const filterEl = root.querySelector("#var-filter");
-  const csvInput = root.querySelector("#var-csv");
-  const btnLoad = root.querySelector("#var-load");
-  const btnExport = root.querySelector("#var-export");
-  const btnSave = root.querySelector("#var-save");
-  const btnSuggest = root.querySelector("#var-gpt-suggest");
-  const btnEval = root.querySelector("#var-gpt-eval");
+  const saveBtn = root.querySelector("#vars-save");
 
-  const bucketEls = {
-    primary: root.querySelector("#bucket-primary .bucket-body"),
-    secondary: root.querySelector("#bucket-secondary .bucket-body"),
-    baseline: root.querySelector("#bucket-baseline .bucket-body"),
-    confounder: root.querySelector("#bucket-confounder .bucket-body"),
-    mediator: root.querySelector("#bucket-mediator .bucket-body"),
-    moderator: root.querySelector("#bucket-moderator .bucket-body"),
-    safety: root.querySelector("#bucket-safety .bucket-body"),
-  };
-
-  // ---------- Render lần đầu ----------
+  // Render lần đầu
   renderAll();
 
-  // ---------- Wire events ----------
-  filterEl?.addEventListener("input", renderPool);
-  btnLoad?.addEventListener("click", onLoadCsv);
-  btnExport?.addEventListener("click", onExport);
-  btnSave?.addEventListener("click", onSave);
-  btnSuggest?.addEventListener("click", onSuggest);
-  btnEval?.addEventListener("click", onEvaluate);
+  // Gắn sự kiện cho từng bucket
+  BUCKETS.forEach((bucket) => bindBucket(bucket));
 
-  setupDropZone(poolEl, "pool");
-  Object.entries(bucketEls).forEach(([k, el]) => setupDropZone(el, k));
+  saveBtn?.addEventListener("click", () => {
+    ctx.save("variables", variables);
+    ctx.toast("Đã lưu tất cả biến nghiên cứu.");
+  });
 
-  // ========================= Functions =========================
+  // ========================= Render =========================
   function renderAll() {
-    renderPool();
-    renderBucketsUI();
+    BUCKETS.forEach((bucket) => renderBucket(bucket));
   }
 
-  function renderPool() {
-    const q = (filterEl?.value || "").trim().toLowerCase();
-    const pool = getPool();
-    const list = q
-      ? pool.filter(
-          (v) =>
-            (v.name || "").toLowerCase().includes(q) ||
-            (v.unit || "").toLowerCase().includes(q) ||
-            (v.type || "").toLowerCase().includes(q) ||
-            (v.note || "").toLowerCase().includes(q)
-        )
-      : pool;
+  function renderBucket(bucket) {
+    const listEl = root.querySelector(
+      `#bucket-${bucket} .bucket-list`
+    );
+    if (!listEl) return;
 
-    if (!poolEl) return;
-    poolEl.innerHTML = "";
-    list.forEach((v) => poolEl.appendChild(renderVarChip(v, "pool")));
-    if (!list.length) {
-      poolEl.innerHTML = `<div class="muted">Không có biến phù hợp bộ lọc.</div>`;
+    const items = variables[bucket] || [];
+    if (!items.length) {
+      listEl.innerHTML = `<div class="muted">Chưa có biến nào trong nhóm này.</div>`;
+      return;
     }
-  }
 
-  function renderBucketsUI() {
-    Object.entries(bucketEls).forEach(([k, el]) => {
-      if (!el) return;
-      const arr = selected[k] || [];
-      el.innerHTML = arr.length ? "" : `<div class="muted">Chưa chọn</div>`;
-      arr.forEach((v) => el.appendChild(renderVarChip(v, k, true)));
+    listEl.innerHTML = "";
+    items.forEach((v, idx) => {
+      const div = document.createElement("div");
+      div.className = "var-item";
+      div.dataset.bucket = bucket;
+      div.dataset.index = String(idx);
+
+      const metaParts = [];
+      if (v.timepoint) metaParts.push(`Thời điểm: ${v.timepoint}`);
+      if (v.unit) metaParts.push(`Đơn vị: ${v.unit}`);
+      if (v.datatype) metaParts.push(`Loại: ${v.datatype}`);
+
+      const defShort = v.definition
+        ? truncateOneLine(v.definition, 120)
+        : "";
+
+      div.innerHTML = `
+        <div class="var-item-main">
+          <div class="var-item-name">${escapeHtml(v.name || "(Chưa đặt tên)")}</div>
+          ${
+            metaParts.length
+              ? `<div class="var-item-meta muted">${escapeHtml(
+                  metaParts.join(" • ")
+                )}</div>`
+              : ""
+          }
+          ${
+            defShort
+              ? `<div class="var-item-def muted">Định nghĩa: ${escapeHtml(
+                  defShort
+                )}</div>`
+              : ""
+          }
+        </div>
+        <div class="var-item-actions">
+          <button type="button" class="btn btn-ghost var-edit">Sửa</button>
+          <button type="button" class="btn btn-ghost var-delete">Xoá</button>
+        </div>
+      `;
+      listEl.appendChild(div);
     });
-  }
 
-  function renderVarChip(v, bucket, withRemove = false) {
-    const chip = document.createElement("div");
-    chip.className = "pill draggable var-chip";
-    chip.draggable = true;
-    chip.dataset.name = v.name;
-    chip.dataset.bucket = bucket;
-
-    const left = document.createElement("div");
-    left.className = "var-chip-main";
-
-    const title = document.createElement("div");
-    title.className = "var-chip-title";
-    title.textContent = v.name;
-    left.appendChild(title);
-
-    const meta = [];
-    if (v.type) meta.push(v.type);
-    if (v.unit) meta.push(`đv: ${v.unit}`);
-    if (v.note) meta.push(v.note);
-    if (meta.length) {
-      const sub = document.createElement("div");
-      sub.className = "muted var-chip-meta";
-      sub.textContent = meta.join(" • ");
-      left.appendChild(sub);
-    }
-
-    chip.appendChild(left);
-
-    if (withRemove) {
-      const btnX = document.createElement("button");
-      btnX.type = "button";
-      btnX.className = "btn-ghost var-chip-remove";
-      btnX.textContent = "✕";
-      btnX.title = "Bỏ khỏi nhóm";
-      btnX.addEventListener("click", () => {
-        removeFromSelected(v.name);
-        renderAll();
+    // Gắn sự kiện Sửa / Xoá
+    listEl.querySelectorAll(".var-edit").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const parent = btn.closest(".var-item");
+        if (!parent) return;
+        const b = parent.dataset.bucket;
+        const i = Number(parent.dataset.index ?? "-1");
+        if (!Number.isInteger(i) || i < 0) return;
+        openEditor(b, i);
       });
-      chip.appendChild(btnX);
-    }
-
-    chip.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData(
-        "text/plain",
-        JSON.stringify({ name: v.name, from: bucket })
-      );
     });
 
-    return chip;
+    listEl.querySelectorAll(".var-delete").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const parent = btn.closest(".var-item");
+        if (!parent) return;
+        const b = parent.dataset.bucket;
+        const i = Number(parent.dataset.index ?? "-1");
+        if (!Number.isInteger(i) || i < 0) return;
+        variables[b] = (variables[b] || []).filter((_, idx) => idx !== i);
+        editIndex[b] = null;
+        closeEditor(b);
+        renderBucket(b);
+      });
+    });
   }
 
-  function setupDropZone(zoneEl, bucketName) {
-    if (!zoneEl) return;
-    zoneEl.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      zoneEl.classList.add("dropping");
-    });
-    zoneEl.addEventListener("dragleave", () => {
-      zoneEl.classList.remove("dropping");
-    });
-    zoneEl.addEventListener("drop", (e) => {
-      e.preventDefault();
-      zoneEl.classList.remove("dropping");
-      const data = safeParse(e.dataTransfer.getData("text/plain"));
-      if (!data?.name) return;
+  // ========================= Per-bucket binding =========================
+  function bindBucket(bucket) {
+    const addBtn = root.querySelector(
+      `[data-bucket="${bucket}"][data-role="add"]`
+    );
+    const suggestBtn = root.querySelector(
+      `[data-bucket="${bucket}"][data-role="gpt-suggest"]`
+    );
+    const evalBtn = root.querySelector(
+      `[data-bucket="${bucket}"][data-role="gpt-eval"]`
+    );
 
-      if (bucketName === "pool") {
-        removeFromSelected(data.name);
-      } else {
-        const item = getVarByName(data.name);
-        if (!item) return;
-        addToSelected(bucketName, item);
+    const editorEl = root.querySelector(
+      `#bucket-${bucket}-editor`
+    );
+    const saveVarBtn = root.querySelector(
+      `[data-bucket="${bucket}"][data-role="editor-save"]`
+    );
+    const cancelVarBtn = root.querySelector(
+      `[data-bucket="${bucket}"][data-role="editor-cancel"]`
+    );
+
+    const fbWrap = root.querySelector(
+      `#bucket-${bucket}-feedback-wrap`
+    );
+    const fbBox = root.querySelector(
+      `#bucket-${bucket}-feedback`
+    );
+
+    // Thêm biến mới
+    addBtn?.addEventListener("click", () => {
+      openEditor(bucket, null);
+    });
+
+    // Lưu biến trong editor
+    saveVarBtn?.addEventListener("click", () => {
+      const data = readEditor(bucket);
+      if (!data.name) {
+        ctx.toast("Tên biến là bắt buộc.");
+        return;
       }
-      renderAll();
+      const idx = editIndex[bucket];
+      if (idx == null || idx < 0) {
+        variables[bucket].push(data);
+      } else {
+        variables[bucket][idx] = data;
+      }
+      editIndex[bucket] = null;
+      closeEditor(bucket);
+      renderBucket(bucket);
     });
-  }
 
-  function onExport() {
-    ctx.downloadJSON("variables.json", {
-      allVariables: allVars,
-      selectedVariables: selected,
+    // Hủy editor
+    cancelVarBtn?.addEventListener("click", () => {
+      editIndex[bucket] = null;
+      closeEditor(bucket);
     });
-  }
 
-  async function onLoadCsv() {
-    if (!Papa) {
-      ctx.toast("Không tìm thấy PapaParse.");
-      return;
-    }
-    const f = csvInput?.files?.[0];
-    if (!f) {
-      ctx.toast("Chọn file CSV trước đã.");
-      return;
-    }
+    // GPT gợi ý biến cho nhóm
+    suggestBtn?.addEventListener("click", async () => {
+      const pico = ctx.get("pico", {}) || {};
+      const mainObj = ctx.get("mainObjective", "") || "";
+      const otherObjs =
+        ctx.get("otherObjectives", []) ||
+        ctx.get("secondaryObjectives", []) ||
+        [];
 
-    try {
-      const text = await f.text();
-      const res = Papa.parse(text, { header: true, skipEmptyLines: "greedy" });
-      const mapped = (res.data || [])
-        .map((row) => ({
-          name: (
-            row.name ||
-            row.Name ||
-            row.tên ||
-            row["Tên biến"] ||
-            ""
-          )
-            .toString()
-            .trim(),
-          type:
-            (
-              row.type ||
-              row.Type ||
-              row.loai ||
-              row["Loại"] ||
-              ""
-            )
-              .toString()
-              .trim() || undefined,
-          unit:
-            (
-              row.unit ||
-              row.Unit ||
-              row.đơnvị ||
-              row["Đơn vị"] ||
-              ""
-            )
-              .toString()
-              .trim() || undefined,
-          note:
-            (
-              row.note ||
-              row.ghi_chu ||
-              row["Ghi chú"] ||
-              ""
-            )
-              .toString()
-              .trim() || undefined,
-        }))
-        .filter((x) => x.name);
+      const groupVars = (variables[bucket] || []).map(viewVar);
+      const allVars = {};
+      BUCKETS.forEach((b) => {
+        allVars[b] = (variables[b] || []).map(viewVar);
+      });
 
-      const existing = new Set(allVars.map((v) => v.name));
-      const merged = [...allVars];
-      mapped.forEach((v) => {
-        if (!existing.has(v.name)) {
-          merged.push(v);
-          existing.add(v.name);
+      const meta = BUCKET_META[bucket] || {};
+      const prompt = `
+Bạn là chuyên gia thiết kế RCT và báo cáo theo CONSORT, SPIRIT và ICH E9.
+
+Nhiệm vụ: **đề xuất danh mục biến cho nhóm "${meta.title ||
+        bucket}"** trong một thử nghiệm lâm sàng ngẫu nhiên, dựa trên:
+- PICO và mục tiêu nghiên cứu.
+- Nhóm biến đang xét (primary / secondary / baseline / confounder / mediator / moderator / safety).
+- Các biến đã có sẵn (nếu có).
+
+Hãy:
+1. Đề xuất các biến phù hợp cho nhóm này, với các trường:
+   - name: tên biến rõ ràng, dễ dùng trên CRF.
+   - timepoint: thời điểm/visit thu thập (baseline, tuần 4, tuần 12, follow-up...).
+   - definition: định nghĩa vận hành (operational definition) đủ chi tiết để người khác hiểu và tái lập.
+   - measurement: cách đo lường (thang đo, công cụ, thiết bị, cách tính điểm hoặc cách tính chỉ số).
+   - unit: đơn vị đo (mm, điểm, kg, %, lần/tuần...).
+   - datatype: kiểu biến (continuous, ordinal, binary, time-to-event...).
+   - notes: ghi chú thêm (mã hoá, cách nhập liệu, cắt ngưỡng lâm sàng, xử lý khi thiếu dữ liệu...).
+
+2. Đảm bảo các biến gợi ý thực sự liên quan đến:
+   - Câu hỏi/mục tiêu chính của nghiên cứu.
+   - Nhóm biến tương ứng (ví dụ: primary: kết cục chính; baseline: đặc điểm ban đầu; safety: biến cố bất lợi...).
+
+3. Kết quả trả về phải là **một JSON duy nhất** với cấu trúc:
+{
+  "variables": [
+    {
+      "name": "...",
+      "timepoint": "...",
+      "definition": "...",
+      "measurement": "...",
+      "unit": "...",
+      "datatype": "...",
+      "notes": "..."
+    },
+    ...
+  ],
+  "note": "Giải thích ngắn gọn logic chọn biến, kèm 3–8 tài liệu tham khảo có thật (CONSORT, SPIRIT, ICH E9, GCP, hoặc các hướng dẫn liên quan) trình bày theo chuẩn AMA 11."
+}
+
+4. Không trả lời giải thích bên ngoài JSON. Toàn bộ giải thích và tài liệu tham khảo phải nằm trong trường "note".
+
+Ngữ cảnh nghiên cứu:
+- P: ${pico.p || "(chưa ghi rõ)"}
+- I: ${pico.i || "(chưa ghi rõ)"}
+- C: ${pico.c || "(chưa ghi rõ)"}
+- O: ${pico.o || "(chưa ghi rõ)"}
+
+Mục tiêu chính: ${mainObj || "(chưa ghi rõ)"}
+Các mục tiêu khác (nếu có): ${JSON.stringify(otherObjs).slice(0, 800)}
+
+Nhóm biến đang xét: ${bucket}
+
+Biến đã có trong nhóm này (rút gọn):
+${JSON.stringify(groupVars, null, 2).slice(0, 1200)}
+
+Tổng quan các nhóm biến khác (tên + loại):
+${JSON.stringify(allVars, null, 2).slice(0, 1200)}
+      `.trim();
+
+      ctx.toast(`Đang để GPT gợi ý biến cho nhóm "${meta.title || bucket}"...`);
+      const raw = await ctx.callStepGPT("step10.suggest", prompt);
+      const j = safeParse(raw);
+      if (!j || typeof j !== "object" || !Array.isArray(j.variables)) {
+        ctx.toast("GPT không trả về JSON hợp lệ (không có trường variables).");
+        return;
+      }
+
+      const existingNames = new Set(
+        (variables[bucket] || []).map((v) => (v.name || "").trim())
+      );
+
+      const newVars = j.variables
+        .map((x) => normVar(x))
+        .filter((v) => v.name);
+
+      newVars.forEach((v) => {
+        const key = v.name.trim();
+        if (!existingNames.has(key)) {
+          variables[bucket].push(v);
+          existingNames.add(key);
         }
       });
-      allVars = merged;
 
-      ctx.toast(`Đã nạp ${mapped.length} biến (gộp trùng theo tên).`);
-      renderAll();
-    } catch (e) {
-      console.error(e);
-      ctx.toast("Không đọc được CSV.");
-    }
-  }
+      renderBucket(bucket);
 
-  function onSave() {
-    ctx.save("allVariables", allVars);
-    ctx.save("selectedVariables", selected);
-    ctx.toast("Đã lưu bộ biến.");
-  }
+      // hiển thị note + TLTK nếu có
+      if (fbWrap && fbBox) {
+        if (j.note) {
+          fbBox.textContent = j.note;
+          fbWrap.classList.remove("hidden");
+        } else {
+          fbBox.textContent = "";
+          fbWrap.classList.add("hidden");
+        }
+      }
 
-  // ---------- GPT gợi ý nhóm biến ----------
-  async function onSuggest() {
-    const pico = ctx.get("pico", {}) || {};
-    const objective = ctx.get("mainObjective", "") || "";
-    const design = ctx.get("design", {}) || {};
-    const interventions = ctx.get("interventions", []) || [];
+      ctx.toast("Đã chèn thêm biến được GPT gợi ý cho nhóm này.");
+    });
 
-    const currentNames = {
-      all: allVars.map((v) => v.name),
-      selected: Object.fromEntries(
-        Object.entries(selected).map(([k, arr]) => [
-          k,
-          (arr || []).map((v) => v.name),
-        ])
-      ),
-    };
+    // GPT đánh giá nhóm biến
+    evalBtn?.addEventListener("click", async () => {
+      const pico = ctx.get("pico", {}) || {};
+      const mainObj = ctx.get("mainObjective", "") || "";
+      const otherObjs =
+        ctx.get("otherObjectives", []) ||
+        ctx.get("secondaryObjectives", []) ||
+        [];
 
-    const prompt = `
-Bạn là chuyên gia phương pháp luận lâm sàng. Hãy đề xuất **danh mục biến** cho RCT, phân nhóm:
-- primary, secondary, baseline, confounder, mediator, moderator, safety
+      const groupVars = (variables[bucket] || []).map(viewVar);
+      if (!groupVars.length) {
+        ctx.toast("Nhóm này chưa có biến nào để đánh giá.");
+        return;
+      }
+
+      const meta = BUCKET_META[bucket] || {};
+      const prompt = `
+Bạn là phản biện phương pháp cho một thử nghiệm lâm sàng ngẫu nhiên (RCT), tuân theo CONSORT, SPIRIT và ICH E9.
+
+Hãy **đánh giá nhóm biến "${meta.title || bucket}"** dưới đây, bao gồm:
+1) Mức độ phù hợp của các biến với:
+   - PICO
+   - Mục tiêu nghiên cứu
+   - Vai trò của nhóm biến (primary / secondary / baseline / confounder / mediator / moderator / safety).
+2) Các biến quan trọng còn thiếu trong nhóm này (gợi ý cụ thể tên và lý do).
+3) Các biến thừa, trùng lặp, khó thu thập hoặc không phù hợp (nêu rõ).
+4) Đề xuất chỉnh sửa cụ thể (nên xem xét đổi tên, làm rõ định nghĩa, thêm thời điểm đo, chuẩn hoá cách đo, đơn vị, loại biến, quy tắc mã hoá...).
 
 YÊU CẦU:
-- Chỉ trả về **một đối tượng JSON thuần**, không giải thích thêm.
-- Cấu trúc JSON mẫu:
-{
-  "primary":   [ { "name": "...", "type": "...", "unit": "...", "note": "..." }, ... ],
-  "secondary": [ ... ],
-  "baseline":  [ ... ],
-  "confounder":[ ... ],
-  "mediator":  [ ... ],
-  "moderator": [ ... ],
-  "safety":    [ ... ]
-}
-- Mỗi biến phải có ít nhất "name"; các trường khác có thể để trống hoặc bỏ qua nếu không rõ.
-- ƯU TIÊN: trước hết sử dụng các biến đã có trong kho (đối chiếu theo tên gần giống); chỉ tạo biến mới nếu thật sự cần.
+- Trả lời bằng văn xuôi, có thể dùng gạch đầu dòng.
+- Tham chiếu rõ ràng đến các hướng dẫn/hướng dẫn thực hành (ví dụ CONSORT 2010, SPIRIT 2013, ICH E9, GCP...), có 3–8 tài liệu tham khảo có thật.
+- Trình bày tài liệu tham khảo ở cuối dưới tiêu đề "References", chuẩn AMA 11.
 
 Ngữ cảnh:
-PICO:
-- P: ${pico.p || ""}
-- I: ${pico.i || ""}
-- C: ${pico.c || ""}
-- O: ${pico.o || ""}
+- P: ${pico.p || "(chưa ghi rõ)"}
+- I: ${pico.i || "(chưa ghi rõ)"}
+- C: ${pico.c || "(chưa ghi rõ)"}
+- O: ${pico.o || "(chưa ghi rõ)"}
 
-Mục tiêu chính: ${objective || "(chưa ghi rõ)"}
-Thiết kế: ${jsonSafe(design)}
-Can thiệp: ${jsonSafe(interventions)}
+Mục tiêu chính: ${mainObj || "(chưa ghi rõ)"}
+Các mục tiêu khác: ${JSON.stringify(otherObjs).slice(0, 800)}
 
-Kho biến hiện có (tên): ${JSON.stringify(currentNames.all).slice(0, 1500)}
-Lựa chọn hiện tại: ${JSON.stringify(currentNames.selected).slice(0, 1500)}
-`.trim();
+Nhóm biến đang đánh giá: ${meta.title || bucket}
+Danh sách biến trong nhóm (JSON rút gọn):
+${JSON.stringify(groupVars, null, 2).slice(0, 3000)}
+      `.trim();
 
-    ctx.toast("Đang gợi ý nhóm biến từ GPT...");
-    const raw = await ctx.callStepGPT("step10.suggest", prompt);
-    const j = safeParse(raw);
-    if (!j || typeof j !== "object") {
-      ctx.toast("GPT không trả về JSON hợp lệ.");
-      return;
-    }
-
-    const buckets = [
-      "primary",
-      "secondary",
-      "baseline",
-      "confounder",
-      "mediator",
-      "moderator",
-      "safety",
-    ];
-    const byName = new Map(allVars.map((v) => [v.name, v]));
-    const nextSelected = cloneSelectedBlank();
-
-    buckets.forEach((b) => {
-      const arr = Array.isArray(j[b]) ? j[b] : [];
-      nextSelected[b] = arr.map((x) => normVar(x)).filter((v) => !!v.name);
-      nextSelected[b].forEach((v) => {
-        if (!byName.has(v.name)) {
-          allVars.push(v);
-          byName.set(v.name, v);
-        }
-      });
+      ctx.toast(
+        `Đang để GPT đánh giá nhóm biến "${meta.title || bucket}"...`
+      );
+      const fb = await ctx.callStepGPT("step10.evaluate", prompt);
+      if (fbWrap && fbBox) {
+        fbBox.textContent = fb || "Không nhận được phản hồi.";
+        fbWrap.classList.remove("hidden");
+      } else {
+        ctx.toast("Không tìm thấy vùng hiển thị feedback.");
+      }
     });
-
-    selected = nextSelected;
-    renderAll();
-    ctx.toast("Đã chèn gợi ý nhóm biến.");
   }
 
-  // ---------- GPT đánh giá bộ biến ----------
-  async function onEvaluate() {
-    const pico = ctx.get("pico", {}) || {};
-    const objective = ctx.get("mainObjective", "") || "";
-    const design = ctx.get("design", {}) || {};
-    const interventions = ctx.get("interventions", []) || [];
+  // ========================= Editor helpers =========================
+  function openEditor(bucket, indexOrNull) {
+    const editor = root.querySelector(
+      `#bucket-${bucket}-editor`
+    );
+    if (!editor) return;
+    editIndex[bucket] =
+      indexOrNull == null || indexOrNull < 0 ? null : indexOrNull;
 
-    const payload = {
-      primary: selected.primary?.map((v) => viewVar(v)) ?? [],
-      secondary: selected.secondary?.map((v) => viewVar(v)) ?? [],
-      baseline: selected.baseline?.map((v) => viewVar(v)) ?? [],
-      confounder: selected.confounder?.map((v) => viewVar(v)) ?? [],
-      mediator: selected.mediator?.map((v) => viewVar(v)) ?? [],
-      moderator: selected.moderator?.map((v) => viewVar(v)) ?? [],
-      safety: selected.safety?.map((v) => viewVar(v)) ?? [],
-    };
+    const v =
+      indexOrNull == null || indexOrNull < 0
+        ? blankVar()
+        : variables[bucket][indexOrNull] || blankVar();
 
-    const prompt = `
-Bạn là phản biện phương pháp cho RCT. Hãy **đánh giá bộ biến** hiện tại theo các điểm sau:
-1) Mức độ phù hợp với PICO, mục tiêu nghiên cứu và thiết kế (nêu ngắn gọn).
-2) Những biến quan trọng còn thiếu (gợi ý cụ thể tên/loại biến).
-3) Những biến thừa, trùng lặp hoặc khó thu thập (nêu rõ).
-4) Gợi ý chỉnh sửa/bổ sung cụ thể, trình bày dạng gạch đầu dòng.
+    // Điền dữ liệu vào form
+    editor.querySelector(".field-name")      .value = v.name || "";
+    editor.querySelector(".field-timepoint") .value = v.timepoint || "";
+    editor.querySelector(".field-definition").value = v.definition || "";
+    editor.querySelector(".field-measurement").value = v.measurement || "";
+    editor.querySelector(".field-unit")      .value = v.unit || "";
+    editor.querySelector(".field-datatype")  .value = v.datatype || "";
+    editor.querySelector(".field-notes")     .value = v.notes || "";
 
-Ngữ cảnh:
-- P: ${pico.p || ""}
-- I: ${pico.i || ""}
-- C: ${pico.c || ""}
-- O: ${pico.o || ""}
-- Mục tiêu: ${objective || "(chưa ghi rõ)"}
-- Thiết kế: ${jsonSafe(design)}
-- Can thiệp: ${jsonSafe(interventions)}
-
-Bộ biến hiện tại (JSON rút gọn):
-${JSON.stringify(payload, null, 2).slice(0, 4000)}
-`.trim();
-
-    ctx.toast("Đang đánh giá bộ biến...");
-    const fb = await ctx.callStepGPT("step10.evaluate", prompt);
-    showFeedbackDialog(fb || "Không nhận được phản hồi.");
+    editor.classList.remove("hidden");
   }
 
-  // ====================== Helpers: data ======================
-  function normalizeAll(arr) {
-    const out = Array.isArray(arr) ? arr : [];
-    const seen = new Set();
-    return out
-      .map((v) => normVar(v))
-      .filter((v) => v.name && !dupe(v.name));
-    function dupe(name) {
-      const k = name.trim();
-      if (seen.has(k)) return true;
-      seen.add(k);
-      return false;
-    }
+  function closeEditor(bucket) {
+    const editor = root.querySelector(
+      `#bucket-${bucket}-editor`
+    );
+    if (!editor) return;
+    editor.classList.add("hidden");
   }
 
-  function normalizeSelected(sel) {
-    const buckets = cloneSelectedBlank();
-    if (sel && typeof sel === "object") {
-      Object.keys(buckets).forEach((k) => {
-        buckets[k] = (Array.isArray(sel[k]) ? sel[k] : [])
-          .map((v) => normVar(v))
-          .filter((x) => x.name);
-      });
-    }
-    return buckets;
+  function readEditor(bucket) {
+    const editor = root.querySelector(
+      `#bucket-${bucket}-editor`
+    );
+    if (!editor) return blankVar();
+    return normVar({
+      name: editor.querySelector(".field-name")?.value || "",
+      timepoint: editor.querySelector(".field-timepoint")?.value || "",
+      definition: editor.querySelector(".field-definition")?.value || "",
+      measurement: editor.querySelector(".field-measurement")?.value || "",
+      unit: editor.querySelector(".field-unit")?.value || "",
+      datatype: editor.querySelector(".field-datatype")?.value || "",
+      notes: editor.querySelector(".field-notes")?.value || "",
+    });
   }
 
-  function cloneSelectedBlank() {
+  // ========================= Data helpers =========================
+  function normalizeVariables(raw) {
+    const out = {};
+    BUCKETS.forEach((b) => {
+      const arr = Array.isArray(raw?.[b]) ? raw[b] : [];
+      out[b] = arr.map((v) => normVar(v)).filter((v) => v.name);
+    });
+    return out;
+  }
+
+  function blankVar() {
     return {
-      primary: [],
-      secondary: [],
-      baseline: [],
-      confounder: [],
-      mediator: [],
-      moderator: [],
-      safety: [],
+      name: "",
+      timepoint: "",
+      definition: "",
+      measurement: "",
+      unit: "",
+      datatype: "",
+      notes: "",
     };
   }
 
   function normVar(v) {
     if (!v || typeof v !== "object") {
       const s = (v ?? "").toString().trim();
-      return s ? { name: s } : { name: "" };
+      return s ? { ...blankVar(), name: s } : blankVar();
     }
     return {
       name: (v.name ?? "").toString().trim(),
-      type: cleanStr(v.type),
+      timepoint: cleanStr(v.timepoint),
+      definition: cleanStr(v.definition),
+      measurement: cleanStr(v.measurement),
       unit: cleanStr(v.unit),
-      note: cleanStr(v.note),
+      datatype: cleanStr(v.datatype),
+      notes: cleanStr(v.notes),
     };
   }
 
   function cleanStr(x) {
     const s = (x ?? "").toString().trim();
-    return s || undefined;
+    return s || "";
   }
 
-  function getPool() {
-    const inBuckets = new Set(
-      Object.values(selected)
-        .flat()
-        .map((v) => v.name)
-    );
-    return allVars.filter((v) => !inBuckets.has(v.name));
-  }
-
-  function getVarByName(name) {
-    return allVars.find((v) => v.name === name);
-  }
-
-  function addToSelected(bucket, item) {
-    const arr = selected[bucket] || [];
-    if (!arr.some((x) => x.name === item.name)) {
-      selected[bucket] = [...arr, item];
-    }
-    // đảm bảo một biến chỉ ở một bucket
-    Object.keys(selected).forEach((k) => {
-      if (k !== bucket) {
-        selected[k] = selected[k].filter((x) => x.name !== item.name);
-      }
-    });
-  }
-
-  function removeFromSelected(name) {
-    Object.keys(selected).forEach((k) => {
-      selected[k] = selected[k].filter((x) => x.name !== name);
-    });
-  }
-
-  // ====================== Helpers: UI ======================
   function viewVar(v) {
-    return { name: v.name, type: v.type, unit: v.unit, note: v.note };
+    return {
+      name: v.name,
+      timepoint: v.timepoint,
+      definition: v.definition,
+      measurement: v.measurement,
+      unit: v.unit,
+      datatype: v.datatype,
+      notes: v.notes,
+    };
   }
 
-  function showFeedbackDialog(text) {
-    const id = "vars-fb-dialog";
-    let dlg = document.getElementById(id);
-    if (!dlg) {
-      dlg = document.createElement("div");
-      dlg.id = id;
-      dlg.className = "vars-dialog-overlay";
-      dlg.innerHTML = `
-        <div class="vars-dialog">
-          <div class="vars-dialog-title">Đánh giá bộ biến</div>
-          <div id="vars-fb-text" class="vars-dialog-body"></div>
-          <div class="vars-dialog-footer">
-            <button id="vars-fb-close" class="btn btn-primary" type="button">Đóng</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(dlg);
-      dlg
-        .querySelector("#vars-fb-close")
-        ?.addEventListener("click", () => dlg.remove());
-    }
-    const body = dlg.querySelector("#vars-fb-text");
-    if (body) body.textContent = text;
-  }
-
-  // ====================== Helpers: misc ======================
   function safeParse(s) {
     try {
       return JSON.parse(s);
@@ -562,40 +535,92 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
     }
   }
 
-  function jsonSafe(x) {
-    try {
-      return JSON.stringify(x).slice(0, 2000);
-    } catch {
-      return String(x);
-    }
+  function truncateOneLine(s, maxLen) {
+    const str = String(s || "").replace(/\s+/g, " ").trim();
+    if (str.length <= maxLen) return str;
+    return str.slice(0, maxLen - 1) + "…";
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 }
 
-// ---------- Markup helpers (ngoài mount) ----------
+// ---------- Markup helper ----------
 function renderBucketsHTML() {
-  return `
-    ${renderBucketBox("Kết cục chính (Primary)",   "primary",    "Kết cục chính duy nhất hoặc rất ít")}
-    ${renderBucketBox("Kết cục phụ (Secondary)",   "secondary",  "Các kết cục bổ sung")}
-    ${renderBucketBox("Biến nền (Baseline)",       "baseline",   "Đặc điểm ban đầu, mô tả dân số")}
-    ${renderBucketBox("Nhiễu (Confounder)",        "confounder", "Yếu tố gây nhiễu cần điều chỉnh")}
-    ${renderBucketBox("Trung gian (Mediator)",     "mediator",   "Nếu phù hợp với giả thuyết")}
-    ${renderBucketBox("Điều biến (Moderator)",     "moderator",  "Nếu phù hợp với giả thuyết")}
-    ${renderBucketBox("An toàn (Safety)",          "safety",     "Biến cố bất lợi, AE/SAE")}
-  `;
-}
+  return BUCKETS.map((b) => {
+    const meta = BUCKET_META[b] || { title: b, hint: "" };
+    return `
+      <div id="bucket-${b}" class="card var-bucket">
+        <div class="card-header">
+          <div class="bucket-title">${meta.title}</div>
+          ${
+            meta.hint
+              ? `<div class="bucket-hint muted">${meta.hint}</div>`
+              : ""
+          }
+        </div>
 
-function renderBucketBox(title, key, hint = "") {
-  return `
-    <div id="bucket-${key}" class="card var-bucket">
-      <div class="card-header">
-        <div class="bucket-title">${title}</div>
-        ${
-          hint
-            ? `<div class="bucket-hint muted">${hint}</div>`
-            : ""
-        }
+        <div class="card-body">
+          <div class="bucket-list"></div>
+
+          <div class="bucket-editor hidden" id="bucket-${b}-editor">
+            <div class="bucket-editor-grid">
+              <div class="form-group">
+                <label>Tên biến <span class="required">*</span></label>
+                <input type="text" class="field-name" placeholder="Ví dụ: VAS đau gối lúc nghỉ" />
+              </div>
+              <div class="form-group">
+                <label>Thời điểm thu thập</label>
+                <input type="text" class="field-timepoint" placeholder="Baseline, tuần 4, tuần 12, follow-up 6 tháng..." />
+              </div>
+              <div class="form-group full-span">
+                <label>Định nghĩa biến (operational definition)</label>
+                <textarea class="field-definition" rows="3"
+                  placeholder="Mô tả cụ thể điều gì được đo, cách phân loại, ngưỡng cắt lâm sàng, cách xử lý trường hợp đặc biệt..."></textarea>
+              </div>
+              <div class="form-group full-span">
+                <label>Cách đo lường / công cụ</label>
+                <textarea class="field-measurement" rows="3"
+                  placeholder="Thang đo, thiết bị, quy trình đo, ai thực hiện, số lần đo, cách tính trung bình/điểm số..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>Đơn vị</label>
+                <input type="text" class="field-unit" placeholder="mm, điểm, kg, %, lần/tuần..." />
+              </div>
+              <div class="form-group">
+                <label>Loại biến (data type)</label>
+                <input type="text" class="field-datatype" placeholder="continuous, ordinal, binary, time-to-event..." />
+              </div>
+              <div class="form-group full-span">
+                <label>Ghi chú</label>
+                <textarea class="field-notes" rows="2"
+                  placeholder="Mã hoá dữ liệu, quy tắc xử lý giá trị ngoại lai/thiếu, cách tổng hợp..."></textarea>
+              </div>
+            </div>
+            <div class="bucket-editor-footer">
+              <button type="button" class="btn btn-primary" data-bucket="${b}" data-role="editor-save">Lưu biến</button>
+              <button type="button" class="btn btn-secondary" data-bucket="${b}" data-role="editor-cancel">Hủy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer bucket-footer">
+          <button type="button" class="btn btn-secondary" data-bucket="${b}" data-role="add">+ Thêm biến</button>
+          <button type="button" class="btn btn-primary"  data-bucket="${b}" data-role="gpt-suggest">GPT gợi ý biến</button>
+          <button type="button" class="btn btn-primary"  data-bucket="${b}" data-role="gpt-eval">GPT đánh giá nhóm</button>
+        </div>
+
+        <div class="card-body bucket-feedback hidden" id="bucket-${b}-feedback-wrap">
+          <div class="bucket-feedback-title">Nhận xét / tài liệu tham khảo</div>
+          <div id="bucket-${b}-feedback" class="muted"></div>
+        </div>
       </div>
-      <div class="card-body bucket-body droptarget" data-bucket="${key}"></div>
-    </div>
-  `;
+    `;
+  }).join("");
 }
