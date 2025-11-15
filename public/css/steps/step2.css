@@ -1,55 +1,78 @@
-/* public/css/steps/step2.css */
 /* Scope riêng cho step 2 */
-[data-scope="step2"] .hidden{ display:none !important; }
-
-/* Textarea */
-[data-scope="step2"] textarea{
-  resize:vertical;
-  min-height:96px;
-  border-radius:10px;
+[data-scope="step2"] .obj-main-label textarea {
+  min-height: 96px;
 }
 
-/* Hàng nút GPT: 2 cột bằng nhau, tự xuống hàng màn nhỏ */
-[data-scope="step2"] .btn-row{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:12px;
-  align-items:stretch;
+/* Mục tiêu phụ: input + nút Thêm */
+[data-scope="step2"] .obj-sub-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
-[data-scope="step2"] .btn-row .btn{
-  width:100%;
-  justify-content:center;
-  min-height:44px;
-  padding:.6rem .9rem;
-  line-height:1.2;
+
+[data-scope="step2"] .obj-sub-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+[data-scope="step2"] .obj-sub-row input {
+  flex: 1 1 auto;
+}
+
+[data-scope="step2"] .obj-sub-row button {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 /* Danh sách mục tiêu phụ */
-[data-scope="step2"] .sub-list{
-  border-top:1px dashed var(--border);
-}
-[data-scope="step2"] .sub-item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  padding:8px 0;
-  border-bottom:1px dashed var(--border);
-}
-[data-scope="step2"] .sub-item-text{
-  flex:1 1 auto;
-  min-width:0;
-  word-break:break-word;
-}
-[data-scope="step2"] .sub-item-ctrls{
-  display:flex;
-  gap:8px;
+[data-scope="step2"] .obj-sub-list {
+  margin-top: 0.5rem;
 }
 
-/* Khoảng cách tổng thể thoáng hơn */
-[data-scope="step2"] .card-body + .card-body{ margin-top:8px; }
+[data-scope="step2"] .obj-sub-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--border);
+}
 
-/* Responsive */
-@media (max-width:720px){
-  [data-scope="step2"] .btn-row{ grid-template-columns:1fr; }
+[data-scope="step2"] .obj-sub-controls {
+  display: flex;
+  gap: 8px;
+}
+
+/* File + nút GPT */
+[data-scope="step2"] .obj-file-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+[data-scope="step2"] .obj-file-label {
+  font-weight: 600;
+}
+
+[data-scope="step2"] .obj-gpt-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Header các khối GPT result */
+[data-scope="step2"] .obj-gpt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+[data-scope="step2"] .obj-gpt-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
