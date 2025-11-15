@@ -10,9 +10,9 @@
   white-space: nowrap;
 }
 
-/* Card GPT nằm gọn trong step, không đè layout chung */
+/* GPT cards thẳng hàng với nội dung chính của card (không thụt vào) */
 .step[data-scope="step7"] #crit .crit-gpt-card {
-  margin: 0 16px 12px;
+  margin: 12px 0 0;  /* chỉ margin-top, hai bên = 0 để thẳng với các khối khác */
 }
 
 /* Header GPT: các nút nằm trên 1 hàng, xuống hàng đẹp khi màn nhỏ */
@@ -23,14 +23,14 @@
   gap: 8px;
 }
 
-/* Điều chỉnh nhỏ cho textarea trong step 7 nếu cần */
+/* Textarea trong step 7 */
 .step[data-scope="step7"] #crit textarea.form-input {
   min-height: 80px;
 }
 
-/* Mobile: cho GPT card full-width không bị chật */
+/* Mobile: giữ card full-width, không bị chật */
 @media (max-width: 768px) {
   .step[data-scope="step7"] #crit .crit-gpt-card {
-    margin: 0 0 12px;
+    margin: 12px 0 0;
   }
 }
