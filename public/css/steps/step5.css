@@ -78,6 +78,11 @@
   margin-top: 12px;
 }
 
+/* Khoảng cách phía trên nút Lưu thiết kế */
+[data-scope="step5"] #dsg .card-footer {
+  margin-top: 12px;
+}
+
 /* Responsive */
 @media (max-width:900px){
   [data-scope="step5"] .grid-2{ grid-template-columns:1fr; }
