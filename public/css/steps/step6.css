@@ -60,3 +60,15 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Hàng nút GPT – cho nó cách phần input một chút, nhưng không dính vào footer */
+.step[data-scope="step6"] #ss .card-body.control-row {
+  margin-top: 8px;      /* thay 4 -> 8 cho thoáng hơn một chút */
+  margin-bottom: 0;     /* không cần margin dưới, để footer tự có margin riêng */
+}
+
+/* Hàng nút Tính cỡ mẫu / Lưu – tạo khoảng cách rõ với hàng GPT */
+.step[data-scope="step6"] #ss .card-footer {
+  margin-top: 16px;     /* hoặc 12–20 tuỳ mắt bạn */
+}
+
