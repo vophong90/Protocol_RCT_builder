@@ -1,0 +1,36 @@
+/* public/css/steps/step7.css */
+/* ============ Step 7 – Tiêu chí vào/loại ============ */
+
+.step[data-scope="step7"] #crit .hidden {
+  display: none !important;
+}
+
+/* Nhãn không xuống dòng cho "Tiêu chí Vào/Loại" */
+.step[data-scope="step7"] #crit .nowrap {
+  white-space: nowrap;
+}
+
+/* Card GPT nằm gọn trong step, không đè layout chung */
+.step[data-scope="step7"] #crit .crit-gpt-card {
+  margin: 0 16px 12px;
+}
+
+/* Header GPT: các nút nằm trên 1 hàng, xuống hàng đẹp khi màn nhỏ */
+.step[data-scope="step7"] #crit .crit-gpt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Điều chỉnh nhỏ cho textarea trong step 7 nếu cần */
+.step[data-scope="step7"] #crit textarea.form-input {
+  min-height: 80px;
+}
+
+/* Mobile: cho GPT card full-width không bị chật */
+@media (max-width: 768px) {
+  .step[data-scope="step7"] #crit .crit-gpt-card {
+    margin: 0 0 12px;
+  }
+}
