@@ -77,17 +77,13 @@ export async function mount(root, ctx) {
         </label>
 
         <label>
-          Tài liệu PDF (tuỳ chọn)
           <input id="intv-pdf-${idx}" type="file" accept="application/pdf" />
-          <span class="muted intv-note">
-            * Nếu tải PDF, hệ thống sẽ trích văn bản và đưa vào prompt GPT để gợi ý/đánh giá chính xác hơn.
-          </span>
         </label>
       </div>
 
       <div class="card-footer intv-footer">
-        <button id="intv-suggest-${idx}" class="btn btn-secondary">GPT gợi ý mô tả</button>
-        <button id="intv-eval-${idx}" class="btn btn-secondary">GPT đánh giá mô tả</button>
+        <button id="intv-suggest-${idx}" class="btn btn-primary">GPT gợi ý mô tả</button>
+        <button id="intv-eval-${idx}" class="btn btn-primary">GPT đánh giá mô tả</button>
       </div>
 
       <div class="card-body intv-feedback hidden" id="intv-fbwrap-${idx}">
