@@ -1,42 +1,54 @@
 /* public/css/steps/step7.css */
-/* Scope riêng cho Step 7 để tránh xung đột với components.css */
+/* Scope riêng cho Step 7 để tránh đụng components.css */
 
 [data-scope="step7"] #crit {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* Hai textarea: grid 2 cột chuẩn */
-[data-scope="step7"] #crit .card-body.grid-2 {
+/* ==== 2 textarea nằm trong cùng 1 card, cao bằng nhau ==== */
+
+[data-scope="step7"] .crit-pairs {
+  padding-bottom: 0; /* đỡ bị khoảng trắng dư dưới */
+}
+
+[data-scope="step7"] .crit-grid-2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px 16px;
-  align-items: flex-start;
+  align-items: stretch; /* hai cột cao bằng nhau */
 }
+
 @media (max-width: 900px) {
-  [data-scope="step7"] #crit .card-body.grid-2 {
+  [data-scope="step7"] .crit-grid-2 {
     grid-template-columns: 1fr;
   }
 }
 
-[data-scope="step7"] #crit .form-input {
-  width: 100%;
+[data-scope="step7"] .crit-label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
 }
 
-[data-scope="step7"] #crit .nowrap {
-  white-space: nowrap;
+[data-scope="step7"] .crit-textarea {
+  flex: 1;
+  min-height: 240px;    /* bắt buộc cùng min-height */
 }
 
-/* Hàng PDF: input + hint */
-[data-scope="step7"] #crit .control-row {
+/* ==== Hàng file PDF – card riêng ==== */
+
+[data-scope="step7"] .crit-file-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px 16px;
   align-items: center;
 }
+
 @media (max-width: 900px) {
-  [data-scope="step7"] #crit .control-row {
+  [data-scope="step7"] .crit-file-row {
     grid-template-columns: 1fr;
   }
 }
@@ -45,34 +57,43 @@
   font-size: 0.85rem;
 }
 
-/* Hàng 2 nút GPT: 2 cột bằng nhau */
+/* ==== Card 2 nút GPT – cùng một hàng, cùng kích thước ==== */
+
 [data-scope="step7"] .crit-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px 16px;
   align-items: stretch;
 }
+
 @media (max-width: 900px) {
   [data-scope="step7"] .crit-actions {
     grid-template-columns: 1fr;
   }
 }
 
-/* Hàng nút Lưu – luôn nằm một mình, bên trái, dưới tất cả */
-[data-scope="step7"] .crit-save-row {
-  display: block !important;       /* ép block để không bị flex/grid nơi khác ảnh hưởng */
-  text-align: left !important;
-  margin-top: 8px;
-}
-[data-scope="step7"] .crit-save-row .btn {
-  display: inline-flex;
-  min-width: 140px;
+[data-scope="step7"] .crit-actions .btn {
+  width: 100%;
+  justify-content: center;
 }
 
-/* Card kết quả GPT */
-[data-scope="step7"] .crit-gpt-card {
-  margin-top: 12px;
+/* ==== Card nút Lưu – luôn ở dưới, bên trái ==== */
+
+[data-scope="step7"] .crit-save-row {
+  display: flex !important;
+  justify-content: flex-start !important;
 }
+
+[data-scope="step7"] .crit-save-row .btn {
+  min-width: 160px;
+}
+
+/* ==== Card kết quả GPT ==== */
+
+[data-scope="step7"] .crit-gpt-card {
+  margin-top: 8px;
+}
+
 [data-scope="step7"] .crit-gpt-header {
   display: flex;
   justify-content: space-between;
