@@ -57,7 +57,7 @@
   font-size: 0.85rem;
 }
 
-/* ==== Card 2 nút GPT – cùng một hàng, cùng kích thước ==== */
+/* ==== Hàng 2 nút GPT – luôn cùng chiều cao ==== */
 [data-scope="step7"] .crit-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -72,10 +72,17 @@
 }
 
 [data-scope="step7"] .crit-actions .btn {
-  width: 100%;
-  justify-content: center;
-  min-height: 48px;       /* ép cùng chiều cao */
-  white-space: nowrap;    /* không cho text xuống dòng */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  height: 52px !important;
+  min-height: 52px !important;
+
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+
+  white-space: nowrap !important;  /* không cho xuống dòng */
 }
 
 /* ==== Card nút Lưu – luôn ở dưới, bên trái ==== */
