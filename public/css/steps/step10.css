@@ -193,3 +193,10 @@
   resize: vertical;
   min-height: 80px;
 }
+
+/* Textarea hiển thị gợi ý & đánh giá GPT trong step10 */
+[data-scope="step10"] .vars-suggest-ta,
+[data-scope="step10"] .vars-eval-ta {
+  width: 100%;
+  box-sizing: border-box;
+}
