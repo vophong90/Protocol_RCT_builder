@@ -275,5 +275,30 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 10 ----------
+  'step10.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step10.suggest',   // trùng với bindingKey trong callStepGPT
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step10.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step10.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
   
 };
