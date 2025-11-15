@@ -1,4 +1,4 @@
-// src/steps/step8/index.js
+// src/steps/step8/index.js 
 // Step 8 – Ngẫu nhiên hoá (baseline)
 
 export const id = 8;
@@ -44,15 +44,14 @@ export async function mount(root, ctx) {
         <div id="arm-rows" class="grid-3"></div>
       </div>
 
-      <!-- Block sizes -->
-      <div class="card-body grid-3 hidden" id="block-row">
+      <!-- Block sizes: ghi chú ngay dưới ô, cùng cột -->
+      <div class="card-body hidden" id="block-row">
         <label>Block sizes (nếu block) – ngăn cách bởi dấu phẩy
           <input id="rand-blocksizes" type="text" placeholder="vd: 4,6,8" />
+          <span class="muted rand-note">
+            * Mỗi block size cần chia hết tổng tỷ lệ (ví dụ 1:1 → block = 2,4,6,...).
+          </span>
         </label>
-        <div class="muted">
-          * Mỗi block size cần chia hết tổng tỷ lệ (vd 1:1 → block = 2,4,6,...)
-        </div>
-        <div></div>
       </div>
 
       <!-- Strata -->
@@ -188,38 +187,41 @@ export async function mount(root, ctx) {
     const blockSizes = parseBlockSizes(blockSizesI.value);
     const conceal = (concealTA.value || '').trim();
 
+    // Prompt TIẾNG VIỆT, yêu cầu kết quả tiếng Việt + TLTK thực theo AMA 11
     const prompt = `
-You are writing the Methods section for an international randomized controlled trial paper.
+Bạn là người viết mục Phương pháp (Methods) cho một bài báo thử nghiệm lâm sàng ngẫu nhiên (RCT).
 
-Write a concise but detailed description (about 2–3 paragraphs) of the randomization and allocation concealment procedures in **formal academic English**, suitable for submission to a high–impact medical journal.
+Hãy viết một đoạn mô tả chi tiết, chuẩn mực về **quy trình ngẫu nhiên hoá và che giấu phân bổ** để dùng nguyên văn trong bài báo quốc tế (khoảng 2–3 đoạn văn).
 
-Use the following information:
-- P (population): ${pico.p || 'not specified'}
-- I (intervention): ${pico.i || 'not specified'}
-- C (comparator): ${pico.c || 'not specified'}
-- O (primary outcome): ${pico.o || 'not specified'}
-- Study design (JSON from step 5): ${JSON.stringify(design)}
-- Research question: ${rq || 'not specified'}
-- Main objective: ${obj || 'not specified'}
-- Arms: ${JSON.stringify(arms)}
-- Allocation ratio: ${JSON.stringify(rr)}
-- Total sample size (if available): ${N ?? 'not specified'}
-- Randomization method: ${method} (simple vs block vs stratified)
-- Block sizes (if any): ${blockSizes.length ? JSON.stringify(blockSizes) : 'none'}
-- Stratification factors (if any): ${strata.length ? JSON.stringify(strata) : 'none'}
-- Allocation concealment notes from the user (optional, Vietnamese may appear): "${conceal || 'not specified'}"
+Thông tin đầu vào:
+- P (đối tượng): ${pico.p || 'chưa ghi rõ'}
+- I (can thiệp): ${pico.i || 'chưa ghi rõ'}
+- C (đối chứng): ${pico.c || 'chưa ghi rõ'}
+- O (kết cục chính): ${pico.o || 'chưa ghi rõ'}
+- Thiết kế nghiên cứu (JSON từ Bước 5): ${JSON.stringify(design)}
+- Câu hỏi nghiên cứu: ${rq || 'chưa ghi rõ'}
+- Mục tiêu chính: ${obj || 'chưa ghi rõ'}
+- Các nhánh can thiệp: ${JSON.stringify(arms)}
+- Tỷ lệ phân bổ: ${JSON.stringify(rr)}
+- Cỡ mẫu tổng (nếu có): ${N ?? 'chưa xác định'}
+- Phương pháp ngẫu nhiên hoá: ${method} (simple / block / stratified)
+- Block sizes (nếu có): ${blockSizes.length ? JSON.stringify(blockSizes) : 'không có'}
+- Các yếu tố phân tầng (nếu có): ${strata.length ? JSON.stringify(strata) : 'không phân tầng'}
+- Ghi chú của người dùng về che giấu phân bổ (có thể bằng tiếng Việt): "${conceal || 'chưa ghi rõ'}"
 
-Requirements:
-1. Describe clearly: sequence generation, type of randomization, block sizes and stratification (if used), allocation ratio, who generated the sequence, and how allocation concealment was ensured.
-2. Do NOT mention any software that was not explicitly provided; if you need to mention software, use generic wording such as "a computer–generated random sequence".
-3. Include **2–5 REAL references** about randomization and allocation concealment methods (e.g., CONSORT, Schulz KF, ICH E9, etc.).
-4. Format references strictly in **AMA 11th edition** style and list them at the end under the heading "References".
-5. Only cite articles or guidelines that truly exist. If you are not sure a reference is real, do NOT invent it; instead, reduce the number of references.
-6. Do not include any JSON or bullet lists in the output, only continuous prose plus a numbered reference list.
+YÊU CẦU:
+1. Viết **bằng tiếng Việt học thuật**, câu văn trôi chảy, có thể giữ lại các thuật ngữ chuẩn tiếng Anh khi cần (ví dụ: CONSORT, allocation concealment, computer-generated random sequence...).
+2. Mô tả rõ: cách sinh chuỗi ngẫu nhiên (sequence generation), loại ngẫu nhiên hoá (simple / block / stratified), kích thước block và yếu tố phân tầng (nếu dùng), tỷ lệ phân bổ, ai là người tạo chuỗi, ai giữ chuỗi và cách đảm bảo che giấu phân bổ (allocation concealment).
+3. Không nêu tên phần mềm cụ thể nếu chưa được cung cấp; nếu cần, dùng dạng chung chung như “chuỗi ngẫu nhiên do máy tính tạo”.
+4. Thêm **2–5 tài liệu tham khảo CÓ THẬT** liên quan đến ngẫu nhiên hoá và che giấu phân bổ (ví dụ: CONSORT, Schulz KF về allocation concealment, ICH E9, v.v.).
+5. Liệt kê tài liệu tham khảo ở cuối đoạn dưới tiêu đề “References”, trình bày đúng **chuẩn AMA 11th** (tên tác giả, tên bài báo/sách, tạp chí, năm, số, trang).
+6. Tuyệt đối không bịa đặt tài liệu. Nếu không chắc về một tài liệu, hãy bỏ tài liệu đó và chỉ dùng những tài liệu chắc chắn có thật.
+7. Không trả về JSON, không dùng gạch đầu dòng; chỉ trả về văn bản liên tục và danh sách tài liệu tham khảo đánh số 1., 2., 3., … ở cuối.
     `.trim();
 
     ctx.toast('Đang để GPT viết mô tả quy trình ngẫu nhiên hoá...');
-    const raw = await ctx.callGPT(prompt);
+    // dùng binding step8.suggest trong ai-bindings
+    const raw = await ctx.callStepGPT('step8.suggest', prompt);
     descTA.value = raw;
     ctx.toast('Đã chèn mô tả quy trình ngẫu nhiên hoá vào ô phía trên.');
   });
