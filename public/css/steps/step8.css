@@ -24,3 +24,8 @@
 [data-scope="step8"] .rand-summary{
   margin-bottom: 8px;
 }
+
+/* Căn top cho 2 ô Phương pháp / Seed để thẳng hàng hơn */
+[data-scope="step8"] .control-row{
+  align-items: flex-start;
+}
