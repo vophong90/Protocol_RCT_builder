@@ -47,7 +47,7 @@
   font-size: 0.85rem;
 }
 
-/* Nút GPT trên header card */
+/* Nút trên header card */
 [data-scope="step10"] .var-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -97,7 +97,7 @@
   color: #e02424;
 }
 
-/* Hàng nút thêm biến */
+/* Hàng nút trong form */
 [data-scope="step10"] .var-form-actions {
   display: flex;
   justify-content: flex-end;
