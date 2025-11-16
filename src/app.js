@@ -34,6 +34,10 @@ const baseCtx = {
   toast: (msg) => console.log('[toast]', msg),
   goto: goToStep,
   callStepGPT: aiRun,
+  vendor: {
+    mermaid: window.mermaid,
+    html2canvas: window.html2canvas,
+  },
 };
 
 // ---- Nav + Title ----
