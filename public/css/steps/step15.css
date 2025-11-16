@@ -16,10 +16,6 @@
   white-space: pre-wrap;
 }
 
-[data-scope="step15"] .flow-context-text{
-  white-space:pre-wrap;
-}
-
 /* Tiêu đề section nhỏ */
 [data-scope="step15"] .flow-section-title{
   font-weight:600;
