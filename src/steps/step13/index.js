@@ -24,7 +24,7 @@ export async function mount(rootEl, ctx) {
     <div class="card-body">
       <!-- Tóm tắt bối cảnh -->
       <section class="eth-context">
-        <div class="eth-context-title">Tóm tắt bối cảnh (tham khảo, không chỉnh sửa tại đây)</div>
+        <div class="eth-context-title">Tóm tắt bối cảnh</div>
         <div id="eth-context" class="eth-context-body"></div>
       </section>
 
