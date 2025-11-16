@@ -382,5 +382,18 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 14 ----------
+  "step14.logic": {
+    endpoint: ENDPOINT,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: "step14.logic",
+        response_format: "text"
+      }),
+    parse: parseResponsesAPI,
+  },
+
   
 };
