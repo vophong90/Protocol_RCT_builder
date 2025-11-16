@@ -1,126 +1,143 @@
-// src/steps/step11_data_collection.js
+// src/steps/step11/index.js
 // Step 11 – Thu thập dữ liệu
-// - Đọc biến đã chọn ở Step 10: ctx.get('selectedVariables')
+// - Đọc biến đã khai báo ở Step 10: ctx.get('step10Vars') hoặc ctx.get('selectedVariables')
 // - Tạo/hiệu chỉnh danh sách mốc thu thập (timepoints)
 // - Kéo-thả biến vào từng mốc để xác định nơi thu thập
-// - GPT gợi ý & đánh giá lịch thu thập
-// - Lưu state vào 'dataCollection' và xuất JSON
+// - GPT gợi ý & đánh giá lịch thu thập (qua callStepGPT + aiBindings)
+// - Lưu state vào 'dataCollection' và cho phép export JSON
 
-export async function mount(root, ctx) {
+export const id = 11;
+export const title = "Kế hoạch thu thập dữ liệu";
+export const subtitle =
+  "Xác định các mốc thời gian và biến nào sẽ được thu thập tại mỗi mốc. GPT có thể gợi ý và đánh giá lịch thu thập.";
+export const css = "./public/css/steps/step11.css";
+
+export async function mount(rootEl, ctx) {
   // Scope CSS riêng cho step11
-  root.closest('.step')?.setAttribute('data-scope', 'step11');
+  rootEl.closest(".step")?.setAttribute("data-scope", "step11");
 
-  root.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Kế hoạch thu thập dữ liệu</h3>
-        <div class="card-subtitle">
-          Tạo các <strong>mốc thu thập</strong> (ví dụ: Baseline, Tuần 2, Tuần 4...), sau đó kéo-thả biến vào từng mốc.
-        </div>
+  // ===== Layout chung (card-header / card-body / card-footer) =====
+  rootEl.innerHTML = `
+    <div class="card-header">
+      <h3 class="card-title">Kế hoạch thu thập dữ liệu</h3>
+      <div class="card-subtitle">
+        Tạo các <strong>mốc thu thập</strong> (ví dụ: Baseline, Tuần 2, Tuần 4...), sau đó kéo-thả biến vào từng mốc.
       </div>
+    </div>
 
-      <div class="card-body">
-        <div class="muted small">
-          Gợi ý: luôn có mốc <strong>Baseline (ngày 0)</strong>, sau đó là các mốc theo lịch tái khám hoặc các thời điểm đo chính.
-        </div>
+    <div class="card-body">
+      <p class="muted small">
+        Gợi ý: luôn có mốc <strong>Baseline (ngày 0)</strong>, sau đó là các mốc theo lịch tái khám
+        hoặc các thời điểm đo chính. Lịch thu thập sẽ liên quan chặt chẽ đến kế hoạch phân tích thống kê.
+      </p>
 
-        <div class="dc-layout">
-          <!-- Cột trái: quản lý mốc + kho biến -->
-          <div class="dc-left">
-            <div class="card card-nested muted">
-              <div class="card-header">
-                <strong>Thêm mốc</strong>
-              </div>
-              <div class="card-body grid-1">
-                <input id="tp-label" type="text" placeholder="Nhãn mốc (vd: Baseline, Tuần 2)" />
-                <div class="inline-row dc-inline-row">
-                  <label class="dc-label-inline">
-                    <span>Ngày</span>
-                    <input id="tp-day" type="number" placeholder="0, 14, 28..." />
-                  </label>
-                  <button id="tp-add" class="btn btn-secondary">Thêm</button>
-                </div>
-              </div>
+      <div class="dc-layout">
+        <!-- Cột trái: quản lý mốc + kho biến -->
+        <div class="dc-left">
+          <div class="card card-nested muted">
+            <div class="card-header">
+              <strong>Thêm mốc</strong>
             </div>
-
-            <div class="card card-nested">
-              <div class="card-header dc-list-header">
-                <strong>Danh sách mốc</strong>
-                <span class="muted tiny">Sắp xếp theo ngày</span>
-              </div>
-              <div id="tp-list" class="card-body dc-tplist"></div>
-            </div>
-
-            <div class="card card-nested">
-              <div class="card-header">
-                <strong>Kho biến (từ Step 10)</strong>
-              </div>
-              <div class="card-body grid-1">
-                <input id="var-filter" type="text" placeholder="Lọc theo tên biến hoặc nhóm..." />
-                <div id="pool" class="droptarget dc-pool" data-bucket="pool"></div>
-                <div class="muted tiny">
-                  Kéo biến từ đây sang các mốc để chỉ định nơi thu thập. Thả lại vào kho để bỏ chỉ định.
-                </div>
+            <div class="card-body grid-1">
+              <input id="tp-label" type="text" placeholder="Nhãn mốc (vd: Baseline, Tuần 2)" />
+              <div class="inline-row dc-inline-row">
+                <label class="dc-label-inline">
+                  <span>Ngày</span>
+                  <input id="tp-day" type="number" placeholder="0, 14, 28..." />
+                </label>
+                <button id="tp-add" class="btn btn-secondary" type="button">Thêm</button>
               </div>
             </div>
           </div>
 
-          <!-- Cột phải: lưới mốc & biến -->
-          <div class="dc-right">
-            <div class="card card-nested">
-              <div class="card-header dc-grid-header">
-                <strong>Bảng thu thập theo mốc</strong>
-                <div class="dc-grid-actions">
-                  <button id="gpt-suggest" class="btn btn-secondary">GPT gợi ý lịch</button>
-                  <button id="gpt-eval" class="btn btn-secondary">GPT đánh giá lịch</button>
-                </div>
+          <div class="card card-nested">
+            <div class="card-header dc-list-header">
+              <strong>Danh sách mốc</strong>
+              <span class="muted tiny">Sắp xếp theo ngày</span>
+            </div>
+            <div id="tp-list" class="card-body dc-tplist"></div>
+          </div>
+
+          <div class="card card-nested">
+            <div class="card-header">
+              <strong>Kho biến (từ Step 10)</strong>
+            </div>
+            <div class="card-body grid-1">
+              <input id="var-filter" type="text" placeholder="Lọc theo tên biến hoặc nhóm..." />
+              <div id="pool" class="droptarget dc-pool" data-bucket="pool"></div>
+              <div class="muted tiny">
+                Kéo biến từ đây sang các mốc để chỉ định nơi thu thập. Thả lại vào kho để bỏ chỉ định.
               </div>
-              <div id="grid" class="card-body dc-grid-body"></div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="card-footer">
-        <button id="save" class="btn btn-primary">Lưu</button>
-        <button id="export-json" class="btn btn-secondary">Xuất JSON</button>
+        <!-- Cột phải: lưới mốc & biến -->
+        <div class="dc-right">
+          <div class="card card-nested">
+            <div class="card-header dc-grid-header">
+              <strong>Bảng thu thập theo mốc</strong>
+              <div class="dc-grid-actions">
+                <button id="gpt-suggest" class="btn btn-secondary" type="button">
+                  GPT gợi ý lịch
+                </button>
+                <button id="gpt-eval" class="btn btn-secondary" type="button">
+                  GPT đánh giá lịch
+                </button>
+              </div>
+            </div>
+            <div id="grid" class="card-body dc-grid-body"></div>
+          </div>
+        </div>
       </div>
+    </div>
+
+    <div class="card-footer">
+      <button id="save" class="btn btn-primary" type="button">Lưu</button>
+      <button id="export-json" class="btn btn-secondary" type="button">Xuất JSON</button>
     </div>
   `.trim();
 
   // ---------- State ----------
-  const sel = normalizeSelected(ctx.get('selectedVariables', {})); // từ Step 10
+  // 1) Lấy biến từ Step 10:
+  //    - Nếu anh có hàm chuyển từ step10Vars → selectedVariables thì dùng ctx.get('selectedVariables')
+  //    - Ở đây mình tái sử dụng normalizeSelected(build từ step10Vars) như cũ.
+  const step10Vars = ctx.get("step10Vars", {}) || {};
+  const sel = normalizeSelectedFromStep10(step10Vars); // { primary: [{name}], ... }
   const varList = buildVariableList(sel); // [{name, group}]
-  let dc = normalizeDataCollection(ctx.get('dataCollection', {}));
 
-  const groupByName = new Map(varList.map(v => [v.name, v.group]));
+  // 2) Kế hoạch thu thập hiện có
+  let dc = normalizeDataCollection(ctx.get("dataCollection", {}));
+
+  // Bản đồ nhanh varName -> group (để hiển thị nhãn nhóm)
+  const groupByName = new Map(varList.map((v) => [v.name, v.group]));
 
   // ---------- DOM ----------
-  const poolEl     = root.querySelector('#pool');
-  const filterEl   = root.querySelector('#var-filter');
-  const tpLabelEl  = root.querySelector('#tp-label');
-  const tpDayEl    = root.querySelector('#tp-day');
-  const tpAddBtn   = root.querySelector('#tp-add');
-  const tpListEl   = root.querySelector('#tp-list');
-  const gridEl     = root.querySelector('#grid');
-  const saveBtn    = root.querySelector('#save');
-  const exportBtn  = root.querySelector('#export-json');
-  const suggestBtn = root.querySelector('#gpt-suggest');
-  const evalBtn    = root.querySelector('#gpt-eval');
+  const poolEl = rootEl.querySelector("#pool");
+  const filterEl = rootEl.querySelector("#var-filter");
+  const tpLabelEl = rootEl.querySelector("#tp-label");
+  const tpDayEl = rootEl.querySelector("#tp-day");
+  const tpAddBtn = rootEl.querySelector("#tp-add");
+  const tpListEl = rootEl.querySelector("#tp-list");
+  const gridEl = rootEl.querySelector("#grid");
+  const saveBtn = rootEl.querySelector("#save");
+  const exportBtn = rootEl.querySelector("#export-json");
+  const suggestBtn = rootEl.querySelector("#gpt-suggest");
+  const evalBtn = rootEl.querySelector("#gpt-eval");
 
   // Drop zone cho kho biến
-  setupDropZone(poolEl, 'pool');
+  setupDropZone(poolEl, "pool");
 
   // ---------- Render lần đầu ----------
   renderAll();
 
   // ---------- Events ----------
-  tpAddBtn.addEventListener('click', onAddTimepoint);
-  filterEl.addEventListener('input', renderPool);
-  saveBtn.addEventListener('click', onSave);
-  exportBtn.addEventListener('click', onExport);
-  suggestBtn.addEventListener('click', onSuggest);
-  evalBtn.addEventListener('click', onEvaluate);
+  tpAddBtn.addEventListener("click", onAddTimepoint);
+  filterEl.addEventListener("input", () => renderPool());
+  saveBtn.addEventListener("click", onSave);
+  exportBtn.addEventListener("click", onExport);
+  suggestBtn.addEventListener("click", onSuggest);
+  evalBtn.addEventListener("click", onEvaluate);
 
   // ======================== Functions ========================
 
@@ -132,40 +149,42 @@ export async function mount(root, ctx) {
   }
 
   function renderTpList() {
-    tpListEl.innerHTML = '';
+    tpListEl.innerHTML = "";
     if (!dc.timepoints.length) {
       tpListEl.innerHTML = `<div class="muted tiny">Chưa có mốc. Hãy thêm tối thiểu mốc "Baseline (ngày 0)".</div>`;
       return;
     }
-    dc.timepoints.forEach(tp => {
-      const row = document.createElement('div');
-      row.className = 'pill dc-tp-pill';
+    dc.timepoints.forEach((tp) => {
+      const row = document.createElement("div");
+      row.className = "pill dc-tp-pill";
 
-      const left = document.createElement('div');
-      left.className = 'dc-tp-pill-left';
-      left.innerHTML = `<strong>${escapeHtml(tp.label || '')}</strong> <span class="muted tiny">• ngày ${escapeHtml(String(tp.day))}</span>`;
+      const left = document.createElement("div");
+      left.className = "dc-tp-pill-left";
+      left.innerHTML = `<strong>${escapeHtml(tp.label || "")}</strong> <span class="muted tiny">• ngày ${escapeHtml(
+        String(tp.day)
+      )}</span>`;
       row.appendChild(left);
 
-      const right = document.createElement('div');
-      right.className = 'dc-tp-pill-right';
+      const right = document.createElement("div");
+      right.className = "dc-tp-pill-right";
 
-      const upBtn = document.createElement('button');
-      upBtn.className = 'btn-ghost';
-      upBtn.title = 'Lên';
-      upBtn.textContent = '↑';
-      upBtn.addEventListener('click', () => moveTp(tp.id, -1));
+      const upBtn = document.createElement("button");
+      upBtn.className = "btn-ghost";
+      upBtn.title = "Lên";
+      upBtn.textContent = "↑";
+      upBtn.addEventListener("click", () => moveTp(tp.id, -1));
 
-      const dnBtn = document.createElement('button');
-      dnBtn.className = 'btn-ghost';
-      dnBtn.title = 'Xuống';
-      dnBtn.textContent = '↓';
-      dnBtn.addEventListener('click', () => moveTp(tp.id, +1));
+      const dnBtn = document.createElement("button");
+      dnBtn.className = "btn-ghost";
+      dnBtn.title = "Xuống";
+      dnBtn.textContent = "↓";
+      dnBtn.addEventListener("click", () => moveTp(tp.id, +1));
 
-      const delBtn = document.createElement('button');
-      delBtn.className = 'btn-ghost';
-      delBtn.title = 'Xóa mốc';
-      delBtn.textContent = '✕';
-      delBtn.addEventListener('click', () => deleteTp(tp.id));
+      const delBtn = document.createElement("button");
+      delBtn.className = "btn-ghost";
+      delBtn.title = "Xóa mốc";
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", () => deleteTp(tp.id));
 
       right.appendChild(upBtn);
       right.appendChild(dnBtn);
@@ -177,35 +196,35 @@ export async function mount(root, ctx) {
   }
 
   function renderPool() {
-    const q = (filterEl.value || '').trim().toLowerCase();
+    const q = (filterEl.value || "").trim().toLowerCase();
     const inAnyTp = new Set(Object.values(dc.assignments).flat());
     const poolVars = varList
-      .filter(v => !inAnyTp.has(v.name))
-      .filter(v => !q || v.name.toLowerCase().includes(q) || v.group.toLowerCase().includes(q));
+      .filter((v) => !inAnyTp.has(v.name))
+      .filter((v) => !q || v.name.toLowerCase().includes(q) || v.group.toLowerCase().includes(q));
 
-    poolEl.innerHTML = '';
+    poolEl.innerHTML = "";
     if (!poolVars.length) {
       poolEl.innerHTML = `<div class="muted tiny">Không có biến phù hợp điều kiện lọc / tất cả đã gán vào mốc.</div>`;
       return;
     }
-    poolVars.forEach(v => poolEl.appendChild(renderVarChip(v.name, v.group, 'pool')));
+    poolVars.forEach((v) => poolEl.appendChild(renderVarChip(v.name, v.group, "pool")));
   }
 
   function renderGrid() {
-    gridEl.innerHTML = '';
+    gridEl.innerHTML = "";
     if (!dc.timepoints.length) {
       gridEl.innerHTML = `<div class="muted tiny">Thêm mốc để bắt đầu lập bảng.</div>`;
       return;
     }
 
     // Header
-    const header = document.createElement('div');
-    header.className = 'dc-grid-header-row';
+    const header = document.createElement("div");
+    header.className = "dc-grid-header-row";
     header.style.gridTemplateColumns = `repeat(${dc.timepoints.length}, minmax(160px, 1fr))`;
 
-    dc.timepoints.forEach(tp => {
-      const h = document.createElement('div');
-      h.className = 'pill dc-grid-header-pill';
+    dc.timepoints.forEach((tp) => {
+      const h = document.createElement("div");
+      h.className = "pill dc-grid-header-pill";
       h.innerHTML = `
         <div class="dc-grid-header-label">${escapeHtml(tp.label)}</div>
         <div class="muted tiny">Ngày ${escapeHtml(String(tp.day))}</div>
@@ -215,17 +234,17 @@ export async function mount(root, ctx) {
     gridEl.appendChild(header);
 
     // Body (các droptarget theo mốc)
-    const body = document.createElement('div');
-    body.className = 'dc-grid-body-row';
+    const body = document.createElement("div");
+    body.className = "dc-grid-body-row";
     body.style.gridTemplateColumns = `repeat(${dc.timepoints.length}, minmax(160px, 1fr))`;
 
-    dc.timepoints.forEach(tp => {
-      const col = document.createElement('div');
-      col.className = 'card droptarget dc-grid-col';
+    dc.timepoints.forEach((tp) => {
+      const col = document.createElement("div");
+      col.className = "card droptarget dc-grid-col";
       col.dataset.bucket = tp.id;
 
-      const inner = document.createElement('div');
-      inner.className = 'card-body dc-grid-inner';
+      const inner = document.createElement("div");
+      inner.className = "card-body dc-grid-inner";
 
       // Drop setup
       setupDropZone(inner, tp.id);
@@ -239,9 +258,9 @@ export async function mount(root, ctx) {
       if (!names.length) {
         inner.innerHTML = `<div class="muted tiny">Chưa gán biến</div>`;
       } else {
-        inner.innerHTML = '';
-        names.forEach(name => {
-          const group = groupByName.get(name) || '';
+        inner.innerHTML = "";
+        names.forEach((name) => {
+          const group = groupByName.get(name) || "";
           inner.appendChild(renderVarChip(name, group, tp.id, true));
         });
       }
@@ -254,61 +273,61 @@ export async function mount(root, ctx) {
   }
 
   function renderVarChip(name, group, bucket, removable = false) {
-    const chip = document.createElement('div');
-    chip.className = 'pill draggable dc-var-chip';
+    const chip = document.createElement("div");
+    chip.className = "pill draggable dc-var-chip";
     chip.draggable = true;
     chip.dataset.name = name;
     chip.dataset.bucket = bucket;
 
-    const left = document.createElement('div');
-    left.className = 'dc-var-chip-left';
+    const left = document.createElement("div");
+    left.className = "dc-var-chip-left";
 
-    const t = document.createElement('div');
-    t.className = 'dc-var-chip-title';
+    const t = document.createElement("div");
+    t.className = "dc-var-chip-title";
     t.textContent = name;
     left.appendChild(t);
 
     if (group) {
-      const sub = document.createElement('div');
-      sub.className = 'muted tiny';
+      const sub = document.createElement("div");
+      sub.className = "muted tiny";
       sub.textContent = groupLabel(group);
       left.appendChild(sub);
     }
     chip.appendChild(left);
 
     if (removable) {
-      const btnX = document.createElement('button');
-      btnX.type = 'button';
-      btnX.className = 'btn-ghost dc-var-chip-remove';
-      btnX.textContent = '✕';
-      btnX.title = 'Bỏ khỏi mốc';
-      btnX.addEventListener('click', () => {
+      const btnX = document.createElement("button");
+      btnX.type = "button";
+      btnX.className = "btn-ghost dc-var-chip-remove";
+      btnX.textContent = "✕";
+      btnX.title = "Bỏ khỏi mốc";
+      btnX.addEventListener("click", () => {
         unassign(name, bucket);
         renderAll();
       });
       chip.appendChild(btnX);
     }
 
-    chip.addEventListener('dragstart', (e) => {
-      e.dataTransfer.setData('text/plain', JSON.stringify({ name, from: bucket }));
+    chip.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", JSON.stringify({ name, from: bucket }));
     });
 
     return chip;
   }
 
   function setupDropZone(zoneEl, bucket) {
-    zoneEl.addEventListener('dragover', (e) => {
+    zoneEl.addEventListener("dragover", (e) => {
       e.preventDefault();
-      zoneEl.classList.add('dropping');
+      zoneEl.classList.add("dropping");
     });
-    zoneEl.addEventListener('dragleave', () => zoneEl.classList.remove('dropping'));
-    zoneEl.addEventListener('drop', (e) => {
+    zoneEl.addEventListener("dragleave", () => zoneEl.classList.remove("dropping"));
+    zoneEl.addEventListener("drop", (e) => {
       e.preventDefault();
-      zoneEl.classList.remove('dropping');
-      const data = safeParse(e.dataTransfer.getData('text/plain'));
+      zoneEl.classList.remove("dropping");
+      const data = safeParse(e.dataTransfer.getData("text/plain"));
       if (!data?.name) return;
 
-      if (bucket === 'pool') {
+      if (bucket === "pool") {
         // Bỏ tất cả gán
         dc.assignments[data.name] = [];
       } else {
@@ -323,33 +342,34 @@ export async function mount(root, ctx) {
 
   // ----- CRUD mốc -----
   function onAddTimepoint() {
-    const label = (tpLabelEl.value || '').trim();
-    const day   = num(tpDayEl.value);
+    const label = (tpLabelEl.value || "").trim();
+    const day = num(tpDayEl.value);
     if (!label || Number.isNaN(day)) {
-      ctx.toast('Nhập nhãn mốc và số ngày hợp lệ.');
+      toast(ctx, "Nhập nhãn mốc và số ngày hợp lệ.");
       return;
     }
     const id = makeId(label, day);
-    if (dc.timepoints.some(x => x.id === id)) {
-      ctx.toast('Mốc này đã tồn tại.');
+    if (dc.timepoints.some((x) => x.id === id)) {
+      toast(ctx, "Mốc này đã tồn tại.");
       return;
     }
     dc.timepoints.push({ id, label, day });
-    tpLabelEl.value = '';
-    tpDayEl.value = '';
+    tpLabelEl.value = "";
+    tpDayEl.value = "";
     renderAll();
   }
 
   function deleteTp(id) {
-    dc.timepoints = dc.timepoints.filter(tp => tp.id !== id);
-    Object.keys(dc.assignments).forEach(k => {
-      dc.assignments[k] = (dc.assignments[k] || []).filter(x => x !== id);
+    dc.timepoints = dc.timepoints.filter((tp) => tp.id !== id);
+    // Bỏ gán biến tại mốc này
+    Object.keys(dc.assignments).forEach((k) => {
+      dc.assignments[k] = (dc.assignments[k] || []).filter((x) => x !== id);
     });
     renderAll();
   }
 
   function moveTp(id, dir) {
-    const idx = dc.timepoints.findIndex(x => x.id === id);
+    const idx = dc.timepoints.findIndex((x) => x.id === id);
     if (idx < 0) return;
     const j = idx + dir;
     if (j < 0 || j >= dc.timepoints.length) return;
@@ -359,26 +379,26 @@ export async function mount(root, ctx) {
   }
 
   function unassign(varName, tpId) {
-    dc.assignments[varName] = (dc.assignments[varName] || []).filter(x => x !== tpId);
+    dc.assignments[varName] = (dc.assignments[varName] || []).filter((x) => x !== tpId);
   }
 
   // ----- Save / Export -----
   function onSave() {
-    ctx.save('dataCollection', dc);
-    ctx.toast('Đã lưu kế hoạch thu thập.');
+    ctx.save("dataCollection", dc);
+    toast(ctx, "Đã lưu kế hoạch thu thập.");
   }
 
   function onExport() {
-    ctx.downloadJSON('data_collection.json', dc);
+    ctx.downloadJSON("data_collection.json", dc);
   }
 
   // ----- GPT -----
   async function onSuggest() {
-    const pico          = ctx.get('pico', {}) || {};
-    const objective     = ctx.get('mainObjective', '') || '';
-    const design        = ctx.get('design', {}) || {};
-    const interventions = ctx.get('interventions', []) || [];
-    const selectedVars  = summarizeSelected(sel);
+    const pico = ctx.get("pico", {}) || {};
+    const objective = ctx.get("mainObjective", "") || "";
+    const design = ctx.get("design", {}) || {};
+    const interventions = ctx.get("interventions", []) || [];
+    const selectedVars = summarizeSelected(sel);
 
     const prompt = `
 Bạn là chuyên gia thiết kế RCT. Hãy **gợi ý lịch thu thập dữ liệu** dựa vào PICO, mục tiêu, thiết kế và danh mục biến hiện có.
@@ -397,17 +417,17 @@ Yêu cầu trả về **JSON đúng định dạng**:
 }
 
 Nguyên tắc:
-- always có "Baseline" (day = 0).
-- Kết cục chính: tần suất đủ để kiểm tra thay đổi theo thời gian, phù hợp khoảng theo dõi thường dùng cho lĩnh vực tương ứng.
+- luôn có "Baseline" (day = 0).
+- Kết cục chính: tần suất đủ để kiểm tra thay đổi theo thời gian, phù hợp khoảng theo dõi thường dùng.
 - Biến an toàn (AE/SAE): nên ghi nhận tại mọi mốc sau can thiệp.
 - Không bịa thêm biến mới ngoài danh mục đã có; chỉ lập lịch cho biến hiện có (nếu cần đặt tên alias, giữ nguyên tên gốc).
 
 Bối cảnh:
 PICO:
-- P: ${pico.p || ''}
-- I: ${pico.i || ''}
-- C: ${pico.c || ''}
-- O: ${pico.o || ''}
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
 
 Mục tiêu chính: ${objective}
 Thiết kế: ${jsonSafe(design)}
@@ -417,45 +437,47 @@ Danh mục biến (theo nhóm):
 ${JSON.stringify(selectedVars, null, 2).slice(0, 4000)}
 `.trim();
 
-    ctx.toast('Đang gợi ý lịch thu thập từ GPT...');
-    const raw = await ctx.callGPT(prompt);
+    toast(ctx, "Đang gợi ý lịch thu thập từ GPT...");
+    const raw = await callAI("step11.suggest", prompt, ctx);
     const j = safeParse(raw);
-    if (!j || !Array.isArray(j.timepoints) || typeof j.assignments !== 'object') {
-      ctx.toast('GPT không trả về JSON hợp lệ.');
+    if (!j || !Array.isArray(j.timepoints) || typeof j.assignments !== "object") {
+      toast(ctx, "GPT không trả về JSON hợp lệ.");
       return;
     }
 
-    const tps = (j.timepoints || []).map(tp => ({
-      id: String(tp.id || '').trim() || makeId(tp.label, tp.day),
-      label: String(tp.label || '').trim() || 'Mốc',
-      day: num(tp.day),
-    })).filter(tp => tp.id && !Number.isNaN(tp.day));
+    const tps = (j.timepoints || [])
+      .map((tp) => ({
+        id: String(tp.id || "").trim() || makeId(tp.label, tp.day),
+        label: String(tp.label || "").trim() || "Mốc",
+        day: num(tp.day),
+      }))
+      .filter((tp) => tp.id && !Number.isNaN(tp.day));
 
-    const nameset = new Set(varList.map(v => v.name));
+    const nameset = new Set(varList.map((v) => v.name));
     const asg = {};
     Object.entries(j.assignments || {}).forEach(([name, arr]) => {
       if (!nameset.has(name)) return;
       const ids = Array.isArray(arr) ? arr.map(String) : [];
-      asg[name] = ids.filter(id => tps.some(tp => tp.id === id));
+      asg[name] = ids.filter((id) => tps.some((tp) => tp.id === id));
     });
 
     if (!tps.length) {
-      ctx.toast('Gợi ý không có mốc hợp lệ.');
+      toast(ctx, "Gợi ý không có mốc hợp lệ.");
       return;
     }
 
-    dc.timepoints  = dedupeTp(tps);
+    dc.timepoints = dedupeTp(tps);
     dc.assignments = asg;
     renderAll();
-    ctx.toast('Đã chèn gợi ý lịch thu thập.');
+    toast(ctx, "Đã chèn gợi ý lịch thu thập.");
   }
 
   async function onEvaluate() {
-    const pico          = ctx.get('pico', {}) || {};
-    const objective     = ctx.get('mainObjective', '') || '';
-    const design        = ctx.get('design', {}) || {};
-    const interventions = ctx.get('interventions', []) || [];
-    const selectedVars  = summarizeSelected(sel);
+    const pico = ctx.get("pico", {}) || {};
+    const objective = ctx.get("mainObjective", "") || "";
+    const design = ctx.get("design", {}) || {};
+    const interventions = ctx.get("interventions", []) || [];
+    const selectedVars = summarizeSelected(sel);
 
     const payload = {
       timepoints: dc.timepoints,
@@ -472,10 +494,10 @@ Bạn là phản biện phương pháp. Hãy **đánh giá lịch thu thập d�
 
 Ngữ cảnh:
 PICO:
-- P: ${pico.p || ''}
-- I: ${pico.i || ''}
-- C: ${pico.c || ''}
-- O: ${pico.o || ''}
+- P: ${pico.p || ""}
+- I: ${pico.i || ""}
+- C: ${pico.c || ""}
+- O: ${pico.o || ""}
 
 Mục tiêu: ${objective}
 Thiết kế: ${jsonSafe(design)}
@@ -485,24 +507,38 @@ Dữ liệu hiện tại (JSON):
 ${JSON.stringify(payload, null, 2).slice(0, 4000)}
 `.trim();
 
-    ctx.toast('Đang đánh giá lịch thu thập...');
-    const fb = await ctx.callGPT(prompt);
-    showFeedbackDialog(fb || 'Không nhận được phản hồi.');
+    toast(ctx, "Đang đánh giá lịch thu thập...");
+    const fb = await callAI("step11.evaluate", prompt, ctx);
+    showFeedbackDialog(fb || "Không nhận được phản hồi.");
   }
 
   // ===================== Helpers: data ======================
+
+  // chuyển từ step10Vars (anh đang lưu) → cấu trúc giống selectedVariables
+  function normalizeSelectedFromStep10(step10) {
+    const groups = ["primary", "secondary", "baseline", "confounder", "mediator", "moderator", "safety"];
+    const out = {};
+    groups.forEach((g) => {
+      const arr = Array.isArray(step10?.[g]) ? step10[g] : [];
+      out[g] = arr
+        .map((v) => ({ name: String(v?.name || "").trim() }))
+        .filter((x) => x.name);
+    });
+    return out;
+  }
+
   function buildVariableList(sel) {
     const out = [];
     Object.entries(sel).forEach(([group, arr]) => {
-      (arr || []).forEach(v => {
-        const name = (v && v.name) ? String(v.name).trim() : '';
+      (arr || []).forEach((v) => {
+        const name = (v && v.name) ? String(v.name).trim() : "";
         if (!name) return;
         out.push({ name, group });
       });
     });
     const seen = new Set();
     return out
-      .filter(x => {
+      .filter((x) => {
         if (seen.has(x.name)) return false;
         seen.add(x.name);
         return true;
@@ -512,36 +548,25 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
 
   function summarizeSelected(sel) {
     const obj = {};
-    Object.keys(sel).forEach(k => {
-      obj[k] = (sel[k] || []).map(v => v.name).sort(alpha);
+    Object.keys(sel).forEach((k) => {
+      obj[k] = (sel[k] || []).map((v) => v.name).sort(alpha);
     });
     return obj;
-  }
-
-  function normalizeSelected(sel) {
-    const keys = ['primary', 'secondary', 'baseline', 'confounder', 'mediator', 'moderator', 'safety'];
-    const out = {};
-    keys.forEach(k => {
-      out[k] = Array.isArray(sel?.[k])
-        ? sel[k].map(v => ({ name: String(v.name || '').trim() })).filter(x => x.name)
-        : [];
-    });
-    return out;
   }
 
   function normalizeDataCollection(x) {
     const timepoints = Array.isArray(x?.timepoints)
       ? x.timepoints
-          .map(tp => ({
-            id: String(tp.id || '').trim() || makeId(tp.label, tp.day),
-            label: String(tp.label || '').trim() || 'Mốc',
+          .map((tp) => ({
+            id: String(tp.id || "").trim() || makeId(tp.label, tp.day),
+            label: String(tp.label || "").trim() || "Mốc",
             day: num(tp.day),
           }))
-          .filter(tp => tp.id && !Number.isNaN(tp.day))
+          .filter((tp) => tp.id && !Number.isNaN(tp.day))
       : [];
 
     const assignments = {};
-    if (x && typeof x.assignments === 'object') {
+    if (x && typeof x.assignments === "object") {
       Object.entries(x.assignments).forEach(([name, arr]) => {
         if (!name) return;
         assignments[name] = Array.isArray(arr) ? arr.map(String) : [];
@@ -553,7 +578,7 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
   function dedupeTp(arr) {
     const seen = new Set();
     const out = [];
-    arr.forEach(tp => {
+    arr.forEach((tp) => {
       if (seen.has(tp.id)) return;
       seen.add(tp.id);
       out.push(tp);
@@ -562,28 +587,37 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
   }
 
   // ===================== Helpers: misc/UI =====================
+
   function groupLabel(g) {
-    switch ((g || '').toLowerCase()) {
-      case 'primary': return 'Kết cục chính';
-      case 'secondary': return 'Kết cục phụ';
-      case 'baseline': return 'Biến nền';
-      case 'confounder': return 'Nhiễu';
-      case 'mediator': return 'Trung gian';
-      case 'moderator': return 'Điều biến';
-      case 'safety': return 'An toàn';
-      default: return g;
+    switch ((g || "").toLowerCase()) {
+      case "primary":
+        return "Kết cục chính";
+      case "secondary":
+        return "Kết cục phụ";
+      case "baseline":
+        return "Biến nền";
+      case "confounder":
+        return "Nhiễu";
+      case "mediator":
+        return "Trung gian";
+      case "moderator":
+        return "Điều biến";
+      case "safety":
+        return "An toàn";
+      default:
+        return g;
     }
   }
 
   function makeId(label, day) {
     const d = num(day);
-    const slug = String(label || '')
+    const slug = String(label || "")
       .toLowerCase()
-      .replace(/[()]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/[^a-z0-9_]/g, '')
-      .replace(/_+/g, '_');
-    return `${slug || 'tp'}_d${Number.isNaN(d) ? 'x' : d}`;
+      .replace(/[()]/g, "")
+      .replace(/\s+/g, "_")
+      .replace(/[^a-z0-9_]/g, "")
+      .replace(/_+/g, "_");
+    return `${slug || "tp"}_d${Number.isNaN(d) ? "x" : d}`;
   }
 
   function num(x) {
@@ -592,53 +626,86 @@ ${JSON.stringify(payload, null, 2).slice(0, 4000)}
   }
 
   function alpha(a, b) {
-    if (typeof a === 'object') a = a?.name ?? '';
-    if (typeof b === 'object') b = b?.name ?? '';
-    a = (a || '').toString().toLowerCase();
-    b = (b || '').toString().toLowerCase();
+    if (typeof a === "object") a = a?.name ?? "";
+    if (typeof b === "object") b = b?.name ?? "";
+    a = (a || "").toString().toLowerCase();
+    b = (b || "").toString().toLowerCase();
     if (a < b) return -1;
     if (a > b) return 1;
     return 0;
   }
 
   function safeParse(s) {
-    try { return JSON.parse(s); } catch { return null; }
+    try {
+      return JSON.parse(s);
+    } catch {
+      return null;
+    }
   }
 
   function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
+  function jsonSafe(obj) {
+    try {
+      return JSON.stringify(obj);
+    } catch {
+      return String(obj || "");
+    }
+  }
+
+  function toast(ctx, msg) {
+    if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
+    else console.log("[toast]", msg);
+  }
+
+  async function callAI(bindingKey, prompt, ctx) {
+    // Ưu tiên ctx.callStepGPT (dùng aiBindings như step10)
+    if (typeof ctx.callStepGPT === "function") {
+      try {
+        return String((await ctx.callStepGPT(bindingKey, prompt)) ?? "");
+      } catch (e) {
+        if (typeof ctx.callGPT === "function") {
+          return String(await ctx.callGPT(prompt));
+        }
+        throw e;
+      }
+    }
+    if (typeof ctx.callGPT === "function") {
+      return String(await ctx.callGPT(prompt));
+    }
+    throw new Error("Chưa cấu hình GPT cho step11.");
   }
 
   function showFeedbackDialog(text) {
-    const id = 'dc-fb-dialog';
+    const id = "dc-fb-dialog";
     let dlg = document.getElementById(id);
     if (!dlg) {
-      dlg = document.createElement('div');
+      dlg = document.createElement("div");
       dlg.id = id;
-      dlg.style.position = 'fixed';
-      dlg.style.inset = '0';
-      dlg.style.background = 'rgba(0,0,0,.4)';
-      dlg.style.zIndex = '60';
-      dlg.style.display = 'flex';
-      dlg.style.alignItems = 'center';
-      dlg.style.justifyContent = 'center';
+      dlg.style.position = "fixed";
+      dlg.style.inset = "0";
+      dlg.style.background = "rgba(0,0,0,.4)";
+      dlg.style.zIndex = "60";
+      dlg.style.display = "flex";
+      dlg.style.alignItems = "center";
+      dlg.style.justifyContent = "center";
       dlg.innerHTML = `
         <div style="background:#fff; max-width:720px; width:90vw; padding:18px; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.24)">
           <div style="font-weight:700; margin-bottom:8px;">Đánh giá lịch thu thập</div>
           <div id="dc-fb-text" style="white-space:pre-wrap; line-height:1.4; max-height:60vh; overflow:auto;"></div>
           <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-            <button id="dc-fb-close" class="btn btn-primary">Đóng</button>
+            <button id="dc-fb-close" class="btn btn-primary" type="button">Đóng</button>
           </div>
         </div>
       `;
       document.body.appendChild(dlg);
-      dlg.querySelector('#dc-fb-close').addEventListener('click', () => dlg.remove());
+      dlg.querySelector("#dc-fb-close").addEventListener("click", () => dlg.remove());
     }
-    dlg.querySelector('#dc-fb-text').textContent = text;
+    dlg.querySelector("#dc-fb-text").textContent = text;
   }
 }
