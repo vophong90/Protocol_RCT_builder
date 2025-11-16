@@ -1,69 +1,79 @@
 /* public/css/steps/step12.css */
-/* Scope riêng cho step 12 – Kế hoạch phân tích số liệu */
+/* Scope riêng cho Step 12 – không ảnh hưởng step khác */
 
 [data-scope="step12"] .hidden {
   display: none !important;
 }
 
-[data-scope="step12"] .small {
+/* Card con cho từng tiểu mục A/B */
+[data-scope="step12"] .section-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px 16px;
+  background: var(--card);
+}
+
+[data-scope="step12"] .section-card + .section-card {
+  margin-top: 16px;
+}
+
+/* Header mỗi tiểu mục */
+[data-scope="step12"] .section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+[data-scope="step12"] .section-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+[data-scope="step12"] .section-hint {
+  margin-top: 4px;
   font-size: 0.9rem;
 }
 
-[data-scope="step12"] .tiny {
-  font-size: 0.8rem;
-}
-
-/* Bố cục 2 cột chính: nội dung & GPT side */
-[data-scope="step12"] .an-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 16px;
-  align-items: flex-start;
-}
-
-[data-scope="step12"] .an-main,
-[data-scope="step12"] .an-side {
-  min-width: 0;
-}
-
-/* Card lồng trong card chính */
-[data-scope="step12"] .card-nested {
-  margin-top: 12px;
-}
-
-/* Textarea chung */
-[data-scope="step12"] .an-ta {
-  width: 100%;
-  min-height: 120px;
-  resize: vertical;
-}
-
-/* Header cột bên phải */
-[data-scope="step12"] .an-side-header {
+[data-scope="step12"] .section-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
-/* Hàng nút nhỏ phía dưới textarea GPT */
-[data-scope="step12"] .an-side-actions {
+/* Thân tiểu mục */
+[data-scope="step12"] .section-body {
+  gap: 12px;
+}
+
+[data-scope="step12"] .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+[data-scope="step12"] .field-label {
+  font-weight: 600;
+  color: #111827;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 6px;
+  gap: 8px;
 }
 
-/* Nút ghost nhỏ */
-[data-scope="step12"] .an-side-actions .btn.tiny,
-[data-scope="step12"] .btn-ghost.tiny {
-  font-size: 0.8rem;
-  padding: 2px 6px;
+/* Textarea chính & feedback */
+[data-scope="step12"] textarea {
+  min-height: 140px;
 }
 
-/* Responsive – màn nhỏ: xếp dọc */
-@media (max-width: 900px) {
-  [data-scope="step12"] .an-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
+[data-scope="step12"] .feedback-area {
+  min-height: 110px;
+  font-size: 0.93rem;
+}
+
+/* Nút nhỏ */
+[data-scope="step12"] .btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.78rem;
+  border-radius: 999px;
 }
