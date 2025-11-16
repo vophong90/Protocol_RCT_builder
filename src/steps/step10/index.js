@@ -109,10 +109,10 @@ function renderGroupCard(group, varsArray, ctx, onChange) {
           <div class="var-group-hint muted">${group.hint || ""}</div>
         </div>
         <div class="var-group-actions">
-          <button type="button" class="btn btn-secondary btn-gpt-suggest">
+          <button type="button" class="btn btn-primary btn-gpt-suggest">
             GPT gợi ý biến
           </button>
-          <button type="button" class="btn btn-ghost btn-gpt-eval">
+          <button type="button" class="btn btn-secondary btn-gpt-eval">
             GPT đánh giá
           </button>
           <button type="button" class="btn btn-primary btn-toggle-form">
