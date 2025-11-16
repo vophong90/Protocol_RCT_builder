@@ -1,4 +1,4 @@
-// src/steps/step0/index.js
+ond// src/steps/step0/index.js
 // Step 0 – PICO (module hoá, per-step GPT binding)
 
 export const id = 0;
