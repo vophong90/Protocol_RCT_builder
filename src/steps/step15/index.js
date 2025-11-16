@@ -38,91 +38,85 @@ export async function mount(rootEl, ctx) {
 
     <div class="card-body">
       <div class="flow-context-box">
-        <div class="flow-context-title">Tóm tắt bối cảnh</div>
+        <div class="flow-context-title">Tóm tắt bối cảnh:</div>
         <div id="flow-context" class="flow-context-text"></div>
       </div>
 
-      <div class="grid-2">
-        <!-- Cột trái: mô tả các bước & từng nhóm -->
-        <div class="flow-col">
-          <label>
-            <span>Tiêu đề sơ đồ (tuỳ chọn)</span>
-            <input
-              id="flow-title"
-              type="text"
-              placeholder="Ví dụ: Quy trình tiến hành thử nghiệm RCT thoái hoá khớp gối"
-              value="${escapeAttr(state.title || '')}"
-            />
-          </label>
+      <label>
+        <span>Tiêu đề sơ đồ (tuỳ chọn)</span>
+        <input
+          id="flow-title"
+          type="text"
+          placeholder="Ví dụ: Quy trình tiến hành thử nghiệm RCT thoái hoá khớp gối"
+          value="${escapeAttr(state.title || '')}"
+        />
+      </label>
 
-          <div class="flow-section-title">Các bước chung</div>
+      <div class="flow-section-title">Các bước chung</div>
 
-          <label>
-            <span>1. Tuyển chọn / Sàng lọc</span>
-            <textarea id="flow-screen" rows="2"
-              placeholder="BN thoả tiêu chuẩn vào/loại; giải thích nghiên cứu, xin đồng thuận...">${escapeHtml(
-                state.steps.screen || ''
-              )}</textarea>
-          </label>
+      <label>
+        <span>1. Tuyển chọn / Sàng lọc</span>
+        <textarea id="flow-screen" rows="2"
+          placeholder="BN thoả tiêu chuẩn vào/loại; giải thích nghiên cứu, xin đồng thuận...">${escapeHtml(
+            state.steps.screen || ''
+          )}</textarea>
+      </label>
 
-          <label>
-            <span>2. Khám ban đầu &amp; đo lường (Baseline)</span>
-            <textarea id="flow-baseline" rows="2"
-              placeholder="Khám lâm sàng, cận lâm sàng, đo VAS, WOMAC, test chức năng...">${escapeHtml(
-                state.steps.baseline || ''
-              )}</textarea>
-          </label>
+      <label>
+        <span>2. Khám ban đầu &amp; đo lường (Baseline)</span>
+        <textarea id="flow-baseline" rows="2"
+          placeholder="Khám lâm sàng, cận lâm sàng, đo VAS, WOMAC, test chức năng...">${escapeHtml(
+            state.steps.baseline || ''
+          )}</textarea>
+      </label>
 
-          <label>
-            <span>3. Phân nhóm ngẫu nhiên</span>
-            <textarea id="flow-random" rows="2"
-              placeholder="Mô tả cách ngẫu nhiên hoá, che giấu phân nhóm (nếu có)...">${escapeHtml(
-                state.steps.randomize || ''
-              )}</textarea>
-          </label>
+      <label>
+        <span>3. Phân nhóm ngẫu nhiên</span>
+        <textarea id="flow-random" rows="2"
+          placeholder="Mô tả cách ngẫu nhiên hoá, che giấu phân nhóm (nếu có)...">${escapeHtml(
+            state.steps.randomize || ''
+          )}</textarea>
+      </label>
 
-          <label>
-            <span>4. Theo dõi &amp; đánh giá theo mốc thời gian</span>
-            <textarea id="flow-follow" rows="3"
-              placeholder="Ví dụ: Đánh giá VAS, WOMAC, test chức năng tại tuần 0, 2, 4, 8...">${escapeHtml(
-                state.steps.followup || ''
-              )}</textarea>
-          </label>
+      <label>
+        <span>4. Theo dõi &amp; đánh giá theo mốc thời gian</span>
+        <textarea id="flow-follow" rows="3"
+          placeholder="Ví dụ: Đánh giá VAS, WOMAC, test chức năng tại tuần 0, 2, 4, 8...">${escapeHtml(
+            state.steps.followup || ''
+          )}</textarea>
+      </label>
 
-          <label>
-            <span>5. Xử lý số liệu &amp; kết luận</span>
-            <textarea id="flow-analysis" rows="2"
-              placeholder="Mô tả ngắn gọn xử lý số liệu, phân tích chính, kết thúc nghiên cứu...">${escapeHtml(
-                state.steps.analysis || ''
-              )}</textarea>
-          </label>
+      <label>
+        <span>5. Xử lý số liệu &amp; kết luận</span>
+        <textarea id="flow-analysis" rows="2"
+          placeholder="Mô tả ngắn gọn xử lý số liệu, phân tích chính, kết thúc nghiên cứu...">${escapeHtml(
+            state.steps.analysis || ''
+          )}</textarea>
+      </label>
 
-          <div class="flow-section-title">Mô tả theo từng nhóm can thiệp</div>
-          <div id="flow-arms" class="flow-arms-list"></div>
-        </div>
+      <div class="flow-section-title">Mô tả theo từng nhóm can thiệp</div>
+      <div id="flow-arms" class="flow-arms-list"></div>
 
-        <!-- Cột phải: Mermaid & sơ đồ -->
-        <div class="flow-col">
-          <div class="btn-row">
-            <button id="flow-gen" class="btn btn-primary" type="button">Generate Mermaid</button>
-            <button id="flow-render" class="btn btn-secondary" type="button">Render</button>
-          </div>
-          <div class="btn-row">
-            <button id="flow-copy" class="btn btn-secondary" type="button">Sao chép code</button>
-            <button id="flow-png" class="btn btn-secondary" type="button">Xuất PNG</button>
-          </div>
+      <div class="flow-section-title">Mermaid &amp; sơ đồ</div>
 
-          <label>
-            <span>Mermaid code</span>
-            <textarea id="flow-mm" rows="10"
-              placeholder="Mermaid flowchart sẽ được sinh ở đây..."></textarea>
-          </label>
+      <div class="btn-row">
+        <button id="flow-gen" class="btn btn-primary" type="button">Generate Mermaid</button>
+        <button id="flow-render" class="btn btn-secondary" type="button">Render</button>
+      </div>
+      <div class="btn-row">
+        <button id="flow-copy" class="btn btn-secondary" type="button">Sao chép code</button>
+        <button id="flow-png" class="btn btn-secondary" type="button">Xuất PNG</button>
+      </div>
 
-          <div id="flow-diagram-wrap" class="flow-diagram-wrap">
-            <div id="flow-diagram" class="flow-diagram-placeholder">
-              <em>Chưa có sơ đồ. Nhập mô tả, nhấn “Generate Mermaid” rồi “Render”.</em>
-            </div>
-          </div>
+      <label>
+        <span>Mermaid code</span>
+        <textarea id="flow-mm" rows="10"
+          placeholder="Mermaid flowchart sẽ được sinh ở đây..."></textarea>
+      </label>
+
+      <div id="flow-diagram-wrap" class="flow-diagram-wrap">
+        <div id="flow-diagram" class="flow-diagram-placeholder">
+          <em>Chưa có sơ đồ. Nhập mô tả, nhấn “Generate Mermaid” rồi “Render”.</em>
         </div>
       </div>
     </div>
