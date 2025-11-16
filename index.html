@@ -58,6 +58,15 @@
     </main>
   </div>
 
+  <!-- App entry vendors: Mermaid + html2canvas -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    if (window.mermaid) {
+      window.mermaid.initialize({ startOnLoad: false });
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
   <!-- App entry -->
   <script type="module" src="./src/app.js"></script>
 
