@@ -58,11 +58,11 @@ export async function mount(rootEl, ctx) {
 Người bệnh sau khi đủ tiêu chuẩn sẽ được mời tham gia nghiên cứu và thực hiện đánh giá ban đầu tại thời điểm Baseline (ngày 0)..."></textarea>
 
       <div class="btn-row dc-btn-row">
-        <button id="dc-gpt-suggest" type="button" class="btn btn-secondary">
-          GPT gợi ý đoạn mô tả
+        <button id="dc-gpt-suggest" type="button" class="btn btn-primary">
+          GPT gợi ý mô tả
         </button>
-        <button id="dc-gpt-eval" type="button" class="btn btn-ghost">
-          GPT đánh giá đoạn mô tả hiện tại
+        <button id="dc-gpt-eval" type="button" class="btn btn-secondary">
+          GPT đánh giá mô tả
         </button>
       </div>
     </div>
