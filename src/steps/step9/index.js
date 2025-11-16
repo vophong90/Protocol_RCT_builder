@@ -83,7 +83,7 @@ export async function mount(root, ctx) {
 
       <div class="card-footer intv-footer">
         <button id="intv-suggest-${idx}" class="btn btn-primary">GPT gợi ý mô tả</button>
-        <button id="intv-eval-${idx}" class="btn btn-primary">GPT đánh giá mô tả</button>
+        <button id="intv-eval-${idx}" class="btn btn-secondary">GPT đánh giá mô tả</button>
       </div>
 
       <div class="card-body intv-feedback hidden" id="intv-fbwrap-${idx}">
