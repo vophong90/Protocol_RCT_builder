@@ -300,6 +300,33 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 11 ----------
+  'step11.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Gợi ý đoạn mô tả quy trình thu thập dữ liệu → trả về text thường (markdown cũng được)
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step11.suggest',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step11.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Đánh giá đoạn mô tả quy trình thu thập → text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step11.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+  
     // ---------- STEP 12 ----------
   'step12.suggest': {
     endpoint: ENDPOINT,
