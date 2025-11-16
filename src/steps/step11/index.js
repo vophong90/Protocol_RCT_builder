@@ -1,711 +1,532 @@
-// src/steps/step11/index.js
-// Step 11 – Thu thập dữ liệu
-// - Đọc biến đã khai báo ở Step 10: ctx.get('step10Vars') hoặc ctx.get('selectedVariables')
-// - Tạo/hiệu chỉnh danh sách mốc thu thập (timepoints)
-// - Kéo-thả biến vào từng mốc để xác định nơi thu thập
-// - GPT gợi ý & đánh giá lịch thu thập (qua callStepGPT + aiBindings)
-// - Lưu state vào 'dataCollection' và cho phép export JSON
+// src/steps/step11_data_collection.js
+// Step 11 – Quy trình thu thập dữ liệu (narrative + bảng tóm tắt từ Step 10)
+//
+// - Đọc biến đã khai báo ở Step 10: ctx.get('step10Vars')
+// - Tự dựng bảng tóm tắt "thời điểm / biến được thu thập (theo nhóm)" – chỉ đọc, không chỉnh ở đây
+// - Textarea để viết đoạn văn mô tả quy trình thu thập dữ liệu cho đề cương
+// - GPT gợi ý đoạn mô tả & GPT đánh giá đoạn mô tả
+// - Lưu state vào 'dataCollectionNarrative'
 
 export const id = 11;
-export const title = "Kế hoạch thu thập dữ liệu";
+export const title = "Quy trình thu thập dữ liệu";
 export const subtitle =
-  "Xác định các mốc thời gian và biến nào sẽ được thu thập tại mỗi mốc. GPT có thể gợi ý và đánh giá lịch thu thập.";
+  "Tóm tắt lịch thu thập từ các biến đã khai báo (Step 10) và viết đoạn mô tả quy trình thu thập dữ liệu theo chuẩn RCT.";
 export const css = "./public/css/steps/step11.css";
 
 export async function mount(rootEl, ctx) {
-  // Scope CSS riêng cho step11
+  // Gắn scope CSS riêng cho step11
   rootEl.closest(".step")?.setAttribute("data-scope", "step11");
 
-  // ===== Layout chung (card-header / card-body / card-footer) =====
+  // Lấy narrative đã lưu (nếu có)
+  const saved = ctx.get("dataCollectionNarrative", {}) || {};
+  const initialText = typeof saved.text === "string" ? saved.text : "";
+
   rootEl.innerHTML = `
     <div class="card-header">
-      <h3 class="card-title">Kế hoạch thu thập dữ liệu</h3>
+      <h3 class="card-title">Quy trình thu thập dữ liệu</h3>
       <div class="card-subtitle">
-        Tạo các <strong>mốc thu thập</strong> (ví dụ: Baseline, Tuần 2, Tuần 4...), sau đó kéo-thả biến vào từng mốc.
+        Dựa trên biến số và thời điểm thu thập ở <strong>Step 10</strong>, hãy mô tả rõ ràng quy trình thu thập dữ liệu, lịch thăm khám, ai thu thập và tại thời điểm nào.
       </div>
     </div>
 
     <div class="card-body">
-      <p class="muted small">
-        Gợi ý: luôn có mốc <strong>Baseline (ngày 0)</strong>, sau đó là các mốc theo lịch tái khám
-        hoặc các thời điểm đo chính. Lịch thu thập sẽ liên quan chặt chẽ đến kế hoạch phân tích thống kê.
+      <p class="muted">
+        Phần này tương ứng với mục <em>Data collection methods and schedule of assessments</em> trong đề cương RCT chuẩn (SPIRIT/CONSORT):<br/>
+        – Ai thu thập dữ liệu, ở đâu, bằng công cụ gì;<br/>
+        – Lịch thăm khám (screening, baseline, follow-up), các đánh giá thực hiện ở từng lần;<br/>
+        – Cách kiểm soát chất lượng dữ liệu (huấn luyện, chuẩn hóa, kiểm tra, nhập liệu...).
       </p>
+    </div>
 
-      <div class="dc-layout">
-        <!-- Cột trái: quản lý mốc + kho biến -->
-        <div class="dc-left">
-          <div class="card card-nested muted">
-            <div class="card-header">
-              <strong>Thêm mốc</strong>
-            </div>
-            <div class="card-body grid-1">
-              <input id="tp-label" type="text" placeholder="Nhãn mốc (vd: Baseline, Tuần 2)" />
-              <div class="inline-row dc-inline-row">
-                <label class="dc-label-inline">
-                  <span>Ngày</span>
-                  <input id="tp-day" type="number" placeholder="0, 14, 28..." />
-                </label>
-                <button id="tp-add" class="btn btn-secondary" type="button">Thêm</button>
-              </div>
-            </div>
-          </div>
+    <div class="card-body dc-summary-card">
+      <h4 class="dc-section-title">Tóm tắt lịch thu thập (tự động từ Step 10, chỉ đọc)</h4>
+      <p class="muted dc-summary-hint">
+        Dựa trên trường <strong>“Thời điểm thu thập”</strong> đã khai báo cho từng biến ở Step 10, hệ thống gom lại theo mốc. 
+        Nếu muốn chỉnh sửa lịch, hãy quay lại Step 10 cập nhật thời điểm thu thập của biến.
+      </p>
+      <div id="dc-summary"></div>
+    </div>
 
-          <div class="card card-nested">
-            <div class="card-header dc-list-header">
-              <strong>Danh sách mốc</strong>
-              <span class="muted tiny">Sắp xếp theo ngày</span>
-            </div>
-            <div id="tp-list" class="card-body dc-tplist"></div>
-          </div>
+    <div class="card-body">
+      <label class="field-label" for="dc-text">
+        Đoạn mô tả quy trình thu thập dữ liệu
+        <span class="muted" style="font-weight:400;">
+          (viết dạng văn bản hoàn chỉnh để chép vào đề cương: mô tả ai thu thập, khi nào, ở đâu, làm những đánh giá gì tại mỗi lần thăm khám...)
+        </span>
+      </label>
+      <textarea id="dc-text" rows="10" placeholder="Ví dụ: 
+Người bệnh sau khi đủ tiêu chuẩn sẽ được mời tham gia nghiên cứu và thực hiện đánh giá ban đầu tại thời điểm Baseline (ngày 0)..."></textarea>
 
-          <div class="card card-nested">
-            <div class="card-header">
-              <strong>Kho biến (từ Step 10)</strong>
-            </div>
-            <div class="card-body grid-1">
-              <input id="var-filter" type="text" placeholder="Lọc theo tên biến hoặc nhóm..." />
-              <div id="pool" class="droptarget dc-pool" data-bucket="pool"></div>
-              <div class="muted tiny">
-                Kéo biến từ đây sang các mốc để chỉ định nơi thu thập. Thả lại vào kho để bỏ chỉ định.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cột phải: lưới mốc & biến -->
-        <div class="dc-right">
-          <div class="card card-nested">
-            <div class="card-header dc-grid-header">
-              <strong>Bảng thu thập theo mốc</strong>
-              <div class="dc-grid-actions">
-                <button id="gpt-suggest" class="btn btn-secondary" type="button">
-                  GPT gợi ý lịch
-                </button>
-                <button id="gpt-eval" class="btn btn-secondary" type="button">
-                  GPT đánh giá lịch
-                </button>
-              </div>
-            </div>
-            <div id="grid" class="card-body dc-grid-body"></div>
-          </div>
-        </div>
+      <div class="btn-row dc-btn-row">
+        <button id="dc-gpt-suggest" type="button" class="btn btn-secondary">
+          GPT gợi ý đoạn mô tả
+        </button>
+        <button id="dc-gpt-eval" type="button" class="btn btn-ghost">
+          GPT đánh giá đoạn mô tả hiện tại
+        </button>
       </div>
     </div>
 
     <div class="card-footer">
-      <button id="save" class="btn btn-primary" type="button">Lưu</button>
-      <button id="export-json" class="btn btn-secondary" type="button">Xuất JSON</button>
+      <button id="dc-save" type="button" class="btn btn-primary">Lưu mô tả quy trình</button>
     </div>
   `.trim();
 
-  // ---------- State ----------
-  // 1) Lấy biến từ Step 10:
-  //    - Nếu anh có hàm chuyển từ step10Vars → selectedVariables thì dùng ctx.get('selectedVariables')
-  //    - Ở đây mình tái sử dụng normalizeSelected(build từ step10Vars) như cũ.
+  // ===== DOM refs =====
+  const summaryEl = rootEl.querySelector("#dc-summary");
+  const textEl = rootEl.querySelector("#dc-text");
+  const btnSuggest = rootEl.querySelector("#dc-gpt-suggest");
+  const btnEval = rootEl.querySelector("#dc-gpt-eval");
+  const btnSave = rootEl.querySelector("#dc-save");
+
+  // Gán giá trị đã lưu
+  textEl.value = initialText;
+
+  // ===== Build & render summary from Step 10 =====
   const step10Vars = ctx.get("step10Vars", {}) || {};
-  const sel = normalizeSelectedFromStep10(step10Vars); // { primary: [{name}], ... }
-  const varList = buildVariableList(sel); // [{name, group}]
+  const summary = buildVisitSummary(step10Vars);
+  renderSummary(summaryEl, summary);
 
-  // 2) Kế hoạch thu thập hiện có
-  let dc = normalizeDataCollection(ctx.get("dataCollection", {}));
+  // ===== Events =====
+  btnSave.addEventListener("click", () => {
+    const text = (textEl.value || "").trim();
+    ctx.save("dataCollectionNarrative", { text });
+    toast(ctx, "Đã lưu mô tả quy trình thu thập dữ liệu (Step 11).");
+  });
 
-  // Bản đồ nhanh varName -> group (để hiển thị nhãn nhóm)
-  const groupByName = new Map(varList.map((v) => [v.name, v.group]));
+  btnSuggest.addEventListener("click", () =>
+    onSuggest(ctx, textEl, summary)
+  );
 
-  // ---------- DOM ----------
-  const poolEl = rootEl.querySelector("#pool");
-  const filterEl = rootEl.querySelector("#var-filter");
-  const tpLabelEl = rootEl.querySelector("#tp-label");
-  const tpDayEl = rootEl.querySelector("#tp-day");
-  const tpAddBtn = rootEl.querySelector("#tp-add");
-  const tpListEl = rootEl.querySelector("#tp-list");
-  const gridEl = rootEl.querySelector("#grid");
-  const saveBtn = rootEl.querySelector("#save");
-  const exportBtn = rootEl.querySelector("#export-json");
-  const suggestBtn = rootEl.querySelector("#gpt-suggest");
-  const evalBtn = rootEl.querySelector("#gpt-eval");
+  btnEval.addEventListener("click", () =>
+    onEvaluate(ctx, textEl, summary)
+  );
+}
 
-  // Drop zone cho kho biến
-  setupDropZone(poolEl, "pool");
+/* ===================== SUMMARY FROM STEP 10 ===================== */
 
-  // ---------- Render lần đầu ----------
-  renderAll();
+/**
+ * Từ step10Vars:
+ * {
+ *   primary: [ {name, time, ...}, ... ],
+ *   baseline: [ ... ],
+ *   ...
+ * }
+ * → gom thành mảng các mốc:
+ * [
+ *   {
+ *     label: "Baseline, tuần 4",
+ *     groups: {
+ *       primary: ["VAS đau", "WOMAC"],
+ *       baseline: ["Tuổi", "Giới"],
+ *       ...
+ *     }
+ *   },
+ *   ...
+ * ]
+ */
+function buildVisitSummary(step10Vars) {
+  const GROUP_ORDER = ["primary", "secondary", "baseline", "confounder", "safety", "exploratory"];
+  const timeMap = new Map(); // label → { groupKey: [varNames] }
 
-  // ---------- Events ----------
-  tpAddBtn.addEventListener("click", onAddTimepoint);
-  filterEl.addEventListener("input", () => renderPool());
-  saveBtn.addEventListener("click", onSave);
-  exportBtn.addEventListener("click", onExport);
-  suggestBtn.addEventListener("click", onSuggest);
-  evalBtn.addEventListener("click", onEvaluate);
+  if (!step10Vars || typeof step10Vars !== "object") return [];
 
-  // ======================== Functions ========================
+  Object.entries(step10Vars).forEach(([groupKey, arr]) => {
+    if (!Array.isArray(arr)) return;
+    arr.forEach((v) => {
+      const name = String(v?.name || "").trim();
+      if (!name) return;
 
-  function renderAll() {
-    dc.timepoints.sort((a, b) => num(a.day) - num(b.day));
-    renderTpList();
-    renderPool();
-    renderGrid();
-  }
-
-  function renderTpList() {
-    tpListEl.innerHTML = "";
-    if (!dc.timepoints.length) {
-      tpListEl.innerHTML = `<div class="muted tiny">Chưa có mốc. Hãy thêm tối thiểu mốc "Baseline (ngày 0)".</div>`;
-      return;
-    }
-    dc.timepoints.forEach((tp) => {
-      const row = document.createElement("div");
-      row.className = "pill dc-tp-pill";
-
-      const left = document.createElement("div");
-      left.className = "dc-tp-pill-left";
-      left.innerHTML = `<strong>${escapeHtml(tp.label || "")}</strong> <span class="muted tiny">• ngày ${escapeHtml(
-        String(tp.day)
-      )}</span>`;
-      row.appendChild(left);
-
-      const right = document.createElement("div");
-      right.className = "dc-tp-pill-right";
-
-      const upBtn = document.createElement("button");
-      upBtn.className = "btn-ghost";
-      upBtn.title = "Lên";
-      upBtn.textContent = "↑";
-      upBtn.addEventListener("click", () => moveTp(tp.id, -1));
-
-      const dnBtn = document.createElement("button");
-      dnBtn.className = "btn-ghost";
-      dnBtn.title = "Xuống";
-      dnBtn.textContent = "↓";
-      dnBtn.addEventListener("click", () => moveTp(tp.id, +1));
-
-      const delBtn = document.createElement("button");
-      delBtn.className = "btn-ghost";
-      delBtn.title = "Xóa mốc";
-      delBtn.textContent = "✕";
-      delBtn.addEventListener("click", () => deleteTp(tp.id));
-
-      right.appendChild(upBtn);
-      right.appendChild(dnBtn);
-      right.appendChild(delBtn);
-      row.appendChild(right);
-
-      tpListEl.appendChild(row);
-    });
-  }
-
-  function renderPool() {
-    const q = (filterEl.value || "").trim().toLowerCase();
-    const inAnyTp = new Set(Object.values(dc.assignments).flat());
-    const poolVars = varList
-      .filter((v) => !inAnyTp.has(v.name))
-      .filter((v) => !q || v.name.toLowerCase().includes(q) || v.group.toLowerCase().includes(q));
-
-    poolEl.innerHTML = "";
-    if (!poolVars.length) {
-      poolEl.innerHTML = `<div class="muted tiny">Không có biến phù hợp điều kiện lọc / tất cả đã gán vào mốc.</div>`;
-      return;
-    }
-    poolVars.forEach((v) => poolEl.appendChild(renderVarChip(v.name, v.group, "pool")));
-  }
-
-  function renderGrid() {
-    gridEl.innerHTML = "";
-    if (!dc.timepoints.length) {
-      gridEl.innerHTML = `<div class="muted tiny">Thêm mốc để bắt đầu lập bảng.</div>`;
-      return;
-    }
-
-    // Header
-    const header = document.createElement("div");
-    header.className = "dc-grid-header-row";
-    header.style.gridTemplateColumns = `repeat(${dc.timepoints.length}, minmax(160px, 1fr))`;
-
-    dc.timepoints.forEach((tp) => {
-      const h = document.createElement("div");
-      h.className = "pill dc-grid-header-pill";
-      h.innerHTML = `
-        <div class="dc-grid-header-label">${escapeHtml(tp.label)}</div>
-        <div class="muted tiny">Ngày ${escapeHtml(String(tp.day))}</div>
-      `;
-      header.appendChild(h);
-    });
-    gridEl.appendChild(header);
-
-    // Body (các droptarget theo mốc)
-    const body = document.createElement("div");
-    body.className = "dc-grid-body-row";
-    body.style.gridTemplateColumns = `repeat(${dc.timepoints.length}, minmax(160px, 1fr))`;
-
-    dc.timepoints.forEach((tp) => {
-      const col = document.createElement("div");
-      col.className = "card droptarget dc-grid-col";
-      col.dataset.bucket = tp.id;
-
-      const inner = document.createElement("div");
-      inner.className = "card-body dc-grid-inner";
-
-      // Drop setup
-      setupDropZone(inner, tp.id);
-
-      // Render biến đã gán cho mốc này
-      const names = Object.entries(dc.assignments)
-        .filter(([vn, arr]) => arr.includes(tp.id))
-        .map(([vn]) => vn)
-        .sort(alpha);
-
-      if (!names.length) {
-        inner.innerHTML = `<div class="muted tiny">Chưa gán biến</div>`;
-      } else {
-        inner.innerHTML = "";
-        names.forEach((name) => {
-          const group = groupByName.get(name) || "";
-          inner.appendChild(renderVarChip(name, group, tp.id, true));
-        });
+      let timeStr = String(v?.time || "").trim();
+      if (!timeStr) {
+        timeStr = "Chưa xác định rõ thời điểm";
       }
 
-      col.appendChild(inner);
-      body.appendChild(col);
-    });
+      // Tách nhiều mốc: ngăn bởi , ; /
+      let labels = timeStr
+        .split(/[,;/]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
 
-    gridEl.appendChild(body);
-  }
+      if (!labels.length) {
+        labels = ["Chưa xác định rõ thời điểm"];
+      }
 
-  function renderVarChip(name, group, bucket, removable = false) {
-    const chip = document.createElement("div");
-    chip.className = "pill draggable dc-var-chip";
-    chip.draggable = true;
-    chip.dataset.name = name;
-    chip.dataset.bucket = bucket;
-
-    const left = document.createElement("div");
-    left.className = "dc-var-chip-left";
-
-    const t = document.createElement("div");
-    t.className = "dc-var-chip-title";
-    t.textContent = name;
-    left.appendChild(t);
-
-    if (group) {
-      const sub = document.createElement("div");
-      sub.className = "muted tiny";
-      sub.textContent = groupLabel(group);
-      left.appendChild(sub);
-    }
-    chip.appendChild(left);
-
-    if (removable) {
-      const btnX = document.createElement("button");
-      btnX.type = "button";
-      btnX.className = "btn-ghost dc-var-chip-remove";
-      btnX.textContent = "✕";
-      btnX.title = "Bỏ khỏi mốc";
-      btnX.addEventListener("click", () => {
-        unassign(name, bucket);
-        renderAll();
+      labels.forEach((label) => {
+        if (!timeMap.has(label)) timeMap.set(label, {});
+        const bucket = timeMap.get(label);
+        if (!bucket[groupKey]) bucket[groupKey] = [];
+        bucket[groupKey].push(name);
       });
-      chip.appendChild(btnX);
+    });
+  });
+
+  // Chuyển thành mảng để render; có thể sort theo label
+  const rows = Array.from(timeMap.entries()).map(([label, groups]) => ({
+    label,
+    groups,
+  }));
+
+  // Sắp xếp: Baseline/Screening trước, còn lại theo alphabet
+  rows.sort((a, b) => {
+    const score = (label) => {
+      const l = label.toLowerCase();
+      if (l.includes("screen") || l.includes("sàng lọc") || l.includes("sơ tuyển")) return 0;
+      if (l.includes("baseline") || l.includes("ban đầu") || l.includes("ngày 0")) return 1;
+      return 2;
+    };
+    const sa = score(a.label);
+    const sb = score(b.label);
+    if (sa !== sb) return sa - sb;
+    return a.label.localeCompare(b.label, "vi");
+  });
+
+  // Trong mỗi bucket, sort group theo nhóm chuẩn, còn lại phía sau
+  rows.forEach((row) => {
+    const ordered = {};
+    GROUP_ORDER.forEach((g) => {
+      if (row.groups[g]) ordered[g] = dedupe(row.groups[g]);
+    });
+    Object.keys(row.groups).forEach((g) => {
+      if (!ordered[g]) ordered[g] = dedupe(row.groups[g]);
+    });
+    row.groups = ordered;
+  });
+
+  return rows;
+}
+
+function renderSummary(container, rows) {
+  container.innerHTML = "";
+
+  if (!rows || !rows.length) {
+    container.innerHTML = `
+      <div class="muted">
+        Chưa có thông tin thời điểm thu thập từ Step 10. 
+        Hãy quay lại Step 10 và điền trường <strong>"Thời điểm thu thập"</strong> cho các biến để xem tóm tắt tại đây.
+      </div>
+    `.trim();
+    return;
+  }
+
+  const table = document.createElement("table");
+  table.className = "dc-summary-table";
+
+  const thead = document.createElement("thead");
+  thead.innerHTML = `
+    <tr>
+      <th style="width: 28%;">Thời điểm / Mốc</th>
+      <th>Biến được thu thập (theo nhóm)</th>
+    </tr>
+  `.trim();
+  table.appendChild(thead);
+
+  const tbody = document.createElement("tbody");
+
+  rows.forEach((row) => {
+    const tr = document.createElement("tr");
+
+    const tdLabel = document.createElement("td");
+    tdLabel.className = "dc-summary-label";
+    tdLabel.textContent = row.label;
+    tr.appendChild(tdLabel);
+
+    const tdVars = document.createElement("td");
+    tdVars.className = "dc-summary-vars";
+
+    const groups = row.groups || {};
+    const entries = Object.entries(groups);
+
+    if (!entries.length) {
+      tdVars.innerHTML = `<span class="muted">Chưa có biến được gán cho mốc này.</span>`;
+    } else {
+      entries.forEach(([gKey, vars]) => {
+        if (!vars || !vars.length) return;
+        const wrap = document.createElement("div");
+        wrap.className = "dc-summary-group";
+
+        const lbl = document.createElement("div");
+        lbl.className = "dc-summary-group-label";
+        lbl.textContent = groupLabel(gKey) + ":";
+        wrap.appendChild(lbl);
+
+        const list = document.createElement("div");
+        list.className = "dc-summary-group-vars";
+        list.textContent = vars.join("; ");
+        wrap.appendChild(list);
+
+        tdVars.appendChild(wrap);
+      });
     }
 
-    chip.addEventListener("dragstart", (e) => {
-      e.dataTransfer.setData("text/plain", JSON.stringify({ name, from: bucket }));
-    });
+    tr.appendChild(tdVars);
+    tbody.appendChild(tr);
+  });
 
-    return chip;
-  }
+  table.appendChild(tbody);
+  container.appendChild(table);
+}
 
-  function setupDropZone(zoneEl, bucket) {
-    zoneEl.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      zoneEl.classList.add("dropping");
-    });
-    zoneEl.addEventListener("dragleave", () => zoneEl.classList.remove("dropping"));
-    zoneEl.addEventListener("drop", (e) => {
-      e.preventDefault();
-      zoneEl.classList.remove("dropping");
-      const data = safeParse(e.dataTransfer.getData("text/plain"));
-      if (!data?.name) return;
+/* ===================== GPT HANDLERS ===================== */
 
-      if (bucket === "pool") {
-        // Bỏ tất cả gán
-        dc.assignments[data.name] = [];
-      } else {
-        // Gán vào mốc đích (duy trì các mốc khác)
-        const arr = new Set(dc.assignments[data.name] || []);
-        arr.add(bucket);
-        dc.assignments[data.name] = [...arr];
-      }
-      renderAll();
-    });
-  }
-
-  // ----- CRUD mốc -----
-  function onAddTimepoint() {
-    const label = (tpLabelEl.value || "").trim();
-    const day = num(tpDayEl.value);
-    if (!label || Number.isNaN(day)) {
-      toast(ctx, "Nhập nhãn mốc và số ngày hợp lệ.");
-      return;
-    }
-    const id = makeId(label, day);
-    if (dc.timepoints.some((x) => x.id === id)) {
-      toast(ctx, "Mốc này đã tồn tại.");
-      return;
-    }
-    dc.timepoints.push({ id, label, day });
-    tpLabelEl.value = "";
-    tpDayEl.value = "";
-    renderAll();
-  }
-
-  function deleteTp(id) {
-    dc.timepoints = dc.timepoints.filter((tp) => tp.id !== id);
-    // Bỏ gán biến tại mốc này
-    Object.keys(dc.assignments).forEach((k) => {
-      dc.assignments[k] = (dc.assignments[k] || []).filter((x) => x !== id);
-    });
-    renderAll();
-  }
-
-  function moveTp(id, dir) {
-    const idx = dc.timepoints.findIndex((x) => x.id === id);
-    if (idx < 0) return;
-    const j = idx + dir;
-    if (j < 0 || j >= dc.timepoints.length) return;
-    const [it] = dc.timepoints.splice(idx, 1);
-    dc.timepoints.splice(j, 0, it);
-    renderAll();
-  }
-
-  function unassign(varName, tpId) {
-    dc.assignments[varName] = (dc.assignments[varName] || []).filter((x) => x !== tpId);
-  }
-
-  // ----- Save / Export -----
-  function onSave() {
-    ctx.save("dataCollection", dc);
-    toast(ctx, "Đã lưu kế hoạch thu thập.");
-  }
-
-  function onExport() {
-    ctx.downloadJSON("data_collection.json", dc);
-  }
-
-  // ----- GPT -----
-  async function onSuggest() {
+async function onSuggest(ctx, textEl, summaryRows) {
+  try {
+    toggleBusy(textEl, true); // dùng tạm: disable textarea trong lúc chờ
     const pico = ctx.get("pico", {}) || {};
-    const objective = ctx.get("mainObjective", "") || "";
     const design = ctx.get("design", {}) || {};
     const interventions = ctx.get("interventions", []) || [];
-    const selectedVars = summarizeSelected(sel);
+    const mainObj = (ctx.get("mainObjective", "") || "").trim();
+    const subs = Array.isArray(ctx.get("subObjectives", []))
+      ? ctx
+          .get("subObjectives", [])
+          .map((s) => String(s || "").trim())
+          .filter(Boolean)
+      : [];
+
+    const summaryText = summaryToPlain(summaryRows);
 
     const prompt = `
-Bạn là chuyên gia thiết kế RCT. Hãy **gợi ý lịch thu thập dữ liệu** dựa vào PICO, mục tiêu, thiết kế và danh mục biến hiện có.
-Yêu cầu trả về **JSON đúng định dạng**:
-{
-  "timepoints": [
-    {"id":"baseline_d0","label":"Baseline","day":0},
-    {"id":"w2_d14","label":"Tuần 2","day":14},
-    ...
-  ],
-  "assignments": {
-    "VAS đau": ["baseline_d0","w2_d14","w4_d28","w8_d56"],
-    "WOMAC":   ["baseline_d0","w4_d28","w8_d56"],
-    ...
+Bạn là chuyên gia thiết kế RCT, cần viết mục "Quy trình thu thập dữ liệu" cho đề cương nghiên cứu.
+
+YÊU CẦU:
+- Viết bằng tiếng Việt, văn phong học thuật, rõ ràng, dễ copy vào đề cương.
+- Cấu trúc tối thiểu:
+  1. Đoạn mở đầu (1–2 đoạn): mô tả chung cách tuyển chọn, thời điểm baseline, lịch theo dõi tổng quát, địa điểm & người phụ trách thu thập dữ liệu.
+  2. Đoạn mô tả chi tiết theo từng mốc: với mỗi thời điểm (Screening, Baseline, tuần X, tháng Y...), nêu rõ:
+     - Bệnh nhân được đánh giá gì (các biến/ thang điểm/ xét nghiệm),
+     - Ai thực hiện (bác sĩ nghiên cứu, điều dưỡng được huấn luyện, evaluator mù can thiệp...),
+     - Hình thức thu thập (khám trực tiếp, xét nghiệm tại labo, gọi điện thoại...),
+     - Nếu phù hợp, nêu "cửa sổ thời gian" (ví dụ: tuần 4 ± 3 ngày).
+  3. Đoạn về kiểm soát chất lượng dữ liệu (training, quy trình chuẩn hóa, nhập liệu, kiểm tra logic/range, bảo mật và lưu trữ).
+
+- Không bịa thêm biến mới; chỉ sử dụng các biến và mốc thời gian đã tóm tắt.
+- Có thể gợi ý chung về thực hành tốt (Good Clinical Practice), nhưng không được bịa DOI/PMID/URL cụ thể.
+
+THÔNG TIN BỐI CẢNH:
+
+PICO:
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
+
+Mục tiêu chính: ${mainObj || "(chưa nhập)"}
+Mục tiêu phụ:
+${subs.length ? subs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "(chưa nhập)"}
+
+Thiết kế nghiên cứu (tóm tắt): ${jsonSafe(design)}
+Can thiệp (tóm tắt): ${jsonSafe(interventions)}
+
+TÓM TẮT LỊCH THU THẬP (từ Step 10):
+${summaryText || "(chưa có thông tin rõ về lịch thu thập; bạn có thể gợi ý một lịch hợp lý dựa trên RCT điển hình cho lĩnh vực tương ứng)"}
+`.trim();
+
+    toast(ctx, "Đang để GPT gợi ý đoạn mô tả quy trình thu thập dữ liệu...");
+    const raw = await callAI("step11.suggest", prompt, ctx);
+    const text = String(raw || "").trim();
+    textEl.value = text || "GPT không trả về nội dung.";
+    toast(ctx, "Đã chèn gợi ý đoạn mô tả quy trình thu thập dữ liệu.");
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT gợi ý đoạn mô tả.");
+  } finally {
+    toggleBusy(textEl, false);
   }
 }
 
-Nguyên tắc:
-- luôn có "Baseline" (day = 0).
-- Kết cục chính: tần suất đủ để kiểm tra thay đổi theo thời gian, phù hợp khoảng theo dõi thường dùng.
-- Biến an toàn (AE/SAE): nên ghi nhận tại mọi mốc sau can thiệp.
-- Không bịa thêm biến mới ngoài danh mục đã có; chỉ lập lịch cho biến hiện có (nếu cần đặt tên alias, giữ nguyên tên gốc).
-
-Bối cảnh:
-PICO:
-- P: ${pico.p || ""}
-- I: ${pico.i || ""}
-- C: ${pico.c || ""}
-- O: ${pico.o || ""}
-
-Mục tiêu chính: ${objective}
-Thiết kế: ${jsonSafe(design)}
-Can thiệp: ${jsonSafe(interventions)}
-
-Danh mục biến (theo nhóm):
-${JSON.stringify(selectedVars, null, 2).slice(0, 4000)}
-`.trim();
-
-    toast(ctx, "Đang gợi ý lịch thu thập từ GPT...");
-    const raw = await callAI("step11.suggest", prompt, ctx);
-    const j = safeParse(raw);
-    if (!j || !Array.isArray(j.timepoints) || typeof j.assignments !== "object") {
-      toast(ctx, "GPT không trả về JSON hợp lệ.");
-      return;
-    }
-
-    const tps = (j.timepoints || [])
-      .map((tp) => ({
-        id: String(tp.id || "").trim() || makeId(tp.label, tp.day),
-        label: String(tp.label || "").trim() || "Mốc",
-        day: num(tp.day),
-      }))
-      .filter((tp) => tp.id && !Number.isNaN(tp.day));
-
-    const nameset = new Set(varList.map((v) => v.name));
-    const asg = {};
-    Object.entries(j.assignments || {}).forEach(([name, arr]) => {
-      if (!nameset.has(name)) return;
-      const ids = Array.isArray(arr) ? arr.map(String) : [];
-      asg[name] = ids.filter((id) => tps.some((tp) => tp.id === id));
-    });
-
-    if (!tps.length) {
-      toast(ctx, "Gợi ý không có mốc hợp lệ.");
-      return;
-    }
-
-    dc.timepoints = dedupeTp(tps);
-    dc.assignments = asg;
-    renderAll();
-    toast(ctx, "Đã chèn gợi ý lịch thu thập.");
+async function onEvaluate(ctx, textEl, summaryRows) {
+  const current = (textEl.value || "").trim();
+  if (!current) {
+    toast(ctx, "Chưa có đoạn mô tả nào để đánh giá.");
+    return;
   }
 
-  async function onEvaluate() {
+  try {
+    toggleBusy(textEl, true);
     const pico = ctx.get("pico", {}) || {};
-    const objective = ctx.get("mainObjective", "") || "";
     const design = ctx.get("design", {}) || {};
     const interventions = ctx.get("interventions", []) || [];
-    const selectedVars = summarizeSelected(sel);
-
-    const payload = {
-      timepoints: dc.timepoints,
-      assignments: dc.assignments,
-      variables: selectedVars,
-    };
-
-    const prompt = `
-Bạn là phản biện phương pháp. Hãy **đánh giá lịch thu thập dữ liệu** sau:
-- Tính hợp lý khoảng thời gian giữa các mốc
-- Tần suất đo lường cho kết cục chính/phụ
-- Sự nhất quán với PICO/mục tiêu/thiết kế
-- Gợi ý điều chỉnh ngắn gọn theo gạch đầu dòng
-
-Ngữ cảnh:
-PICO:
-- P: ${pico.p || ""}
-- I: ${pico.i || ""}
-- C: ${pico.c || ""}
-- O: ${pico.o || ""}
-
-Mục tiêu: ${objective}
-Thiết kế: ${jsonSafe(design)}
-Can thiệp: ${jsonSafe(interventions)}
-
-Dữ liệu hiện tại (JSON):
-${JSON.stringify(payload, null, 2).slice(0, 4000)}
-`.trim();
-
-    toast(ctx, "Đang đánh giá lịch thu thập...");
-    const fb = await callAI("step11.evaluate", prompt, ctx);
-    showFeedbackDialog(fb || "Không nhận được phản hồi.");
-  }
-
-  // ===================== Helpers: data ======================
-
-  // chuyển từ step10Vars (anh đang lưu) → cấu trúc giống selectedVariables
-  function normalizeSelectedFromStep10(step10) {
-    const groups = ["primary", "secondary", "baseline", "confounder", "mediator", "moderator", "safety"];
-    const out = {};
-    groups.forEach((g) => {
-      const arr = Array.isArray(step10?.[g]) ? step10[g] : [];
-      out[g] = arr
-        .map((v) => ({ name: String(v?.name || "").trim() }))
-        .filter((x) => x.name);
-    });
-    return out;
-  }
-
-  function buildVariableList(sel) {
-    const out = [];
-    Object.entries(sel).forEach(([group, arr]) => {
-      (arr || []).forEach((v) => {
-        const name = (v && v.name) ? String(v.name).trim() : "";
-        if (!name) return;
-        out.push({ name, group });
-      });
-    });
-    const seen = new Set();
-    return out
-      .filter((x) => {
-        if (seen.has(x.name)) return false;
-        seen.add(x.name);
-        return true;
-      })
-      .sort((a, b) => alpha(a.name, b.name));
-  }
-
-  function summarizeSelected(sel) {
-    const obj = {};
-    Object.keys(sel).forEach((k) => {
-      obj[k] = (sel[k] || []).map((v) => v.name).sort(alpha);
-    });
-    return obj;
-  }
-
-  function normalizeDataCollection(x) {
-    const timepoints = Array.isArray(x?.timepoints)
-      ? x.timepoints
-          .map((tp) => ({
-            id: String(tp.id || "").trim() || makeId(tp.label, tp.day),
-            label: String(tp.label || "").trim() || "Mốc",
-            day: num(tp.day),
-          }))
-          .filter((tp) => tp.id && !Number.isNaN(tp.day))
+    const mainObj = (ctx.get("mainObjective", "") || "").trim();
+    const subs = Array.isArray(ctx.get("subObjectives", []))
+      ? ctx
+          .get("subObjectives", [])
+          .map((s) => String(s || "").trim())
+          .filter(Boolean)
       : [];
 
-    const assignments = {};
-    if (x && typeof x.assignments === "object") {
-      Object.entries(x.assignments).forEach(([name, arr]) => {
-        if (!name) return;
-        assignments[name] = Array.isArray(arr) ? arr.map(String) : [];
-      });
-    }
-    return { timepoints, assignments };
-  }
+    const summaryText = summaryToPlain(summaryRows);
 
-  function dedupeTp(arr) {
-    const seen = new Set();
-    const out = [];
-    arr.forEach((tp) => {
-      if (seen.has(tp.id)) return;
-      seen.add(tp.id);
-      out.push(tp);
+    const prompt = `
+Bạn là phản biện phương pháp của một đề cương RCT. Hãy ĐÁNH GIÁ đoạn mô tả "Quy trình thu thập dữ liệu" dưới đây.
+
+YÊU CẦU:
+1. Nhận xét tổng quan (5–10 câu) về:
+   - Tính rõ ràng, mạch lạc
+   - Mức độ đầy đủ so với thông tin về biến và lịch thu thập
+   - Tính phù hợp với PICO, thiết kế và mục tiêu
+2. Chỉ ra cụ thể:
+   - Những điểm còn thiếu (ví dụ: thiếu mô tả ai thu thập, thiếu cửa sổ thời gian, thiếu cách xử lý mất theo dõi...)
+   - Chỗ mơ hồ, khó hiểu, có thể gây sai lệch
+3. Đề xuất chỉnh sửa:
+   - Gợi ý những nội dung nên bổ sung/ rút gọn/ sắp xếp lại
+   - Có thể đưa ví dụ 1–2 câu sửa mẫu
+4. Nếu có thể, liên hệ ngắn gọn với khuyến cáo của SPIRIT/CONSORT (nhưng KHÔNG bịa DOI/PMID/URL cụ thể).
+
+THÔNG TIN BỐI CẢNH:
+
+PICO:
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
+
+Mục tiêu chính: ${mainObj || "(chưa nhập)"}
+Mục tiêu phụ:
+${subs.length ? subs.map((s, i) => `${i + 1}. ${s}`).join("\n") : "(chưa nhập)"}
+
+Thiết kế nghiên cứu (tóm tắt): ${jsonSafe(design)}
+Can thiệp (tóm tắt): ${jsonSafe(interventions)}
+
+TÓM TẮT LỊCH THU THẬP (từ Step 10):
+${summaryText || "(chưa có tóm tắt rõ, có thể nhận xét ở mức tổng quát)"}
+
+ĐOẠN MÔ TẢ CẦN ĐÁNH GIÁ:
+----------------------------------------
+${current}
+----------------------------------------
+`.trim();
+
+    toast(ctx, "Đang để GPT đánh giá đoạn mô tả quy trình thu thập...");
+    const raw = await callAI("step11.evaluate", prompt, ctx);
+    const text = String(raw || "").trim() || "GPT không trả về nội dung.";
+    showFeedbackDialog(text);
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT đánh giá đoạn mô tả.");
+  } finally {
+    toggleBusy(textEl, false);
+  }
+}
+
+/* ===================== HELPERS ===================== */
+
+function groupLabel(g) {
+  switch ((g || "").toLowerCase()) {
+    case "primary":
+      return "Kết cục chính";
+    case "secondary":
+      return "Kết cục phụ";
+    case "baseline":
+      return "Biến nền / mô tả mẫu";
+    case "confounder":
+      return "Biến nhiễu / điều chỉnh";
+    case "mediator":
+      return "Trung gian";
+    case "moderator":
+      return "Điều biến";
+    case "safety":
+      return "Biến an toàn / tác dụng bất lợi";
+    case "exploratory":
+      return "Biến thăm dò / khám phá";
+    default:
+      return g || "Nhóm khác";
+  }
+}
+
+function dedupe(arr) {
+  const seen = new Set();
+  const out = [];
+  (arr || []).forEach((x) => {
+    if (seen.has(x)) return;
+    seen.add(x);
+    out.push(x);
+  });
+  return out;
+}
+
+function summaryToPlain(rows) {
+  if (!rows || !rows.length) return "";
+  const lines = [];
+  rows.forEach((row) => {
+    lines.push(`- Mốc: ${row.label}`);
+    const groups = row.groups || {};
+    Object.entries(groups).forEach(([gKey, vars]) => {
+      if (!vars || !vars.length) return;
+      lines.push(`  • ${groupLabel(gKey)}: ${vars.join("; ")}`);
     });
-    return out;
+  });
+  return lines.join("\n");
+}
+
+function toast(ctx, msg) {
+  if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
+  else console.log("[toast]", msg);
+}
+
+/**
+ * Dùng tạm để disable/enable textarea trong lúc chờ GPT
+ */
+function toggleBusy(el, busy) {
+  if (!el) return;
+  if (busy) {
+    el.dataset.prevDisabled = el.disabled ? "1" : "0";
+    el.disabled = true;
+  } else {
+    if (el.dataset.prevDisabled === "0") el.disabled = false;
   }
+}
 
-  // ===================== Helpers: misc/UI =====================
-
-  function groupLabel(g) {
-    switch ((g || "").toLowerCase()) {
-      case "primary":
-        return "Kết cục chính";
-      case "secondary":
-        return "Kết cục phụ";
-      case "baseline":
-        return "Biến nền";
-      case "confounder":
-        return "Nhiễu";
-      case "mediator":
-        return "Trung gian";
-      case "moderator":
-        return "Điều biến";
-      case "safety":
-        return "An toàn";
-      default:
-        return g;
-    }
-  }
-
-  function makeId(label, day) {
-    const d = num(day);
-    const slug = String(label || "")
-      .toLowerCase()
-      .replace(/[()]/g, "")
-      .replace(/\s+/g, "_")
-      .replace(/[^a-z0-9_]/g, "")
-      .replace(/_+/g, "_");
-    return `${slug || "tp"}_d${Number.isNaN(d) ? "x" : d}`;
-  }
-
-  function num(x) {
-    const n = Number(x);
-    return Number.isFinite(n) ? n : NaN;
-  }
-
-  function alpha(a, b) {
-    if (typeof a === "object") a = a?.name ?? "";
-    if (typeof b === "object") b = b?.name ?? "";
-    a = (a || "").toString().toLowerCase();
-    b = (b || "").toString().toLowerCase();
-    if (a < b) return -1;
-    if (a > b) return 1;
-    return 0;
-  }
-
-  function safeParse(s) {
+async function callAI(bindingKey, prompt, ctx) {
+  if (typeof ctx.callStepGPT === "function") {
     try {
-      return JSON.parse(s);
-    } catch {
-      return null;
-    }
-  }
-
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
-  }
-
-  function jsonSafe(obj) {
-    try {
-      return JSON.stringify(obj);
-    } catch {
-      return String(obj || "");
-    }
-  }
-
-  function toast(ctx, msg) {
-    if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
-    else console.log("[toast]", msg);
-  }
-
-  async function callAI(bindingKey, prompt, ctx) {
-    // Ưu tiên ctx.callStepGPT (dùng aiBindings như step10)
-    if (typeof ctx.callStepGPT === "function") {
-      try {
-        return String((await ctx.callStepGPT(bindingKey, prompt)) ?? "");
-      } catch (e) {
-        if (typeof ctx.callGPT === "function") {
-          return String(await ctx.callGPT(prompt));
-        }
-        throw e;
+      return String((await ctx.callStepGPT(bindingKey, prompt)) ?? "");
+    } catch (e) {
+      if (typeof ctx.callGPT === "function") {
+        return String(await ctx.callGPT(prompt));
       }
+      throw e;
     }
-    if (typeof ctx.callGPT === "function") {
-      return String(await ctx.callGPT(prompt));
-    }
-    throw new Error("Chưa cấu hình GPT cho step11.");
   }
+  if (typeof ctx.callGPT === "function") {
+    return String(await ctx.callGPT(prompt));
+  }
+  throw new Error("Chưa cấu hình GPT cho step11.");
+}
 
-  function showFeedbackDialog(text) {
-    const id = "dc-fb-dialog";
-    let dlg = document.getElementById(id);
-    if (!dlg) {
-      dlg = document.createElement("div");
-      dlg.id = id;
-      dlg.style.position = "fixed";
-      dlg.style.inset = "0";
-      dlg.style.background = "rgba(0,0,0,.4)";
-      dlg.style.zIndex = "60";
-      dlg.style.display = "flex";
-      dlg.style.alignItems = "center";
-      dlg.style.justifyContent = "center";
-      dlg.innerHTML = `
-        <div style="background:#fff; max-width:720px; width:90vw; padding:18px; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.24)">
-          <div style="font-weight:700; margin-bottom:8px;">Đánh giá lịch thu thập</div>
-          <div id="dc-fb-text" style="white-space:pre-wrap; line-height:1.4; max-height:60vh; overflow:auto;"></div>
-          <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-            <button id="dc-fb-close" class="btn btn-primary" type="button">Đóng</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(dlg);
-      dlg.querySelector("#dc-fb-close").addEventListener("click", () => dlg.remove());
-    }
-    dlg.querySelector("#dc-fb-text").textContent = text;
+function jsonSafe(x) {
+  try {
+    return JSON.stringify(x || {}, null, 2).slice(0, 800);
+  } catch {
+    return String(x || "");
   }
+}
+
+function showFeedbackDialog(text) {
+  const id = "dc11-fb-dialog";
+  let dlg = document.getElementById(id);
+  if (!dlg) {
+    dlg = document.createElement("div");
+    dlg.id = id;
+    dlg.style.position = "fixed";
+    dlg.style.inset = "0";
+    dlg.style.background = "rgba(0,0,0,.4)";
+    dlg.style.zIndex = "60";
+    dlg.style.display = "flex";
+    dlg.style.alignItems = "center";
+    dlg.style.justifyContent = "center";
+    dlg.innerHTML = `
+      <div class="dc-fb-modal">
+        <div class="dc-fb-header">
+          <div class="dc-fb-title">Đánh giá đoạn mô tả quy trình thu thập dữ liệu</div>
+        </div>
+        <div id="dc11-fb-text" class="dc-fb-body"></div>
+        <div class="dc-fb-footer">
+          <button id="dc11-fb-close" type="button" class="btn btn-primary">Đóng</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dlg);
+    dlg.querySelector("#dc11-fb-close").addEventListener("click", () => dlg.remove());
+  }
+  dlg.querySelector("#dc11-fb-text").textContent = text;
 }
