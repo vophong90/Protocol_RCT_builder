@@ -29,30 +29,14 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <div class="card-body">
-      <p class="muted">
-        Phần này tương ứng với mục <em>Data collection methods and schedule of assessments</em> trong đề cương RCT chuẩn (SPIRIT/CONSORT):<br/>
-        – Ai thu thập dữ liệu, ở đâu, bằng công cụ gì;<br/>
-        – Lịch thăm khám (screening, baseline, follow-up), các đánh giá thực hiện ở từng lần;<br/>
-        – Cách kiểm soát chất lượng dữ liệu (huấn luyện, chuẩn hóa, kiểm tra, nhập liệu...).
-      </p>
-    </div>
-
     <div class="card-body dc-summary-card">
-      <h4 class="dc-section-title">Tóm tắt lịch thu thập (tự động từ Step 10, chỉ đọc)</h4>
-      <p class="muted dc-summary-hint">
-        Dựa trên trường <strong>“Thời điểm thu thập”</strong> đã khai báo cho từng biến ở Step 10, hệ thống gom lại theo mốc. 
-        Nếu muốn chỉnh sửa lịch, hãy quay lại Step 10 cập nhật thời điểm thu thập của biến.
-      </p>
+      <h4 class="dc-section-title">Tóm tắt lịch thu thập</h4>
       <div id="dc-summary"></div>
     </div>
 
     <div class="card-body">
       <label class="field-label" for="dc-text">
         Đoạn mô tả quy trình thu thập dữ liệu
-        <span class="muted" style="font-weight:400;">
-          (viết dạng văn bản hoàn chỉnh để chép vào đề cương: mô tả ai thu thập, khi nào, ở đâu, làm những đánh giá gì tại mỗi lần thăm khám...)
-        </span>
       </label>
       <textarea id="dc-text" rows="10" placeholder="Ví dụ: 
 Người bệnh sau khi đủ tiêu chuẩn sẽ được mời tham gia nghiên cứu và thực hiện đánh giá ban đầu tại thời điểm Baseline (ngày 0)..."></textarea>
