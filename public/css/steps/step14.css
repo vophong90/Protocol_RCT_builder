@@ -1,79 +1,35 @@
 /* public/css/steps/step14.css */
-/* Scope riêng cho Step 14 – không ảnh hưởng step khác */
+/* Scope riêng cho Step 14 – Kiểm tra logic tổng thể */
 
-[data-scope="step14"] .lc-layout {
-  display: grid;
-  gap: 16px;
-  align-items: flex-start;
-}
-
-@media (min-width: 900px) {
-  [data-scope="step14"] .lc-layout {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.9fr);
-  }
-}
-
-/* Khối bối cảnh */
-[data-scope="step14"] .lc-context {
+[data-scope="step14"] .logic-context-box {
+  margin-top: 8px;
   padding: 12px 14px;
-  border-radius: 12px;
-  background: var(--muted-bg, #f8fafc);
-  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
-}
-
-[data-scope="step14"] .lc-context-title {
-  margin-bottom: 6px;
+  border-radius: 10px;
+  background: var(--muted-bg, #f7f7f9);
+  border: 1px solid rgba(15, 23, 42, 0.06);
   font-size: 0.9rem;
-  color: var(--muted-foreground, #4b5563);
+  line-height: 1.4;
 }
 
-[data-scope="step14"] .lc-context-pre {
+[data-scope="step14"] #logic-context {
   margin: 0;
   white-space: pre-wrap;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 0.8rem;
-  line-height: 1.4;
-  max-height: 260px;
-  overflow: auto;
 }
 
-/* Cột chính */
-[data-scope="step14"] .lc-main {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Hàng nút GPT / export */
-[data-scope="step14"] .lc-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-/* Kết quả */
-[data-scope="step14"] .lc-result {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-[data-scope="step14"] .lc-result-label {
-  font-size: 0.95rem;
-}
-
-[data-scope="step14"] textarea#logic-fb {
+[data-scope="step14"] #logic-fb {
   width: 100%;
-  min-height: 260px;
+  min-height: 320px;
   resize: vertical;
 }
 
-/* Footer */
-[data-scope="step14"] .lc-footer {
+[data-scope="step14"] .logic-main-header {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+[data-scope="step14"] .logic-footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-start;
 }
