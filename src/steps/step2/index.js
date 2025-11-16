@@ -1,306 +1,403 @@
-// src/steps/step12/index.js
-// Step 12 – Kế hoạch phân tích số liệu (SAP tóm tắt)
-// - Đọc PICO, mục tiêu, thiết kế, can thiệp, biến (step10), lịch thu thập (step11)
-// - Người dùng tự viết kế hoạch phân tích trong textarea chính
-// - GPT gợi ý một SAP gợi ý riêng (textarea riêng) để tham khảo, KHÔNG tự ghi đè
-// - GPT đánh giá đoạn kế hoạch anh đã viết (textarea riêng kết quả đánh giá)
-// - Lưu state vào 'analysisPlan'
+// src/steps/step2/index.js
+// Step 2 – Mục tiêu nghiên cứu (main + subs)
+// Cần ctx: get/save/toast, extractTextFromPDF(file), callStepGPT(bindingKey, prompt)
 
-export const id = 12;
-export const title = "Kế hoạch phân tích số liệu";
+export const id = 2;
+export const title = "Mục tiêu nghiên cứu";
 export const subtitle =
-  "Phác thảo kế hoạch phân tích (SAP tóm tắt) dựa trên mục tiêu, biến số và lịch thu thập.";
-export const css = "./public/css/steps/step12.css";
+  "Đặt mục tiêu chính/phụ; có thể nhờ GPT gợi ý từ PICO, Câu hỏi nghiên cứu và PDF.";
+export const css = "./public/css/steps/step2.css";
 
 export async function mount(rootEl, ctx) {
-  // scope CSS riêng cho step12
-  rootEl.closest(".step")?.setAttribute("data-scope", "step12");
+  // Scope CSS riêng cho step2
+  rootEl.closest(".step")?.setAttribute("data-scope", "step2");
 
-  // ===== Layout card chuẩn =====
+  // rootEl CHÍNH LÀ .card → không lồng .card mới
   rootEl.innerHTML = `
     <div class="card-header">
-      <h3 class="card-title">Kế hoạch phân tích số liệu</h3>
+      <h3 class="card-title">Mục tiêu nghiên cứu</h3>
       <div class="card-subtitle">
-        Mô tả cách phân tích biến kết cục chính/phụ, xử lý số liệu, phân tích độ nhạy, phân tích dưới nhóm...
+        Đặt mục tiêu chính và các mục tiêu phụ. Có thể nhờ GPT gợi ý dựa trên PICO, Câu hỏi nghiên cứu và tài liệu PDF.
       </div>
     </div>
 
     <div class="card-body">
-      <p class="muted small">
-        Gợi ý: kế hoạch nên bám sát mục tiêu nghiên cứu, loại thiết kế, số nhánh can thiệp, biến kết cục và lịch thu thập.
-        GPT chỉ đóng vai trò <strong>gợi ý</strong> và <strong>phản biện</strong>, không tự động thay anh viết SAP.
-      </p>
+      <label class="obj-main-label">
+        Mục tiêu chính
+        <textarea
+          id="obj-main"
+          rows="3"
+          placeholder="Nhập mục tiêu chính, bám PICO và câu hỏi nghiên cứu"></textarea>
+      </label>
+    </div>
 
-      <div class="an-layout">
-        <!-- Cột trái: nội dung chính do anh viết -->
-        <div class="an-main">
-          <div class="card card-nested">
-            <div class="card-header">
-              <strong>Kế hoạch phân tích do bạn soạn</strong>
-            </div>
-            <div class="card-body">
-              <textarea id="an-main" class="an-ta" rows="18"
-                placeholder="Ví dụ cấu trúc:
-1. Nguyên tắc phân tích (ITT/PP)
-2. Mô tả mẫu & so sánh ban đầu
-3. Phân tích biến kết cục chính
-4. Phân tích biến kết cục phụ
-5. Xử lý số liệu thiếu
-6. Phân tích dưới nhóm
-7. Phân tích độ nhạy
-8. Phần mềm & mức ý nghĩa thống kê..."></textarea>
-            </div>
-          </div>
+    <div class="card-body">
+      <div class="obj-sub-title">Mục tiêu phụ</div>
+      <div class="obj-sub-row">
+        <input
+          id="obj-sub-input"
+          type="text"
+          placeholder="Nhập mục tiêu phụ..." />
+        <button
+          id="obj-sub-add"
+          class="btn btn-secondary"
+          type="button">
+          Thêm
+        </button>
+      </div>
+      <div id="obj-sub-list" class="obj-sub-list"></div>
+    </div>
 
-          <div class="card card-nested">
-            <div class="card-header">
-              <strong>Ghi chú nội bộ (tuỳ chọn)</strong>
-            </div>
-            <div class="card-body">
-              <textarea id="an-notes" class="an-ta small" rows="6"
-                placeholder="Ghi chú thêm: lưu ý về MCID, các biến cần chuẩn hoá, biến chuyển đổi log, v.v. (không in vào SAP chính)."></textarea>
-            </div>
-          </div>
+    <!-- File + 2 nút GPT -->
+    <div class="card-body">
+      <label class="obj-file-row">
+        <span class="obj-file-label">Tài liệu tham khảo (PDF, tuỳ chọn)</span>
+        <input id="obj-pdf" type="file" accept="application/pdf" />
+      </label>
+
+      <div class="obj-gpt-row">
+        <button id="obj-gpt"  class="btn btn-primary"  type="button">
+          GPT gợi ý mục tiêu
+        </button>
+        <button id="obj-eval" class="btn btn-secondary" type="button">
+          GPT đánh giá mục tiêu
+        </button>
+      </div>
+    </div>
+
+    <!-- Kết quả GPT – GỢI Ý -->
+    <div id="obj-suggest-wrap" class="card-body" style="display:none">
+      <div class="obj-gpt-header">
+        <strong>Kết quả GPT – Gợi ý</strong>
+        <div class="obj-gpt-actions">
+          <button id="obj-apply" class="btn btn-primary" type="button">Chèn vào ô</button>
+          <button id="obj-copy-suggest" class="btn btn-ghost" type="button">Sao chép</button>
+          <button id="obj-hide-suggest" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
+      </div>
+      <textarea
+        id="obj-suggest-ta"
+        rows="10"
+        placeholder='{"main":"...","subs":["...","..."],"refs":["Tác giả… (năm). … DOI/PMID/URL"]}'></textarea>
+      <div class="muted small" style="margin-top:.35rem">
+        Khi chèn, chỉ lấy mục tiêu; TLTK chỉ để bạn tham khảo.
+      </div>
+    </div>
 
-        <!-- Cột phải: GPT gợi ý & đánh giá -->
-        <div class="an-side">
-          <div class="card card-nested">
-            <div class="card-header an-side-header">
-              <strong>GPT – Gợi ý SAP</strong>
-              <button id="an-gpt-suggest" class="btn btn-secondary" type="button">
-                GPT gợi ý kế hoạch
-              </button>
-            </div>
-            <div class="card-body">
-              <textarea id="an-suggest" class="an-ta small" rows="12"
-                placeholder="Kết quả GPT gợi ý sẽ xuất hiện ở đây. Bạn tự đọc và trích ý phù hợp sang kế hoạch của mình."></textarea>
-              <div class="an-side-actions">
-                <button id="an-copy-suggest" type="button" class="btn btn-ghost tiny">
-                  Sao chép gợi ý
-                </button>
-                <span class="muted tiny">GPT không tự chèn vào kế hoạch chính.</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="card card-nested">
-            <div class="card-header an-side-header">
-              <strong>GPT – Đánh giá kế hoạch</strong>
-              <button id="an-gpt-eval" class="btn btn-secondary" type="button">
-                GPT đánh giá kế hoạch
-              </button>
-            </div>
-            <div class="card-body">
-              <textarea id="an-eval" class="an-ta small" rows="10"
-                placeholder="Nhận xét của GPT về điểm mạnh, điểm yếu, phần thiếu, và gợi ý chỉnh sửa sẽ xuất hiện ở đây."></textarea>
-              <div class="an-side-actions">
-                <button id="an-copy-eval" type="button" class="btn btn-ghost tiny">
-                  Sao chép đánh giá
-                </button>
-              </div>
-            </div>
-          </div>
+    <!-- Kết quả GPT – ĐÁNH GIÁ -->
+    <div id="obj-eval-wrap" class="card-body" style="display:none">
+      <div class="obj-gpt-header">
+        <strong>Kết quả GPT – Đánh giá</strong>
+        <div class="obj-gpt-actions">
+          <button id="obj-copy-eval" class="btn btn-ghost" type="button">Sao chép</button>
+          <button id="obj-hide-eval" class="btn btn-ghost" type="button">Ẩn</button>
         </div>
-      </div> <!-- .an-layout -->
+      </div>
+      <textarea
+        id="obj-eval-ta"
+        rows="11"
+        placeholder="Đánh giá theo SMART + TLTK sẽ xuất hiện tại đây…"></textarea>
     </div>
 
     <div class="card-footer">
-      <button id="an-save" class="btn btn-primary" type="button">Lưu kế hoạch</button>
+      <button id="obj-save" class="btn btn-primary" type="button">Lưu mục tiêu</button>
     </div>
   `.trim();
 
-  // ======= State =======
-  let state = ctx.get("analysisPlan", {}) || {};
-  if (typeof state !== "object") state = {};
-  state.mainText = state.mainText || "";
-  state.notes = state.notes || "";
+  // ===== Elements =====
+  const mainEl     = rootEl.querySelector('#obj-main');
+  const subInputEl = rootEl.querySelector('#obj-sub-input');
+  const subAddBtn  = rootEl.querySelector('#obj-sub-add');
+  const subListEl  = rootEl.querySelector('#obj-sub-list');
 
-  // DOM
-  const mainTa = rootEl.querySelector("#an-main");
-  const notesTa = rootEl.querySelector("#an-notes");
-  const suggestTa = rootEl.querySelector("#an-suggest");
-  const evalTa = rootEl.querySelector("#an-eval");
+  const pdfEl      = rootEl.querySelector('#obj-pdf');
 
-  const btnSave = rootEl.querySelector("#an-save");
-  const btnSuggest = rootEl.querySelector("#an-gpt-suggest");
-  const btnEval = rootEl.querySelector("#an-gpt-eval");
-  const btnCopySuggest = rootEl.querySelector("#an-copy-suggest");
-  const btnCopyEval = rootEl.querySelector("#an-copy-eval");
+  const saveBtn    = rootEl.querySelector('#obj-save');
+  const gptBtn     = rootEl.querySelector('#obj-gpt');
+  const evalBtn    = rootEl.querySelector('#obj-eval');
 
-  // fill state vào UI
-  mainTa.value = state.mainText || "";
-  notesTa.value = state.notes || "";
+  const sWrap  = rootEl.querySelector('#obj-suggest-wrap');
+  const sTA    = rootEl.querySelector('#obj-suggest-ta');
+  const sApply = rootEl.querySelector('#obj-apply');
+  const sCopy  = rootEl.querySelector('#obj-copy-suggest');
+  const sHide  = rootEl.querySelector('#obj-hide-suggest');
 
-  // ======= Events =======
+  const eWrap  = rootEl.querySelector('#obj-eval-wrap');
+  const eTA    = rootEl.querySelector('#obj-eval-ta');
+  const eCopy  = rootEl.querySelector('#obj-copy-eval');
+  const eHide  = rootEl.querySelector('#obj-hide-eval');
 
-  btnSave.addEventListener("click", () => {
-    state.mainText = mainTa.value || "";
-    state.notes = notesTa.value || "";
-    ctx.save("analysisPlan", state);
-    toast(ctx, "Đã lưu kế hoạch phân tích (Step 12).");
+  // ===== Load state =====
+  mainEl.value = ctx.get('mainObjective', '') || '';
+
+  const storedSubs = ctx.get('subObjectives', []);
+  let subObjectives = Array.isArray(storedSubs) ? storedSubs.slice() : [];
+  renderSubList();
+
+  const oldEval = ctx.get('objectivesEval', '');
+  if (oldEval) {
+    eTA.value = String(oldEval);
+    eWrap.style.display = '';
+  }
+
+  // ===== Sub objectives =====
+  subAddBtn.addEventListener('click', () => {
+    const v = (subInputEl.value || '').trim();
+    if (!v) return;
+    if (!Array.isArray(subObjectives)) subObjectives = [];
+    subObjectives.push(v);
+    subInputEl.value = '';
+    renderSubList();
   });
 
-  btnCopySuggest.addEventListener("click", () => {
-    copyText(suggestTa.value || "", ctx);
+  subInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      subAddBtn.click();
+    }
   });
 
-  btnCopyEval.addEventListener("click", () => {
-    copyText(evalTa.value || "", ctx);
+  function renderSubList() {
+    subListEl.innerHTML = '';
+    if (!Array.isArray(subObjectives) || subObjectives.length === 0) {
+      subListEl.innerHTML = '<div class="muted">Chưa có mục tiêu phụ.</div>';
+      return;
+    }
+    subObjectives.forEach((txt, idx) => {
+      const row = document.createElement('div');
+      row.className = 'obj-sub-item';
+
+      const t = document.createElement('div');
+      t.textContent = txt;
+
+      const controls = document.createElement('div');
+      controls.className = 'obj-sub-controls';
+
+      const up = document.createElement('button');
+      up.className = 'btn btn-ghost';
+      up.textContent = '↑';
+      up.title = 'Lên';
+      up.onclick = () => {
+        if (idx > 0) {
+          [subObjectives[idx - 1], subObjectives[idx]] =
+            [subObjectives[idx], subObjectives[idx - 1]];
+          renderSubList();
+        }
+      };
+
+      const down = document.createElement('button');
+      down.className = 'btn btn-ghost';
+      down.textContent = '↓';
+      down.title = 'Xuống';
+      down.onclick = () => {
+        if (idx < subObjectives.length - 1) {
+          [subObjectives[idx + 1], subObjectives[idx]] =
+            [subObjectives[idx], subObjectives[idx + 1]];
+          renderSubList();
+        }
+      };
+
+      const del = document.createElement('button');
+      del.className = 'btn btn-ghost';
+      del.textContent = 'Xóa';
+      del.onclick = () => {
+        subObjectives.splice(idx, 1);
+        renderSubList();
+      };
+
+      controls.append(up, down, del);
+      row.append(t, controls);
+      subListEl.appendChild(row);
+    });
+  }
+
+  // ===== Save =====
+  saveBtn.addEventListener('click', () => {
+    ctx.save('mainObjective', (mainEl.value || '').trim());
+    ctx.save('subObjectives', Array.isArray(subObjectives) ? subObjectives : []);
+    ctx.toast('Đã lưu mục tiêu.');
   });
 
-  btnSuggest.addEventListener("click", () => onSuggest(ctx, suggestTa));
-  btnEval.addEventListener("click", () => onEvaluate(ctx, mainTa, evalTa));
+  // ===== File UI =====
+  pdfEl.addEventListener('change', () => {
+    pdfEl.title = pdfEl.files?.[0]?.name || '';
+  });
+
+  // ===== GPT Suggest =====
+  gptBtn.addEventListener('click', onSuggest);
+  evalBtn.addEventListener('click', onEvaluate);
+
+  // Áp dụng gợi ý (chỉ lấy main/subs)
+  sApply.addEventListener('click', () => {
+    const obj = parseObjectives(sTA.value);
+    if (!obj) {
+      ctx.toast('Không nhận diện được gợi ý hợp lệ.');
+      return;
+    }
+    if (obj.main) mainEl.value = obj.main;
+    if (Array.isArray(obj.subs)) subObjectives = obj.subs.slice();
+    renderSubList();
+    ctx.save('mainObjective', (mainEl.value || '').trim());
+    ctx.save('subObjectives', subObjectives);
+    ctx.toast('Đã chèn gợi ý vào các ô.');
+  });
+  sCopy.addEventListener('click', () => copyText(sTA.value || '', ctx));
+  sHide.addEventListener('click', () => (sWrap.style.display = 'none'));
+
+  eCopy.addEventListener('click', () => copyText(eTA.value || '', ctx));
+  eHide.addEventListener('click', () => (eWrap.style.display = 'none'));
 
   // ================= GPT – gợi ý =================
-
-  async function onSuggest(ctx, targetTa) {
+  async function onSuggest() {
     try {
-      toggleBusy(btnSuggest, true, "Đang gợi ý...");
-      const pico = ctx.get("pico", {}) || {};
-      const mainObj = (ctx.get("mainObjective", "") || "").trim();
-      const subs = Array.isArray(ctx.get("subObjectives", []))
-        ? ctx
-            .get("subObjectives", [])
-            .map((x) => String(x || "").trim())
-            .filter(Boolean)
-        : [];
-      const design = ctx.get("design", {}) || {};
-      const interventions = ctx.get("interventions", []) || {};
-      const vars = ctx.get("step10Vars", {}) || {};
-      const dataCollection = ctx.get("dataCollection", {}) || {};
+      toggleBusy(gptBtn, true, 'Đang gợi ý...');
+      const pico = ctx.get('pico', {}) || {};
+      const rq   = ctx.get('researchQuestion', '') || '';
+
+      let pdfText = '';
+      const f = pdfEl?.files?.[0];
+      if (f) {
+        try {
+          pdfText = typeof ctx.extractTextFromPDF === 'function'
+            ? await ctx.extractTextFromPDF(f)
+            : await fallbackExtractTextFromPDF(f);
+          if (pdfText.length > 6000) pdfText = pdfText.slice(0, 6000) + '\n...[cắt bớt]';
+        } catch (e) {
+          console.warn('PDF read error:', e);
+          ctx.toast('Không đọc được PDF, sẽ chỉ dùng PICO và câu hỏi.');
+        }
+      }
 
       const today = new Date().toISOString().slice(0, 10);
 
       const prompt = `
-Bạn là chuyên gia thống kê lâm sàng. Hãy đề xuất một **kế hoạch phân tích số liệu (SAP tóm tắt)** cho thử nghiệm dưới đây.
+Bạn là trợ lý xây dựng đề cương RCT. Dựa trên PICO, câu hỏi nghiên cứu và (nếu có) tài liệu PDF,
+hãy đề xuất MỘT mục tiêu chính và 2–5 mục tiêu phụ.
 
-YÊU CẦU CHUNG:
-- Trả lời bằng **văn bản thường (Markdown cũng được), KHÔNG JSON**.
-- Cấu trúc gợi ý (có thể điều chỉnh linh hoạt tuỳ tình huống nhưng nên đầy đủ):
-  1. Nguyên tắc phân tích (ITT/PP, cách xử lý vi phạm protocol)
-  2. Mô tả mẫu & so sánh ban đầu giữa các nhánh
-  3. Phân tích biến kết cục chính
-  4. Phân tích biến kết cục phụ
-  5. Phân tích an toàn
-  6. Xử lý số liệu thiếu
-  7. Phân tích dưới nhóm (nếu cần)
-  8. Phân tích độ nhạy
-  9. Phần mềm & mức ý nghĩa thống kê
-- Chỉ nêu **loại mô hình/phép kiểm** (t-test, chi-square, hồi quy tuyến tính/hồi quy logistic, mô hình hỗn hợp, GEE, v.v.) và khi nào dùng; không cần viết công thức quá nặng.
-- Ưu tiên bám sát chuẩn CONSORT, SPIRIT, ICH-GCP và các guideline phân tích hiện hành, nhưng KHÔNG bịa tài liệu tham khảo.
-- Nếu muốn trích tài liệu tham khảo, chỉ nêu tên guideline/hiệp hội chung chung, không bịa DOI/PMID.
+YÊU CẦU NGHIÊM VỀ NGUỒN:
+- Mọi gợi ý phải phù hợp bằng chứng hiện tại. KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tên bài báo hoặc tác giả.
+- Trả về tối đa 5 tài liệu tham khảo CÓ THẬT (ưu tiên từ PDF đính kèm). Mỗi mục gồm: Tác giả chính, năm, tiêu đề, tạp chí/sách, và DOI/PMID/URL.
+- Nếu không có nguồn phù hợp, đặt: ["Không tìm thấy nguồn phù hợp để trích dẫn."].
 
-NGỮ CẢNH:
-- P: ${pico.p || "(chưa nhập)"}
-- I: ${pico.i || "(chưa nhập)"}
-- C: ${pico.c || "(chưa nhập)"}
-- O: ${pico.o || "(chưa nhập)"}
+CHỈ TRẢ VỀ 1 JSON HỢP LỆ (không kèm giải thích, không \`\`\`json):
+{
+  "main": "…",
+  "subs": ["…","…"],
+  "refs": ["Tác giả… (năm). Tiêu đề. Tạp chí… DOI/PMID/URL", "..."]
+}
 
-- Mục tiêu chính: ${mainObj || "(chưa nhập)"}
-- Mục tiêu phụ:
-${subs.length ? subs.map((s, i) => (i + 1) + ". " + s).join("\n") : "(chưa nhập)"}
+Ngày: ${today}
 
-THIẾT KẾ:
-${jsonSafe(design)}
+PICO:
+P: ${pico.p || '(chưa có)'}
+I: ${pico.i || '(chưa có)'}
+C: ${pico.c || '(chưa có)'}
+O: ${pico.o || '(chưa có)'}
 
-CAN THIỆP:
-${jsonSafe(interventions)}
+Câu hỏi nghiên cứu:
+${rq || '(chưa có)'}
 
-BIẾN (tóm tắt từ Step 10):
-${jsonSafe(vars).slice(0, 2000)}
-
-LỊCH THU THẬP (tóm tắt từ Step 11):
-${jsonSafe(dataCollection).slice(0, 2000)}
-
-Ngày yêu cầu gợi ý: ${today}
+Trích lược tài liệu (nếu có):
+${pdfText || '(không có)'}
 `.trim();
 
-      const raw = await callAI("step12.suggest", prompt, ctx);
-      const text = String(raw || "").trim();
-      targetTa.value =
-        text ||
-        "GPT không trả về nội dung. Hãy thử rút gọn PICO/mục tiêu hoặc kiểm tra lại kết nối GPT.";
-      toast(ctx, "Đã nhận gợi ý kế hoạch phân tích.");
+      const raw = await callAI('step2.suggest', prompt, ctx);
+      const parsed = parseObjectives(raw);
+
+      if (!parsed) {
+        ctx.toast('GPT không trả về gợi ý hợp lệ.');
+        console.warn('GPT raw reply (step2 suggest):', raw);
+      } else {
+        const lines = [];
+        if (parsed.main) lines.push('Mục tiêu chính: ' + parsed.main);
+        (parsed.subs || []).forEach(x => lines.push('- ' + x));
+        if (parsed.refs && parsed.refs.length) {
+          lines.push('', 'TLTK:');
+          parsed.refs.forEach((r, i) => lines.push(`${i + 1}) ${r}`));
+        }
+        sTA.value = lines.join('\n');
+        sWrap.style.display = '';
+        ctx.toast('Đã nhận gợi ý từ GPT.');
+      }
     } catch (e) {
       console.error(e);
-      toast(ctx, "Lỗi khi GPT gợi ý kế hoạch phân tích.");
+      ctx.toast('Lỗi khi gọi GPT.');
     } finally {
-      toggleBusy(btnSuggest, false, "GPT gợi ý kế hoạch");
+      toggleBusy(gptBtn, false, 'GPT gợi ý mục tiêu');
     }
   }
 
   // ================= GPT – đánh giá =================
-
-  async function onEvaluate(ctx, sourceTa, targetTa) {
-    const content = (sourceTa.value || "").trim();
-    if (!content) {
-      toast(ctx, "Chưa có nội dung kế hoạch để đánh giá.");
+  async function onEvaluate() {
+    const main = (mainEl.value || '').trim();
+    const subs = Array.isArray(subObjectives) ? subObjectives : [];
+    if (!main && subs.length === 0) {
+      ctx.toast('Chưa có mục tiêu để đánh giá.');
       return;
     }
 
     try {
-      toggleBusy(btnEval, true, "Đang đánh giá...");
-      const pico = ctx.get("pico", {}) || {};
-      const mainObj = (ctx.get("mainObjective", "") || "").trim();
-      const subs = Array.isArray(ctx.get("subObjectives", []))
-        ? ctx
-            .get("subObjectives", [])
-            .map((x) => String(x || "").trim())
-            .filter(Boolean)
-        : [];
-      const design = ctx.get("design", {}) || {};
+      toggleBusy(evalBtn, true, 'Đang đánh giá...');
+      const pico = ctx.get('pico', {}) || {};
+      const rq   = ctx.get('researchQuestion', '') || '';
 
       const today = new Date().toISOString().slice(0, 10);
 
       const prompt = `
-Bạn là phản biện thống kê của một tạp chí y học lâm sàng. Hãy ĐÁNH GIÁ kế hoạch phân tích số liệu (SAP tóm tắt) sau:
+Bạn là chuyên gia phương pháp RCT. Hãy đánh giá bộ mục tiêu theo **SMART** và **trích dẫn TLTK CÓ THẬT** (nếu có).
 
---- KẾ HOẠCH HIỆN TẠI ---
-${content}
--------------------------
+NGUYÊN TẮC NGUỒN:
+- KHÔNG bịa DOI/PMID/URL, KHÔNG bịa tác giả hay tiêu đề.
+- Chỉ liệt kê tối đa 5 nguồn bạn **chắc chắn ≥90%** là có thật.
+- Nếu không có nguồn phù hợp, ghi chính xác câu: "Không tìm thấy nguồn phù hợp để trích dẫn."
 
-VUI LÒNG:
-1. Nhận xét tổng quan: điểm mạnh, điểm yếu, mức độ rõ ràng, tính phù hợp với thiết kế.
-2. Chỉ ra các phần còn thiếu hoặc cần chi tiết hơn (ví dụ: xử lý số liệu thiếu, kiểm định giả định mô hình, phân tích phụ, v.v.).
-3. Đề xuất các chỉnh sửa cụ thể (có thể liệt kê dạng gạch đầu dòng).
-4. Nếu thấy cần, gợi ý cấu trúc lại thứ tự trình bày cho logic hơn.
+ĐỊNH DẠNG TRẢ LỜI (không JSON):
+SMART
+- Specific: [điểm]/5 — …
+- Measurable: [điểm]/5 — …
+- Achievable: [điểm]/5 — …
+- Relevant: [điểm]/5 — …
+- Time-bound: [điểm]/5 — …
+Kết luận (1–3 câu): …
+TLTK:
+1) … (DOI/PMID/URL)
+2) … (DOI/PMID/URL)
+(hoặc viết: "Không tìm thấy nguồn phù hợp để trích dẫn.")
 
-NGỮ CẢNH:
-- P: ${pico.p || "(chưa nhập)"}
-- I: ${pico.i || "(chưa nhập)"}
-- C: ${pico.c || "(chưa nhập)"}
-- O: ${pico.o || "(chưa nhập)"}
+Mục tiêu chính:
+${main || '(chưa có)'}
 
-- Mục tiêu chính: ${mainObj || "(chưa nhập)"}
-- Mục tiêu phụ:
-${subs.length ? subs.map((s, i) => (i + 1) + ". " + s).join("\n") : "(chưa nhập)"}
+Mục tiêu phụ:
+${subs.length ? subs.map((s,i)=> (i+1)+'. '+s).join('\n') : '(chưa có)'}
 
-- Thiết kế (tóm tắt): ${jsonSafe(design)}
+PICO tham chiếu:
+P: ${pico.p || '(chưa có)'}
+I: ${pico.i || '(chưa có)'}
+C: ${pico.c || '(chưa có)'}
+O: ${pico.o || '(chưa có)'}
 
-ĐỊNH DẠNG TRẢ LỜI:
-- Viết bằng tiếng Việt, văn phong chuyên môn nhưng dễ hiểu.
-- Dạng đoạn văn + gạch đầu dòng, KHÔNG cần JSON.
+Câu hỏi nghiên cứu:
+${rq || '(chưa có)'}
 
 Ngày đánh giá: ${today}
 `.trim();
 
-      const raw = await callAI("step12.evaluate", prompt, ctx);
-      const text = String(raw || "").trim();
-      targetTa.value =
-        text ||
-        "GPT không trả về nội dung đánh giá. Hãy thử rút gọn kế hoạch hoặc kiểm tra lại kết nối.";
-      toast(ctx, "Đã nhận đánh giá kế hoạch phân tích.");
+      const raw = await callAI('step2.evaluate', prompt, ctx);
+      const text = String(raw || '').trim();
+      eTA.value = text;
+      eWrap.style.display = '';
+      ctx.save('objectivesEval', eTA.value);
+      ctx.toast('Đã nhận đánh giá từ GPT.');
     } catch (e) {
       console.error(e);
-      toast(ctx, "Lỗi khi GPT đánh giá kế hoạch phân tích.");
+      ctx.toast('Lỗi khi đánh giá bằng GPT.');
     } finally {
-      toggleBusy(btnEval, false, "GPT đánh giá kế hoạch");
+      toggleBusy(evalBtn, false, 'GPT đánh giá mục tiêu');
     }
   }
 }
 
-// =============== COMMON HELPERS (giống style step10/11) ===============
+// ================= Helpers =================
 
 function toast(ctx, msg) {
   if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
@@ -328,6 +425,7 @@ function toggleBusy(btn, busy, label) {
   }
 }
 
+// Gọi GPT theo binding; fallback callGPT nếu cần
 async function callAI(bindingKey, prompt, ctx) {
   if (typeof ctx.callStepGPT === "function") {
     try {
@@ -342,13 +440,92 @@ async function callAI(bindingKey, prompt, ctx) {
   if (typeof ctx.callGPT === "function") {
     return String(await ctx.callGPT(prompt));
   }
-  throw new Error("Chưa cấu hình GPT cho step12.");
+  throw new Error("Chưa cấu hình GPT cho step2.");
 }
 
-function jsonSafe(obj) {
-  try {
-    return JSON.stringify(obj);
-  } catch {
-    return String(obj || "");
+// Đọc PDF fallback bằng pdf.js nếu ctx chưa cung cấp
+async function fallbackExtractTextFromPDF(file, maxPages = 4) {
+  const pdfjs = globalThis.pdfjsLib || window.pdfjsLib;
+  if (!pdfjs) throw new Error("pdfjsLib chưa được nạp");
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  const n = Math.min(pdf.numPages, maxPages);
+  let out = "";
+  for (let i = 1; i <= n; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    out += content.items.map((it) => it.str).join(" ") + "\n";
   }
+  return out.trim();
+}
+
+// Phân tích JSON gợi ý mục tiêu hoặc fallback text
+function parseObjectives(text) {
+  const s = String(text || "").trim();
+  if (!s) return null;
+
+  const json = extractJsonCandidate(s);
+  if (json) {
+    try {
+      const j = JSON.parse(json);
+      const main = String(j?.main || "").trim();
+      const subs = Array.isArray(j?.subs)
+        ? j.subs.map((x) => String(x || "").trim()).filter(Boolean)
+        : [];
+      const refs = Array.isArray(j?.refs)
+        ? j.refs.map((x) => String(x || "").trim()).filter(Boolean)
+        : [];
+      if (main || subs.length || refs.length) return { main, subs, refs };
+    } catch {
+      // ignore
+    }
+  }
+
+  // Fallback: tách dòng; bỏ khối TLTK
+  const Lraw = s.split(/\r?\n/);
+  const L = [];
+  let inRefs = false;
+  for (const line of Lraw) {
+    const trimmed = line.trim();
+    if (/^(TLTK|Tham\s*khảo)\s*:?\s*$/iu.test(trimmed)) {
+      inRefs = true;
+      continue;
+    }
+    if (!inRefs) L.push(trimmed);
+  }
+  const filtered = L
+    .map((line) => line.replace(/^\s*(?:\d+[.)]|[-*•])\s*/u, "").trim())
+    .filter(Boolean);
+
+  if (filtered.length === 0) return null;
+
+  let main = "";
+  const subs = [];
+  for (const ln of filtered) {
+    const m = ln.match(/^mục\s*tiêu\s*chính\s*:\s*(.+)$/iu);
+    if (m) {
+      main = m[1].trim();
+      continue;
+    }
+    if (!main) main = ln;
+    else subs.push(ln);
+  }
+  return { main, subs, refs: [] };
+}
+
+function extractJsonCandidate(s) {
+  const fenced = s.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) return stripBullets(fenced[1]);
+  const i1 = s.indexOf("{");
+  const i2 = s.lastIndexOf("}");
+  if (i1 >= 0 && i2 > i1) return stripBullets(s.slice(i1, i2 + 1));
+  return "";
+}
+
+function stripBullets(raw) {
+  return raw
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*[-*•]\s?/, ""))
+    .join("\n")
+    .trim();
 }
