@@ -1,18 +1,21 @@
 /* public/css/steps/step15.css */
 /* Scope riêng cho Step 15 – Sơ đồ tiến hành nghiên cứu (1 cột) */
 
-[data-scope="step15"] .flow-context-box{
-  padding:12px 14px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:#f9fafb;
-  font-size:.9rem;
-  line-height:1.5;
+[data-scope="step15"] .flow-context-box {
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--muted-bg, #f7f7f9);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
-[data-scope="step15"] .flow-context-title{
-  font-weight:600;
-  margin-bottom:4px;
+
+[data-scope="step15"] #flow-context {
+  margin: 0;
+  white-space: pre-wrap;
 }
+
 [data-scope="step15"] .flow-context-text{
   white-space:pre-wrap;
 }
