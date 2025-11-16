@@ -73,7 +73,7 @@ export async function mount(rootEl, ctx) {
       <!-- Nút GPT (2 nút cùng kích thước) -->
       <div class="card-body btn-row">
         <button id="dsg-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý mô tả thiết kế</button>
-        <button id="dsg-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá mô tả</button>
+        <button id="dsg-gpt-eval"    class="btn btn-secondary" type="button">GPT đánh giá mô tả</button>
       </div>
 
       <!-- Mô tả do người dùng soạn (ĐƯA LÊN TRƯỚC) -->
