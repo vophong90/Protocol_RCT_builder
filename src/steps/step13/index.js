@@ -19,10 +19,6 @@ export async function mount(rootEl, ctx) {
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Đạo đức nghiên cứu</h3>
-      <div class="card-subtitle">
-        Trình bày phê duyệt HĐĐĐ/IRB, đồng thuận tham gia, đánh giá nguy cơ–lợi ích, bảo mật dữ liệu,
-        báo cáo AE/SAE, giám sát an toàn, đối tượng dễ tổn thương, bồi hoàn/bảo hiểm, đăng ký thử nghiệm và tuân thủ GCP.
-      </div>
     </div>
 
     <div class="card-body">
@@ -36,10 +32,6 @@ export async function mount(rootEl, ctx) {
       <section class="eth-main">
         <label class="form-label" for="ethics-desc">
           <span>Bản thảo phần Đạo đức</span>
-          <span class="muted">
-            Viết dạng văn bản hoàn chỉnh để đưa vào đề cương: phê duyệt HĐĐĐ/IRB, đồng thuận, nguy cơ–lợi ích,
-            bảo mật dữ liệu, AE/SAE, giám sát an toàn, đối tượng dễ tổn thương, đăng ký thử nghiệm, bồi hoàn/bảo hiểm...
-          </span>
         </label>
         <textarea
           id="ethics-desc"
