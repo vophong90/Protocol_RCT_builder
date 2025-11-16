@@ -1,5 +1,5 @@
 /* public/css/steps/step15.css */
-/* Scope riêng cho Step 15 – Sơ đồ tiến hành nghiên cứu */
+/* Scope riêng cho Step 15 – Sơ đồ tiến hành nghiên cứu (1 cột) */
 
 [data-scope="step15"] .flow-context-box{
   padding:12px 14px;
@@ -17,14 +17,13 @@
   white-space:pre-wrap;
 }
 
-/* Cột trong grid-2: chỉ thêm gap dọc, không đụng grid-2 chung */
-[data-scope="step15"] .flow-col{
-  display:grid;
-  gap:14px;
-  align-items:flex-start;
+/* Tiêu đề section nhỏ */
+[data-scope="step15"] .flow-section-title{
+  font-weight:600;
+  margin-top:8px;
 }
 
-/* Nhóm nhánh can thiệp */
+/* Danh sách nhánh can thiệp */
 [data-scope="step15"] .flow-arms-list{
   display:grid;
   gap:10px;
@@ -39,12 +38,6 @@
 }
 [data-scope="step15"] .flow-arm-title{
   font-weight:600;
-}
-
-/* Tiêu đề section nhỏ */
-[data-scope="step15"] .flow-section-title{
-  font-weight:600;
-  margin-top:4px;
 }
 
 /* Khung sơ đồ Mermaid */
