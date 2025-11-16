@@ -5,106 +5,41 @@
   display: none !important;
 }
 
-/* Bố cục cơ bản */
-[data-scope="step12"] .grid-1 {
+/* Các block trong body */
+[data-scope="step12"] .form-section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-/* Mỗi phần A / B */
-[data-scope="step12"] .section {
-  padding-top: 4px;
-  border-top: 1px solid var(--border-subtle, #e5e7eb);
-}
-
-/* Header phần A/B */
-[data-scope="step12"] .section-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-[data-scope="step12"] .section-title {
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-[data-scope="step12"] .section-hint {
-  margin-top: 4px;
-  font-size: 0.9rem;
-}
-
-[data-scope="step12"] .section-actions {
-  display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
+  margin-top: 8px;
 }
 
-/* Thân phần A/B */
-[data-scope="step12"] .section-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Form field */
-[data-scope="step12"] .form-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-[data-scope="step12"] .field-label {
+/* Nhãn + hint */
+[data-scope="step12"] .form-label {
   font-weight: 600;
   color: #111827;
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+[data-scope="step12"] .form-label .muted {
+  font-weight: 400;
+  font-size: 0.9rem;
 }
 
 /* Textarea chính */
 [data-scope="step12"] textarea {
-  min-height: 140px;
+  min-height: 150px;
 }
 
-/* Vùng GPT (suggest/eval) */
-[data-scope="step12"] .gpt-wrap {
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: var(--muted-bg, #f3f4f6);
-  border: 1px dashed var(--border-subtle, #e5e7eb);
-}
-
-[data-scope="step12"] .gpt-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-
-[data-scope="step12"] .gpt-title {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-[data-scope="step12"] .gpt-actions {
+/* Hàng nút GPT giống Step 11: hai nút ngang hàng, tự xuống hàng nếu chật */
+[data-scope="step12"] .btn-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 6px;
 }
 
-[data-scope="step12"] .gpt-textarea {
-  min-height: 120px;
-  font-size: 0.9rem;
-}
-
-/* Nút nhỏ cho GPT */
-[data-scope="step12"] .btn-xs {
-  padding: 0.2rem 0.6rem;
-  font-size: 0.78rem;
-  border-radius: 999px;
-}
+/* Có thể dùng lại .btn, .btn-primary, .btn-secondary, .btn-ghost từ theme chung */
