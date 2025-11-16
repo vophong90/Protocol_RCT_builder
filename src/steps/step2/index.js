@@ -51,7 +51,6 @@ export async function mount(rootEl, ctx) {
     <!-- File + 2 nút GPT -->
     <div class="card-body">
       <label class="obj-file-row">
-        <span class="obj-file-label">Tài liệu tham khảo (PDF, tuỳ chọn)</span>
         <input id="obj-pdf" type="file" accept="application/pdf" />
       </label>
 
