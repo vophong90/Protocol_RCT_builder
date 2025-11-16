@@ -10,7 +10,7 @@
 export const id = 11;
 export const title = "Quy trình thu thập dữ liệu";
 export const subtitle =
-  "Tóm tắt lịch thu thập từ các biến đã khai báo (Step 10) và viết đoạn mô tả quy trình thu thập dữ liệu theo chuẩn RCT.";
+  "Tóm tắt lịch thu thập từ các biến đã khai báo (Bước 11) và viết đoạn mô tả quy trình thu thập dữ liệu theo chuẩn RCT.";
 export const css = "./public/css/steps/step11.css";
 
 export async function mount(rootEl, ctx) {
