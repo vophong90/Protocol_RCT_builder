@@ -1,0 +1,37 @@
+/* public/css/steps/step12.css */
+/* Scope riêng cho Step 12 – không ảnh hưởng step khác */
+
+[data-scope="step12"] .hidden {
+  display: none !important;
+}
+
+/* Lưới chính trong body: ưu tiên 2 cột, tự xuống hàng trên màn nhỏ */
+[data-scope="step12"] .analysis-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px 18px;
+  align-items: flex-start;
+}
+@media (max-width: 900px) {
+  [data-scope="step12"] .analysis-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tiêu đề nhỏ cho từng khối */
+[data-scope="step12"] .section-title {
+  margin: 0 0 4px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Chữ nhỏ cho word-count dưới textarea */
+[data-scope="step12"] .tiny {
+  font-size: 0.78rem;
+}
+
+/* Dòng word-count */
+[data-scope="step12"] .wc-row {
+  margin-top: 4px;
+}
