@@ -300,5 +300,33 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 12 ----------
+  'step12.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Gợi ý kế hoạch phân tích → cần JSON sạch để parse thành { primary, secondary, exploratory }
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step12.suggest',
+        response_format: 'json',
+        require_json: '1',   // ép backend buộc trả JSON hợp lệ
+      }),
+    parse: parseResponsesAPI,   // trả về chuỗi JSON, step12 tự JSON.parse
+  },
+
+  'step12.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // Đánh giá kế hoạch phân tích → text thường (gạch đầu dòng)
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step12.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
   
 };
