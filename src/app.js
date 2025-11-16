@@ -5,9 +5,9 @@ import { ensureCSS } from './utils/css.js';
 import { aiRun } from './services/ai.js';
 
 const TITLES = [
-  "PICO","Câu hỏi nghiên cứu","Mục tiêu","Mở đầu (CaRS)","Tổng quan tài liệu",
-  "Thiết kế nghiên cứu","Cỡ mẫu","Tiêu chí vào/loại","Ngẫu nhiên hoá","Mô tả can thiệp",
-  "Biến số","Thu thập dữ liệu","Phân tích số liệu","Đạo đức nghiên cứu","Kiểm tra logic","Sơ đồ nghiên cứu (Mermaid)"
+  "PICO","Câu hỏi nghiên cứu","Mục tiêu","Mở đầu","Tổng quan tài liệu",
+  "Thiết kế nghiên cứu","Cỡ mẫu","Tiêu chí chọn/loại","Ngẫu nhiên hoá","Mô tả can thiệp",
+  "Biến số","Thu thập dữ liệu","Phân tích số liệu","Đạo đức nghiên cứu","Kiểm tra logic","Sơ đồ nghiên cứu"
 ];
 
 // ---- ctx adapter (giữ y như Bước 2, dùng chung cho mọi step) ----
