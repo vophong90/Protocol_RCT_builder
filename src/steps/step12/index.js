@@ -27,9 +27,6 @@ export async function mount(rootEl, ctx) {
       <section class="form-section">
         <label class="form-label">
           A. Xử lý dữ liệu & đảm bảo chất lượng
-          <span class="muted">
-            Mô tả luồng dữ liệu, nhập liệu, làm sạch dữ liệu, kiểm tra logic, xử lý thiếu số liệu, giám sát, bảo mật...
-          </span>
         </label>
         <textarea
           id="data-main"
@@ -49,10 +46,6 @@ export async function mount(rootEl, ctx) {
       <section class="form-section">
         <label class="form-label">
           B. Kế hoạch phân tích số liệu chi tiết (SAP)
-          <span class="muted">
-            Mô tả quần thể phân tích (ITT/PP/Safety), biến chính/phụ, test thống kê, mô hình, xử lý thiếu số liệu,
-            phân tích độ nhạy, dưới nhóm, kiểm soát đa so sánh...
-          </span>
         </label>
         <textarea
           id="sap-main"
