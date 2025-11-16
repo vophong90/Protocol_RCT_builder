@@ -36,11 +36,10 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <div class="card-body">
-      <div class="flow-context-box">
-        <div class="flow-context-title">Tóm tắt bối cảnh:</div>
-        <div id="flow-context" class="flow-context-text"></div>
-      </div>
+   <div class="muted"><strong>Tóm tắt bối cảnh:</strong></div>
+    <div class="flow-context-box">
+      <div id="flow-context"></div>
+    </div>
 
       <label>
         <span>Tiêu đề sơ đồ (tuỳ chọn)</span>
