@@ -192,39 +192,50 @@ export async function mount(rootEl, ctx) {
   });
 
   pngBtn.addEventListener("click", async () => {
-    if (!html2canvas) {
-      ctx.toast("Thiếu html2canvas.");
-      return;
-    }
-    const wrap = rootEl.querySelector("#flow-diagram-wrap");
-    try {
-      const canvas = await html2canvas(wrap, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      });
-      const url = canvas.toDataURL("image/png");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `study_flow_${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => a.remove(), 0);
-    } catch (e) {
-      console.error(e);
-      ctx.toast("Xuất PNG thất bại.");
-    }
-  });
+  if (!html2canvas) {
+    ctx.toast("Thiếu html2canvas.");
+    return;
+  }
 
-  saveBtn.addEventListener("click", () => {
-    const flow = collectFlow();
-    ctx.save("studyFlow", flow);
-    ctx.save("flowDiagram", {
-      mermaid: (mmEl.value || "").trim(),
-      updated_at: new Date().toISOString(),
+  // 👉 Có thể chụp cả wrap hoặc chỉ riêng diagram
+  const wrap = rootEl.querySelector("#flow-diagram-wrap");
+
+  if (!wrap) {
+    ctx.toast("Không tìm thấy vùng sơ đồ để xuất PNG.");
+    return;
+  }
+
+  try {
+    // Lưu lại style cũ (inline) của khung trước khi chụp
+    const prevMaxH = wrap.style.maxHeight;
+    const prevOverflow = wrap.style.overflow;
+
+    // 👉 Mở rộng khung để html2canvas chụp hết sơ đồ (kể cả phần trước đó phải scroll)
+    wrap.style.maxHeight = "none";
+    wrap.style.overflow = "visible";
+
+    const canvas = await html2canvas(wrap, {
+      useCORS: true,
+      backgroundColor: null,
+      scale: 2, // tăng nếu muốn ảnh nét hơn (3 cũng được, nhưng file sẽ nặng hơn)
     });
-    ctx.toast("Đã lưu sơ đồ tiến hành nghiên cứu.");
-  });
+
+    // Khôi phục lại style cũ cho UI
+    wrap.style.maxHeight = prevMaxH;
+    wrap.style.overflow = prevOverflow;
+
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `study_flow_${Date.now()}.png`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 0);
+  } catch (e) {
+    console.error(e);
+    ctx.toast("Xuất PNG thất bại.");
+  }
+});
 
   // ===== Helper – gom dữ liệu =====
   function collectFlow() {
