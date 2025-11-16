@@ -30,7 +30,7 @@ export async function mount(rootEl, ctx) {
       </div>
       <div class="btn-row" style="margin-top:8px;">
         <button id="rq-gpt"  class="btn btn-primary" type="button">GPT gợi ý câu hỏi</button>
-        <button id="rq-eval" class="btn btn-primary" type="button">GPT đánh giá câu hỏi</button>
+        <button id="rq-eval" class="btn btn-secondary" type="button">GPT đánh giá câu hỏi</button>
       </div>
     </div>
 
