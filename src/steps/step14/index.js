@@ -1,174 +1,138 @@
 // src/steps/step14/index.js
 // Step 14 – Kiểm tra logic tổng thể
-// - Đọc PICO, Câu hỏi, Mục tiêu, Thiết kế/nhánh can thiệp, Biến, Kế hoạch phân tích, Đạo đức
-// - Gửi prompt chuẩn cho GPT qua binding "step14.logic"
-// - Hiển thị kết quả, cho phép lưu / sao chép / xuất JSON
+// - Đọc bối cảnh từ state (PICO, mục tiêu, thiết kế, biến, SAP, Đạo đức)
+// - GPT kiểm tra logic, trả về báo cáo vào textarea
+// - Cho phép lưu + sao chép báo cáo
+//
+// Phụ thuộc state:
+//  - pico, researchQuestion, mainObjective, subObjectives
+//  - design, interventions
+//  - step10Vars, dataCollection, analysisPlan, ethics
 
 export const id = 14;
 export const title = "Kiểm tra logic tổng thể";
 export const subtitle =
-  "Đối chiếu tính nhất quán giữa PICO, câu hỏi, mục tiêu, thiết kế, biến, kế hoạch phân tích và phần đạo đức.";
+  "Đối chiếu tính nhất quán giữa PICO, mục tiêu, thiết kế, biến số, kế hoạch phân tích và phần đạo đức.";
 export const css = "./public/css/steps/step14.css";
 
 export async function mount(rootEl, ctx) {
-  // Scope riêng cho step14
+  // scope CSS riêng step14
   rootEl.closest(".step")?.setAttribute("data-scope", "step14");
 
   rootEl.innerHTML = `
     <div class="card-header">
       <h3 class="card-title">Kiểm tra logic tổng thể</h3>
       <div class="card-subtitle">
-        Đối chiếu tính nhất quán giữa PICO, câu hỏi nghiên cứu, mục tiêu, thiết kế/nhánh can thiệp,
-        biến đã chọn, kế hoạch phân tích và phần đạo đức.
+        Đối chiếu tính nhất quán giữa PICO, câu hỏi, mục tiêu, thiết kế/nhánh can thiệp, biến số, kế hoạch phân tích và phần đạo đức.
       </div>
     </div>
 
-    <div class="card-body lc-layout">
-      <section class="lc-context card-nested">
-        <div class="lc-context-title">
-          <strong>Bối cảnh (tự động tạo từ các bước)</strong>
-        </div>
-        <pre id="logic-context" class="lc-context-pre"></pre>
-      </section>
-
-      <section class="lc-main">
-        <div class="lc-actions">
-          <button id="logic-run"   type="button" class="btn btn-primary">GPT kiểm tra logic</button>
-          <button id="logic-copy"  type="button" class="btn btn-secondary">Sao chép</button>
-          <button id="logic-export" type="button" class="btn btn-secondary">Xuất JSON</button>
-        </div>
-
-        <label class="lc-result">
-          <div class="lc-result-label">
-            <strong>Kết quả kiểm tra logic</strong>
-          </div>
-          <textarea
-            id="logic-fb"
-            rows="18"
-            placeholder="Kết quả GPT sẽ hiển thị ở đây: các mâu thuẫn, thiếu sót và đề xuất chỉnh sửa cụ thể..."></textarea>
-        </label>
-      </section>
+    <div class="card-body">
+      <div class="muted"><strong>Tóm tắt bối cảnh (tự động từ các bước trước):</strong></div>
+      <div class="logic-context-box">
+        <pre id="logic-context"></pre>
+      </div>
     </div>
 
-    <div class="card-footer lc-footer">
-      <button id="logic-save" type="button" class="btn btn-primary">
-        Lưu báo cáo kiểm tra
+    <div class="card-body">
+      <label class="logic-main-label">
+        <div class="logic-main-header">Báo cáo kiểm tra logic</div>
+        <textarea
+          id="logic-fb"
+          rows="18"
+          placeholder="Kết quả GPT sẽ hiển thị ở đây. Bạn có thể chỉnh sửa rồi lưu lại để sử dụng cho đề cương."></textarea>
+      </label>
+    </div>
+
+    <div class="card-footer logic-footer">
+      <button id="logic-run"  type="button" class="btn btn-primary">
+        GPT kiểm tra logic
+      </button>
+      <button id="logic-copy" type="button" class="btn btn-secondary">
+        Sao chép báo cáo
+      </button>
+      <button id="logic-save" type="button" class="btn btn-secondary">
+        Lưu báo cáo
       </button>
     </div>
   `.trim();
 
-  // --------- Lấy dữ liệu bối cảnh từ state / DOM ---------
-  const pico       = ctx.get("pico", {}) || {};
-  const rq         = ctx.get("researchQuestion", "") || "";
-  const objective  = ctx.get("mainObjective", "") || "";
-  const design     = ctx.get("design", {}) || {};
-  const arms       = Array.isArray(ctx.get("interventions", []))
-    ? ctx.get("interventions", [])
+  // ===== Lấy bối cảnh từ state =====
+  const pico           = ctx.get("pico", {}) || {};
+  const rq             = ctx.get("researchQuestion", "") || "";
+  const mainObjective  = (ctx.get("mainObjective", "") || "").trim();
+  const subObjectives  = Array.isArray(ctx.get("subObjectives", []))
+    ? ctx
+        .get("subObjectives", [])
+        .map((x) => String(x || "").trim())
+        .filter(Boolean)
     : [];
 
-  const numArmsLS  =
-    typeof localStorage !== "undefined"
-      ? localStorage.getItem("num-arms") || ""
-      : "";
-  const numArms =
-    arms.length > 0 ? String(arms.length) : numArmsLS || "Không xác định";
+  const design         = ctx.get("design", {}) || {};
+  const interventions  = ctx.get("interventions", []) || [];
 
-  // Biến đã chọn (step 10)
-  const selected = normalizeSelected(ctx.get("selectedVariables", {}));
+  const varsState      = ctx.get("step10Vars", {}) || {};
+  const dataCollection = ctx.get("dataCollection", {}) || {};
+  const analysisPlan   = ctx.get("analysisPlan", {}) || {};
+  const ethics         = (ctx.get("ethics", "") || "").trim();
 
-  // Kế hoạch phân tích (Step 12) – ưu tiên state mới analysisPlan.mainText
-  const analysisPlan = ctx.get("analysisPlan", {}) || {};
-  const analysisDom  =
-    document.getElementById("an-main") ||
-    document.getElementById("analysis-desc");
-  const analysis =
-    (analysisDom?.value ??
-      analysisPlan.mainText ??
-      ctx.get("analysis", "") ??
-      ""
-    ).toString().trim();
+  // ===== DOM refs =====
+  const ctxEl   = rootEl.querySelector("#logic-context");
+  const fbEl    = rootEl.querySelector("#logic-fb");
+  const runBtn  = rootEl.querySelector("#logic-run");
+  const copyBtn = rootEl.querySelector("#logic-copy");
+  const saveBtn = rootEl.querySelector("#logic-save");
 
-  // Đạo đức (Step 13)
-  const ethicsDom = document.getElementById("ethics-desc");
-  const ethics =
-    (ethicsDom?.value ?? ctx.get("ethics", "") ?? "").toString().trim();
-
-  // --------- DOM refs ----------
-  const ctxEl     = rootEl.querySelector("#logic-context");
-  const runBtn    = rootEl.querySelector("#logic-run");
-  const saveBtn   = rootEl.querySelector("#logic-save");
-  const copyBtn   = rootEl.querySelector("#logic-copy");
-  const exportBtn = rootEl.querySelector("#logic-export");
-  const fbEl      = rootEl.querySelector("#logic-fb");
-
-  // Hiển thị bối cảnh tóm tắt
+  // Hiển thị bối cảnh
   ctxEl.textContent = buildContextSummary();
 
   // Nạp báo cáo đã lưu (nếu có)
-  const savedReport = ctx.get("logicCheck", "");
-  if (savedReport) fbEl.value = savedReport;
+  const saved = ctx.get("logicCheck", "");
+  if (saved) fbEl.value = saved;
 
-  // --------- Events ----------
+  // ===== Events =====
   runBtn.addEventListener("click", onRun);
-  saveBtn.addEventListener("click", onSave);
   copyBtn.addEventListener("click", onCopy);
-  exportBtn.addEventListener("click", onExport);
+  saveBtn.addEventListener("click", onSave);
 
-  // =================== Handlers ===================
+  // ===== Handlers =====
   async function onRun() {
-    const prompt = buildPrompt();
     try {
+      const prompt = buildPrompt();
       toggleBusy(runBtn, true, "Đang kiểm tra...");
-      ctx.toast("Đang kiểm tra logic tổng thể...");
-      const res = await callAI("step14.logic", prompt, ctx);
-      const text = (res || "").toString().trim();
+      toast(ctx, "Đang gửi yêu cầu kiểm tra logic tới GPT...");
+
+      const raw = await callAI("step14.check", prompt, ctx);
+      const text = String(raw || "").trim();
+
       fbEl.value =
         text ||
-        "GPT không trả về nội dung. Hãy thử rút gọn bối cảnh hoặc kiểm tra lại cấu hình GPT.";
-      ctx.toast("Đã nhận kết quả kiểm tra logic.");
+        "GPT không trả về nội dung. Hãy thử rút gọn bối cảnh hoặc kiểm tra lại kết nối.";
+      toast(ctx, "Đã nhận báo cáo kiểm tra logic.");
     } catch (e) {
       console.error(e);
-      ctx.toast("Lỗi khi gọi GPT để kiểm tra logic.");
+      toast(ctx, "Lỗi khi GPT kiểm tra logic.");
     } finally {
       toggleBusy(runBtn, false, "GPT kiểm tra logic");
+    }
+  }
+
+  async function onCopy() {
+    try {
+      await navigator.clipboard?.writeText(fbEl.value || "");
+      toast(ctx, "Đã sao chép báo cáo vào clipboard.");
+    } catch {
+      toast(ctx, "Không sao chép được báo cáo.");
     }
   }
 
   function onSave() {
     const text = (fbEl.value || "").trim();
     ctx.save("logicCheck", text);
-    ctx.toast("Đã lưu báo cáo kiểm tra logic.");
+    toast(ctx, "Đã lưu báo cáo kiểm tra logic.");
   }
 
-  async function onCopy() {
-    try {
-      await navigator.clipboard.writeText(fbEl.value || "");
-      ctx.toast("Đã sao chép vào clipboard.");
-    } catch {
-      ctx.toast("Sao chép không thành công.");
-    }
-  }
-
-  function onExport() {
-    const payload = {
-      context: {
-        pico,
-        researchQuestion: rq,
-        mainObjective: objective,
-        design,
-        interventions: arms,
-        numArms,
-        selectedVariables: summarizeSelected(selected),
-        analysis,
-        ethics,
-      },
-      report: (fbEl.value || "").trim(),
-      generated_at: new Date().toISOString(),
-    };
-    ctx.downloadJSON("logic_check_report.json", payload);
-  }
-
-  // =================== Builders ===================
+  // ===== Builders =====
   function buildContextSummary() {
     const lines = [];
 
@@ -180,162 +144,176 @@ export async function mount(rootEl, ctx) {
 
     lines.push("");
     lines.push(`Câu hỏi nghiên cứu: ${rq || "(chưa nhập)"}`);
-    lines.push(`Mục tiêu chính: ${objective || "(chưa nhập)"}`);
+    lines.push(`Mục tiêu chính: ${mainObjective || "(chưa nhập)"}`);
+    if (subObjectives.length) {
+      lines.push(
+        "Mục tiêu phụ:",
+        ...subObjectives.map((s, i) => `  ${i + 1}. ${s}`)
+      );
+    }
 
-    const armStr = arms
-      .map((x, i) => `Nhánh ${i + 1}: ${armName(x)}`)
-      .join(" | ");
-    lines.push(`Thiết kế (tóm tắt): ${jsonSafe(design)}`);
-    lines.push(`Số nhóm can thiệp: ${numArms}`);
-    lines.push(`Can thiệp: ${armStr || "(chưa nhập)"}`);
+    const armsStr = (interventions || [])
+      .map((arm, i) => `- Nhánh ${i + 1}: ${armName(arm)}`)
+      .join("\n");
+    lines.push("");
+    lines.push(`Thiết kế (rút gọn): ${jsonSafe(design)}`);
+    lines.push("Can thiệp:");
+    lines.push(armsStr || "  (chưa nhập)");
 
     lines.push("");
-    lines.push("Biến đã chọn:");
-    const sum = summarizeSelected(selected);
-    Object.entries(sum).forEach(([role, arr]) => {
-      lines.push(`- ${roleLabel(role)} (${arr.length}): ${arr.join(", ") || "—"}`);
+    lines.push("Lịch thu thập (tóm tắt):");
+    const tps = Array.isArray(dataCollection?.timepoints)
+      ? dataCollection.timepoints
+      : [];
+    if (tps.length) {
+      tps.forEach((tp) => {
+        lines.push(
+          `- ${tp.label || "Mốc"}: ngày ${tp.day ?? "?"}`
+        );
+      });
+    } else {
+      lines.push("- (chưa thiết lập)");
+    }
+
+    const sumVars = summarizeVars(varsState);
+    lines.push("");
+    lines.push("Biến quan tâm:");
+    Object.entries(sumVars).forEach(([group, arr]) => {
+      lines.push(
+        `- ${groupLabel(group)} (${arr.length}): ${
+          arr.join(", ") || "—"
+        }`
+      );
     });
 
     lines.push("");
-    lines.push(`Kế hoạch phân tích (rút gọn): ${brief(analysis)}`);
-    lines.push(`Đạo đức (rút gọn): ${brief(ethics)}`);
+    lines.push(
+      `Kế hoạch phân tích (rút gọn): ${
+        brief(analysisPlan.mainText || "", 200)
+      }`
+    );
+    lines.push(`Đạo đức (rút gọn): ${brief(ethics, 200)}`);
+
     return lines.join("\n");
   }
 
   function buildPrompt() {
-    const variableList = Object.entries(selected)
-      .flatMap(([role, arr]) =>
-        arr.map((v) => `${v.name} (${roleLabel(role)})`),
-      )
-      .join(", ");
+    const today = new Date().toISOString().slice(0, 10);
+    const varsSummary = summarizeVars(varsState);
 
     return `
-Bạn là chuyên gia đánh giá đề cương thử nghiệm lâm sàng ngẫu nhiên (RCT). Hãy kiểm tra **tính nhất quán và logic** giữa các phần của đề cương dưới đây.
+Bạn là chuyên gia đánh giá đề cương RCT. Hãy kiểm tra **tính nhất quán và logic tổng thể** của đề cương dưới đây.
 
-THÔNG TIN ĐẦU VÀO
-- P: ${pico.p || ""}
-- I: ${pico.i || ""}
-- C: ${pico.c || ""}
-- O: ${pico.o || ""}
-- Câu hỏi nghiên cứu: ${rq || ""}
-- Mục tiêu nghiên cứu (chính): ${objective || ""}
-- Thiết kế (tóm tắt): ${jsonSafe(design)}
-- Số nhóm can thiệp: ${numArms}
-- Danh sách nhánh: ${
-      arms.length
-        ? arms.map((x, i) => `Nhánh ${i + 1}: ${armName(x)}`).join(" | ")
-        : "(chưa nhập)"
-    }
-- Biến đã chọn: ${variableList || "(chưa chọn biến ở Step 10)"}
+NGỮ CẢNH:
 
-TÓM TẮT NỘI DUNG
-- Kế hoạch phân tích (Step 12, rút gọn):
-${analysis || "(chưa nhập)"}
+1) PICO
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
 
-- Phần đạo đức nghiên cứu (Step 13, rút gọn):
-${ethics || "(chưa nhập)"}
+2) Câu hỏi & mục tiêu
+- Câu hỏi nghiên cứu: ${rq || "(chưa nhập)"}
+- Mục tiêu chính: ${mainObjective || "(chưa nhập)"}
+- Mục tiêu phụ:
+${subObjectives.length ? subObjectives.map((s,i)=>`  ${i+1}. ${s}`).join("\n") : "  (chưa nhập)"}
 
-YÊU CẦU TRẢ LỜI
-1) Liệt kê những điểm **mâu thuẫn hoặc không khớp** giữa:
-   - PICO ↔ Câu hỏi ↔ Mục tiêu
-   - Thiết kế/nhánh can thiệp ↔ Mục tiêu ↔ Biến kết cục
-   - Kế hoạch phân tích ↔ Biến & thiết kế
-   - Phần đạo đức ↔ Thiết kế & can thiệp
-   Mỗi mâu thuẫn nêu rõ: (a) phần liên quan, (b) vì sao chưa hợp lý.
+3) Thiết kế & can thiệp
+- Thiết kế (JSON rút gọn): ${jsonSafe(design)}
+- Các nhánh can thiệp:
+${(interventions || []).map((arm,i)=>`  - Nhánh ${i+1}: ${armName(arm)}`).join("\n") || "  (chưa nhập)"}
 
-2) Chỉ ra những **phần còn thiếu hoặc quá mơ hồ** (ví dụ: xử lý số liệu thiếu, phân tích dưới nhóm, quản lý AE/SAE...).
+4) Biến số (từ Step 10)
+${Object.entries(varsSummary).map(
+  ([g, arr]) => `- ${groupLabel(g)} (${arr.length}): ${arr.join(", ") || "—"}`
+).join("\n") || "(chưa khai báo)"}
 
-3) Đề xuất **các chỉnh sửa cụ thể** (gạch đầu dòng), gợi ý nên sửa ở đâu
-   (PICO, câu hỏi, mục tiêu, thiết kế, biến, kế hoạch phân tích, đạo đức).
+5) Lịch thu thập (từ Step 11, JSON rút gọn)
+${jsonSafe(dataCollection).slice(0, 2000)}
 
-4) Đưa ra **đánh giá tổng thể**:
-   - Mức rủi ro logic: thấp / vừa / cao (giải thích ngắn gọn).
-   - 3 việc quan trọng nhất cần làm ngay (Next actions 1–3).
+6) Kế hoạch phân tích (SAP tóm tắt – Step 12)
+${(analysisPlan.mainText || "").slice(0, 3500) || "(chưa có)"}
 
-Trả lời bằng tiếng Việt, rõ ràng, cấu trúc thành các mục và gạch đầu dòng dễ theo dõi. Không bịa số liệu nghiên cứu.
+7) Phần Đạo đức (Step 13)
+${ethics.slice(0, 3500) || "(chưa có)"}
+
+YÊU CẦU TRẢ LỜI:
+- Viết bằng tiếng Việt, cấu trúc rõ ràng với các mục:
+  1. Nhận xét tổng quan về sự nhất quán giữa PICO – mục tiêu – thiết kế – biến – phân tích – đạo đức.
+  2. Liệt kê CỤ THỂ các mâu thuẫn hoặc thiếu sót (mỗi mục 1–3 câu), ví dụ:
+     • Mục tiêu không bám sát PICO; 
+     • Biến kết cục không phù hợp mục tiêu; 
+     • Thiết kế/nhánh can thiệp không tương thích với phân tích; 
+     • Phần đạo đức bỏ sót điểm quan trọng, v.v.
+  3. Đề xuất chỉnh sửa cụ thể cho từng vấn đề (viết sao cho tác giả có thể sửa trực tiếp vào đề cương).
+  4. Kết luận chung: mức rủi ro logic (thấp/vừa/cao) và 3 hành động ưu tiên cần làm ngay.
+
+- KHÔNG bịa số liệu, KHÔNG thêm thông tin mới ngoài bối cảnh.
+- Không dùng placeholder như [tên bệnh viện] hay [số hiệu quyết định].
+
+Ngày đánh giá: ${today}.
 `.trim();
   }
-}
 
-// =================== Helpers ===================
+  // ===== Helpers =====
+  function summarizeVars(v) {
+    const groups = [
+      "primary",
+      "secondary",
+      "baseline",
+      "confounder",
+      "mediator",
+      "moderator",
+      "safety",
+    ];
+    const out = {};
+    groups.forEach((g) => {
+      const arr = Array.isArray(v?.[g]) ? v[g] : [];
+      out[g] = arr
+        .map((x) => String(x?.name || "").trim())
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "vi"));
+    });
+    return out;
+  }
 
-function normalizeSelected(sel) {
-  const roles = [
-    "primary",
-    "secondary",
-    "baseline",
-    "confounder",
-    "mediator",
-    "moderator",
-    "safety",
-  ];
-  const out = {};
-  roles.forEach((r) => {
-    out[r] = Array.isArray(sel?.[r])
-      ? sel[r]
-          .map((v) => ({ name: String(v?.name || "").trim() }))
-          .filter((x) => x.name)
-      : [];
-  });
-  return out;
-}
+  function groupLabel(g) {
+    switch ((g || "").toLowerCase()) {
+      case "primary": return "Kết cục chính";
+      case "secondary": return "Kết cục phụ";
+      case "baseline": return "Biến nền";
+      case "confounder": return "Nhiễu";
+      case "mediator": return "Trung gian";
+      case "moderator": return "Điều biến";
+      case "safety": return "An toàn";
+      default: return g;
+    }
+  }
 
-function summarizeSelected(sel) {
-  const obj = {};
-  Object.keys(sel).forEach((k) => {
-    obj[k] = (sel[k] || []).map((v) => v.name).sort(alpha);
-  });
-  return obj;
-}
+  function armName(x) {
+    if (typeof x === "string") return x;
+    const n = x?.name || x?.label || "";
+    return String(n || "").trim() || "Arm";
+  }
 
-function roleLabel(g) {
-  switch ((g || "").toLowerCase()) {
-    case "primary":
-      return "Kết cục chính";
-    case "secondary":
-      return "Kết cục phụ";
-    case "baseline":
-      return "Biến nền";
-    case "confounder":
-      return "Nhiễu";
-    case "mediator":
-      return "Trung gian";
-    case "moderator":
-      return "Điều biến";
-    case "safety":
-      return "An toàn";
-    default:
-      return g;
+  function brief(s, n = 200) {
+    const t = String(s || "").replace(/\s+/g, " ").trim();
+    return t.length > n ? t.slice(0, n) + "…" : t || "—";
+  }
+
+  function jsonSafe(obj) {
+    try {
+      return JSON.stringify(obj);
+    } catch {
+      return String(obj || "");
+    }
   }
 }
 
-function armName(x) {
-  if (typeof x === "string") return x;
-  const n = x?.name || x?.label || "";
-  return String(n || "").trim() || "Arm";
-}
-
-function alpha(a, b) {
-  a = (typeof a === "object" ? a?.name : a) ?? "";
-  b = (typeof b === "object" ? b?.name : b) ?? "";
-  a = a.toString().toLowerCase();
-  b = b.toString().toLowerCase();
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
-}
-
-function brief(s, n = 200) {
-  const t = (s || "").replace(/\s+/g, " ").trim();
-  return t.length > n ? t.slice(0, n) + "…" : t || "—";
-}
-
-function jsonSafe(obj) {
-  try {
-    return JSON.stringify(obj);
-  } catch {
-    return String(obj || "");
-  }
+// ==== COMMON UTILS (giống các step khác) ====
+function toast(ctx, msg) {
+  if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
+  else console.log("[toast]", msg);
 }
 
 function toggleBusy(btn, busy, label) {
@@ -350,7 +328,6 @@ function toggleBusy(btn, busy, label) {
   }
 }
 
-// Gọi GPT qua binding; fallback callGPT nếu chưa cấu hình binding
 async function callAI(bindingKey, prompt, ctx) {
   if (typeof ctx.callStepGPT === "function") {
     try {
