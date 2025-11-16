@@ -1,133 +1,74 @@
 /* public/css/steps/step15.css */
 /* Scope riêng cho Step 15 – Sơ đồ tiến hành nghiên cứu */
 
-[data-scope="step15"] .flow-body {
-  display: grid;
-  gap: 16px;
+[data-scope="step15"] .flow-context-box{
+  padding:12px 14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#f9fafb;
+  font-size:.9rem;
+  line-height:1.5;
+}
+[data-scope="step15"] .flow-context-title{
+  font-weight:600;
+  margin-bottom:4px;
+}
+[data-scope="step15"] .flow-context-text{
+  white-space:pre-wrap;
 }
 
-/* Khung tóm tắt bối cảnh */
-[data-scope="step15"] .flow-context-box {
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-size: 0.9rem;
-  line-height: 1.5;
+/* Cột trong grid-2: chỉ thêm gap dọc, không đụng grid-2 chung */
+[data-scope="step15"] .flow-col{
+  display:grid;
+  gap:14px;
+  align-items:flex-start;
 }
 
-[data-scope="step15"] .flow-context-title {
-  font-weight: 600;
-  margin-bottom: 4px;
+/* Nhóm nhánh can thiệp */
+[data-scope="step15"] .flow-arms-list{
+  display:grid;
+  gap:10px;
+}
+[data-scope="step15"] .flow-arm-block{
+  border-radius:10px;
+  border:1px dashed var(--border);
+  background:#f9fafb;
+  padding:10px 12px;
+  display:grid;
+  gap:6px;
+}
+[data-scope="step15"] .flow-arm-title{
+  font-weight:600;
 }
 
-[data-scope="step15"] .flow-context-text {
-  white-space: pre-wrap;
+/* Tiêu đề section nhỏ */
+[data-scope="step15"] .flow-section-title{
+  font-weight:600;
+  margin-top:4px;
 }
 
-/* Hai cột chính */
-[data-scope="step15"] .flow-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.5fr);
-  gap: 16px;
-  align-items: flex-start;
+/* Khung sơ đồ Mermaid */
+[data-scope="step15"] .flow-diagram-wrap{
+  margin-top:8px;
+  border-radius:12px;
+  border:1px dashed var(--border);
+  padding:12px;
+  background:#f9fafb;
+  max-height:420px;
+  overflow:auto;
+}
+[data-scope="step15"] .flow-diagram-placeholder{
+  min-height:180px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  font-size:.9rem;
+  color:var(--muted);
 }
 
-@media (max-width: 900px) {
-  [data-scope="step15"] .flow-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Panel trái/phải */
-[data-scope="step15"] .flow-panel {
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  padding: 12px 14px;
-  display: grid;
-  gap: 10px;
-}
-
-/* Field chung */
-[data-scope="step15"] .flow-field {
-  display: grid;
-  gap: 4px;
-  font-size: 0.9rem;
-}
-
-[data-scope="step15"] .flow-label {
-  font-weight: 600;
-}
-
-[data-scope="step15"] input,
-[data-scope="step15"] textarea {
-  width: 100%;
-}
-
-/* Nhóm nhánh */
-[data-scope="step15"] .flow-arms-list {
-  display: grid;
-  gap: 10px;
-}
-
-[data-scope="step15"] .flow-arm-block {
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 10px 12px;
-  display: grid;
-  gap: 6px;
-}
-
-[data-scope="step15"] .flow-arm-title {
-  font-weight: 600;
-}
-
-/* Toolbar nút trên Mermaid */
-[data-scope="step15"] .flow-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-/* Section title */
-[data-scope="step15"] .flow-section-title {
-  font-weight: 600;
-  margin-top: 4px;
-  margin-bottom: 4px;
-}
-
-/* Mermaid textarea + khung sơ đồ */
-[data-scope="step15"] #flow-mm {
-  min-height: 150px;
-  resize: vertical;
-}
-
-[data-scope="step15"] .flow-diagram-wrap {
-  margin-top: 10px;
-  border-radius: 12px;
-  border: 1px dashed #d1d5db;
-  padding: 12px;
-  background: #f9fafb;
-  max-height: 420px;
-  overflow: auto;
-}
-
-[data-scope="step15"] .flow-diagram-placeholder {
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #6b7280;
-  font-size: 0.9rem;
-  text-align: center;
-}
-
-/* Lỗi render mermaid */
-[data-scope="step15"] .flow-error {
-  color: #b91c1c;
-  font-size: 0.9rem;
+/* Thông báo lỗi render */
+[data-scope="step15"] .flow-error{
+  color:#b91c1c;
+  font-size:.9rem;
 }
