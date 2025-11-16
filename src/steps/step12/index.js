@@ -1,4 +1,4 @@
-// src/steps/step12_sap.js
+// src/steps/step12/index.js
 // Step 12 – Xử lý dữ liệu & Kế hoạch phân tích (SAP)
 // Cần ctx: get/save/toast, callStepGPT(bindingKey, prompt)
 
@@ -36,10 +36,10 @@ export async function mount(rootEl, ctx) {
           placeholder="Ví dụ: Dữ liệu nghiên cứu sẽ được ghi nhận trên CRF điện tử, sau đó được nhập vào hệ thống ..."></textarea>
 
         <div class="btn-row">
-          <button type="button" class="btn btn-secondary" id="btn-data-suggest">
+          <button type="button" class="btn btn-primary" id="btn-data-suggest">
             GPT gợi ý mô tả A
           </button>
-          <button type="button" class="btn btn-ghost" id="btn-data-eval">
+          <button type="button" class="btn btn-secondary" id="btn-data-eval">
             GPT đánh giá mô tả A
           </button>
         </div>
@@ -59,10 +59,10 @@ export async function mount(rootEl, ctx) {
           placeholder="Ví dụ: Phân tích chính được thực hiện theo nguyên tắc ITT. Biến kết cục chính là..., so sánh bằng..."></textarea>
 
         <div class="btn-row">
-          <button type="button" class="btn btn-secondary" id="btn-sap-suggest">
+          <button type="button" class="btn btn-primary" id="btn-sap-suggest">
             GPT gợi ý mô tả B
           </button>
-          <button type="button" class="btn btn-ghost" id="btn-sap-eval">
+          <button type="button" class="btn btn-secondary" id="btn-sap-eval">
             GPT đánh giá mô tả B
           </button>
         </div>
@@ -72,7 +72,7 @@ export async function mount(rootEl, ctx) {
 
     <div class="card-footer">
       <button type="button" class="btn btn-primary" id="step12-save">
-        Lưu nội dung Step 12
+        Lưu mô tả
       </button>
     </div>
   `.trim();
