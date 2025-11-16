@@ -355,5 +355,32 @@ export const aiBindings = {
     parse: parseResponsesAPI,
   },
 
+    // ---------- STEP 13 ----------
+  'step13.suggest': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // GPT viết phần Đạo đức hoàn chỉnh → text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step13.suggest',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
+  'step13.evaluate': {
+    endpoint: ENDPOINT,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    // GPT phản biện/đánh giá phần Đạo đức → text thường
+    bodyBuilder: (prompt) =>
+      buildJsonBody(prompt, {
+        step: 'step13.evaluate',
+        response_format: 'text',
+      }),
+    parse: parseResponsesAPI,
+  },
+
   
 };
