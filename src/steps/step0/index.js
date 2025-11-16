@@ -1,4 +1,4 @@
-ond// src/steps/step0/index.js
+// src/steps/step0/index.js
 // Step 0 – PICO (module hoá, per-step GPT binding)
 
 export const id = 0;
@@ -41,7 +41,7 @@ export async function mount(rootEl, ctx) {
       </div>
       <div class="btn-row" style="margin-top:8px;">
         <button id="pico-gpt-suggest" class="btn btn-primary" type="button">GPT gợi ý PICO</button>
-        <button id="pico-gpt-eval"    class="btn btn-primary" type="button">GPT đánh giá PICO</button>
+        <button id="pico-gpt-eval"    class="btn btn-secondary" type="button">GPT đánh giá PICO</button>
       </div>
     </div>
 
