@@ -1,310 +1,478 @@
-// src/steps/step12_analysis.js
-// Step 12 – Kế hoạch phân tích số liệu
-// - Sử dụng thông tin từ PICO, mục tiêu, thiết kế, biến và lịch thu thập
-// - GPT gợi ý kế hoạch phân tích (giống một SAP rút gọn)
-// - GPT đánh giá kế hoạch hiện tại
-// - Lưu state vào 'analysisPlan' và cho phép xuất JSON
+// src/steps/step12/index.js
+// Step 12 – Xử lý dữ liệu & Kế hoạch phân tích số liệu chi tiết (SAP)
+// Cần ctx: get/save/toast, callStepGPT(bindingKey, prompt)
 
-export async function mount(root, ctx) {
-  // Gán scope để CSS step12 không ảnh hưởng step khác
-  root.closest('.step')?.setAttribute('data-scope', 'step12');
+export const id = 12;
+export const title = "Xử lý dữ liệu & Kế hoạch phân tích (SAP)";
+export const subtitle =
+  "Mô tả quy trình xử lý dữ liệu, đảm bảo chất lượng và kế hoạch phân tích số liệu chi tiết theo SAP.";
+export const css = "./public/css/steps/step12.css";
 
-  root.innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <h3 class="card-title">Kế hoạch phân tích số liệu</h3>
-        <div class="card-subtitle">
-          Phác thảo <strong>kế hoạch phân tích</strong> cho kết cục chính, kết cục phụ, an toàn và phân tích thăm dò.
-          Đây là bản SAP rút gọn, bám sát PICO, mục tiêu, thiết kế và lịch thu thập dữ liệu.
-        </div>
+export async function mount(rootEl, ctx) {
+  // Scope CSS riêng cho step12
+  rootEl.closest(".step")?.setAttribute("data-scope", "step12");
+
+  // ===== Layout chính =====
+  rootEl.innerHTML = `
+    <div class="card-header">
+      <h3 class="card-title">Xử lý dữ liệu & Kế hoạch phân tích (SAP)</h3>
+      <div class="card-subtitle">
+        Hoàn thiện hai tiểu mục quan trọng trong đề cương / SAP: (1) Xử lý dữ liệu & đảm bảo chất lượng,
+        (2) Kế hoạch phân tích số liệu chi tiết.
       </div>
+    </div>
 
-      <div class="card-body">
-        <div class="muted small">
-          Gợi ý: mô tả rõ <em>kết cục chính</em>, mô hình thống kê sử dụng, xử lý mất mẫu, phân tích nhạy cảm...
-        </div>
+    <div class="card-body grid-1">
 
-        <div class="grid-2 analysis-grid">
+      <!-- A. Data handling & quality -->
+      <div class="section-card">
+        <div class="section-header">
           <div>
-            <h4 class="section-title">1. Phân tích cho kết cục chính</h4>
-            <p class="muted small">
-              Mô tả biến kết cục chính, mô hình (ví dụ: t-test, ANCOVA, mixed model), covariates điều chỉnh,
-              cách kiểm định giả thuyết, xử lý mất mẫu (LOCF, multiple imputation...), mức ý nghĩa, CI...
-            </p>
-            <textarea id="analysis-primary" rows="8" placeholder="Ví dụ: So sánh thay đổi trung bình VAS giữa các nhóm bằng mô hình ANCOVA, điều chỉnh giá trị baseline, tuổi, giới..."></textarea>
-            <div id="wc-primary" class="muted tiny wc-row">0 từ</div>
+            <div class="section-title">A. Xử lý dữ liệu & đảm bảo chất lượng</div>
+            <div class="section-hint muted">
+              Mô tả luồng dữ liệu từ CRF/phiếu thu thập vào CSDL, quy trình nhập liệu, kiểm tra logic,
+              xử lý dữ liệu thiếu/sai, kiểm tra chất lượng, giám sát, khóa CSDL (database lock)...
+            </div>
+          </div>
+          <div class="section-actions">
+            <button type="button" class="btn btn-secondary" id="btn-data-suggest">
+              GPT gợi ý đoạn mô tả
+            </button>
+            <button type="button" class="btn btn-ghost" id="btn-data-eval">
+              GPT đánh giá & góp ý
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-1 section-body">
+          <div class="form-field">
+            <label class="field-label">
+              Đoạn mô tả của bạn
+              <span class="muted">
+                (sẽ lưu vào mục “Xử lý dữ liệu & đảm bảo chất lượng” trong SAP)
+              </span>
+            </label>
+            <textarea id="data-text" placeholder="Ví dụ: Dữ liệu nghiên cứu sẽ được ghi nhận trên CRF điện tử..."></textarea>
           </div>
 
+          <div class="form-field">
+            <label class="field-label inline-row">
+              Gợi ý từ GPT
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-data-copy-suggest">
+                Sao chép vào clipboard
+              </button>
+            </label>
+            <textarea
+              id="data-suggest"
+              class="feedback-area"
+              placeholder="Kết quả GPT gợi ý sẽ xuất hiện ở đây. Bạn chủ động chỉnh sửa và chép sang đoạn mô tả chính."></textarea>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label inline-row">
+              Đánh giá / góp ý của GPT
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-data-copy-eval">
+                Sao chép vào clipboard
+              </button>
+            </label>
+            <textarea
+              id="data-eval"
+              class="feedback-area"
+              placeholder="Đánh giá của GPT về tính đầy đủ, rõ ràng, bám sát hướng dẫn chuẩn cho phần xử lý dữ liệu."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- B. Detailed SAP -->
+      <div class="section-card">
+        <div class="section-header">
           <div>
-            <h4 class="section-title">2. Kết cục phụ và phân tích an toàn</h4>
-            <p class="muted small">
-              Liệt kê kết cục phụ, chỉ định phương pháp phân tích cho từng loại biến (liên tục, tỷ lệ, thời gian đến biến cố),
-              cách hiệu chỉnh đa so sánh (nếu có), cách mô tả và so sánh các biến an toàn (AE/SAE, xét nghiệm...).
-            </p>
-            <textarea id="analysis-secondary" rows="8" placeholder="Ví dụ: Kết cục phụ phân tích mô tả & so sánh bằng chi-square, logistic regression; biến an toàn mô tả tần suất và tỷ lệ giữa các nhóm..."></textarea>
-            <div id="wc-secondary" class="muted tiny wc-row">0 từ</div>
+            <div class="section-title">B. Kế hoạch phân tích số liệu chi tiết (SAP)</div>
+            <div class="section-hint muted">
+              Mô tả chi tiết quần thể phân tích (ITT/PP/Safety), bộ biến chính/phụ, test thống kê, mô hình,
+              xử lý thiếu số liệu, phân tích độ nhạy, phân tích dưới nhóm, kiểm soát đa so sánh... theo chuẩn SAP.
+            </div>
           </div>
-
-          <div class="full-span">
-            <h4 class="section-title">3. Phân tích thăm dò / phân tích thêm</h4>
-            <p class="muted small">
-              Nêu các phân tích thăm dò (subgroup, exploratory), phân tích trung gian/mô hình cấu trúc nếu có,
-              và cách trình bày để tránh diễn giải quá mức.
-            </p>
-            <textarea id="analysis-exploratory" rows="5" placeholder="Ví dụ: Phân tích thăm dò theo nhóm tuổi & giới, mô hình tương tác nhóm*thời gian; phân tích trung gian nếu phù hợp..."></textarea>
-            <div id="wc-exploratory" class="muted tiny wc-row">0 từ</div>
+          <div class="section-actions">
+            <button type="button" class="btn btn-secondary" id="btn-ana-suggest">
+              GPT gợi ý SAP chi tiết
+            </button>
+            <button type="button" class="btn btn-ghost" id="btn-ana-eval">
+              GPT đánh giá SAP
+            </button>
           </div>
         </div>
 
-        <div class="btn-row">
-          <button id="btn-gpt-suggest" class="btn btn-secondary">
-            GPT gợi ý kế hoạch phân tích
-          </button>
-          <button id="btn-gpt-eval" class="btn btn-secondary">
-            GPT đánh giá kế hoạch hiện tại
-          </button>
-        </div>
+        <div class="grid-1 section-body">
+          <div class="form-field">
+            <label class="field-label">
+              Bản thảo kế hoạch phân tích số liệu (SAP)
+              <span class="muted">
+                Nên trình bày theo tiểu mục: quần thể phân tích, biến, phương pháp mô tả, so sánh chính/phụ,
+                mô hình điều chỉnh, kiểm soát sai số loại I, phân tích độ nhạy, phân tích dưới nhóm...
+              </span>
+            </label>
+            <textarea
+              id="ana-text"
+              placeholder="Ví dụ: Phân tích chính sẽ được thực hiện theo nguyên tắc ITT. Biến kết cục chính là..."></textarea>
+          </div>
 
-        <div class="muted small">
-          Lưu ý: Kế hoạch GPT gợi ý chỉ mang tính tham khảo, bạn cần hiệu chỉnh để phù hợp thực tế nghiên cứu
-          và tham khảo thêm ý kiến chuyên gia thống kê.
+          <div class="form-field">
+            <label class="field-label inline-row">
+              Gợi ý SAP từ GPT
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-ana-copy-suggest">
+                Sao chép vào clipboard
+              </button>
+            </label>
+            <textarea
+              id="ana-suggest"
+              class="feedback-area"
+              placeholder="Kết quả GPT gợi ý SAP chi tiết (có thể ở dạng đề cương các tiểu mục hoặc đoạn văn hoàn chỉnh)."></textarea>
+          </div>
+
+          <div class="form-field">
+            <label class="field-label inline-row">
+              Đánh giá / góp ý của GPT cho SAP
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-ana-copy-eval">
+                Sao chép vào clipboard
+              </button>
+            </label>
+            <textarea
+              id="ana-eval"
+              class="feedback-area"
+              placeholder="Nhận xét về mức độ đầy đủ, tính phù hợp với mục tiêu & thiết kế, gợi ý chỉnh sửa, bổ sung."></textarea>
+          </div>
         </div>
       </div>
 
-      <div class="card-footer">
-        <button id="btn-save" class="btn btn-primary">Lưu</button>
-        <button id="btn-export" class="btn btn-secondary">Xuất JSON</button>
-      </div>
+    </div>
+
+    <div class="card-footer">
+      <button type="button" class="btn btn-primary" id="step12-save">
+        Lưu nội dung Step 12
+      </button>
     </div>
   `.trim();
 
-  // ========= DOM =========
-  const primaryEl     = root.querySelector('#analysis-primary');
-  const secondaryEl   = root.querySelector('#analysis-secondary');
-  const exploratoryEl = root.querySelector('#analysis-exploratory');
+  // ===== DOM refs =====
+  const dataTextEl = rootEl.querySelector("#data-text");
+  const dataSuggestEl = rootEl.querySelector("#data-suggest");
+  const dataEvalEl = rootEl.querySelector("#data-eval");
 
-  const wcPrimaryEl   = root.querySelector('#wc-primary');
-  const wcSecondaryEl = root.querySelector('#wc-secondary');
-  const wcExplEl      = root.querySelector('#wc-exploratory');
+  const anaTextEl = rootEl.querySelector("#ana-text");
+  const anaSuggestEl = rootEl.querySelector("#ana-suggest");
+  const anaEvalEl = rootEl.querySelector("#ana-eval");
 
-  const saveBtn       = root.querySelector('#btn-save');
-  const exportBtn     = root.querySelector('#btn-export');
-  const suggestBtn    = root.querySelector('#btn-gpt-suggest');
-  const evalBtn       = root.querySelector('#btn-gpt-eval');
+  const btnDataSuggest = rootEl.querySelector("#btn-data-suggest");
+  const btnDataEval = rootEl.querySelector("#btn-data-eval");
+  const btnDataCopySuggest = rootEl.querySelector("#btn-data-copy-suggest");
+  const btnDataCopyEval = rootEl.querySelector("#btn-data-copy-eval");
 
-  // ========= State init =========
-  let plan = normalizePlan(ctx.get('analysisPlan', {}));
-  primaryEl.value     = plan.primary;
-  secondaryEl.value   = plan.secondary;
-  exploratoryEl.value = plan.exploratory;
-  updateWordCounts();
+  const btnAnaSuggest = rootEl.querySelector("#btn-ana-suggest");
+  const btnAnaEval = rootEl.querySelector("#btn-ana-eval");
+  const btnAnaCopySuggest = rootEl.querySelector("#btn-ana-copy-suggest");
+  const btnAnaCopyEval = rootEl.querySelector("#btn-ana-copy-eval");
 
-  // ========= Events =========
-  primaryEl.addEventListener('input', onChange);
-  secondaryEl.addEventListener('input', onChange);
-  exploratoryEl.addEventListener('input', onChange);
+  const btnSave = rootEl.querySelector("#step12-save");
 
-  saveBtn.addEventListener('click', onSave);
-  exportBtn.addEventListener('click', onExport);
-  suggestBtn.addEventListener('click', onSuggest);
-  evalBtn.addEventListener('click', onEvaluate);
+  // ===== Load state =====
+  dataTextEl.value = String(ctx.get("step12DataHandling", "") || "");
+  anaTextEl.value = String(ctx.get("step12AnalysisPlan", "") || "");
 
-  function onChange() {
-    plan = getCurrentPlan();
-    updateWordCounts();
-  }
+  // ===== Events: Save =====
+  btnSave.addEventListener("click", () => {
+    ctx.save("step12DataHandling", dataTextEl.value || "");
+    ctx.save("step12AnalysisPlan", anaTextEl.value || "");
+    ctx.toast("Đã lưu nội dung Step 12 (Xử lý dữ liệu & Kế hoạch phân tích).");
+  });
 
-  function getCurrentPlan() {
-    return {
-      primary: (primaryEl.value || '').trim(),
-      secondary: (secondaryEl.value || '').trim(),
-      exploratory: (exploratoryEl.value || '').trim(),
-    };
-  }
+  // ===== GPT: A. Data handling & quality =====
+  btnDataSuggest.addEventListener("click", () =>
+    suggestDataHandling(ctx, dataSuggestEl)
+  );
+  btnDataEval.addEventListener("click", () =>
+    evalDataHandling(ctx, dataTextEl.value || "", dataEvalEl)
+  );
+  btnDataCopySuggest.addEventListener("click", () =>
+    copyText(dataSuggestEl.value || "", ctx)
+  );
+  btnDataCopyEval.addEventListener("click", () =>
+    copyText(dataEvalEl.value || "", ctx)
+  );
 
-  function updateWordCounts() {
-    wcPrimaryEl.textContent   = wordCountLabel(primaryEl.value);
-    wcSecondaryEl.textContent = wordCountLabel(secondaryEl.value);
-    wcExplEl.textContent      = wordCountLabel(exploratoryEl.value);
-  }
-
-  function wordCountLabel(text) {
-    const n = (text || '')
-      .split(/\s+/)
-      .filter(Boolean).length;
-    return `${n} từ`;
-  }
-
-  // ===== Save / Export =====
-  function onSave() {
-    plan = getCurrentPlan();
-    ctx.save('analysisPlan', plan);
-    ctx.toast('Đã lưu kế hoạch phân tích.');
-  }
-
-  function onExport() {
-    plan = getCurrentPlan();
-    ctx.downloadJSON('analysis_plan.json', plan);
-  }
-
-  // ===== GPT suggest =====
-  async function onSuggest() {
-    const pico          = ctx.get('pico', {}) || {};
-    const objective     = ctx.get('mainObjective', '') || '';
-    const design        = ctx.get('design', {}) || {};
-    const interventions = ctx.get('interventions', []) || [];
-    const vars          = ctx.get('selectedVariables', {}) || {};
-    const dataColl      = ctx.get('dataCollection', {}) || {};
-    const sampleSize    = ctx.get('sampleSize', {}) || {};
-
-    const prompt = `
-Bạn là chuyên gia thống kê lâm sàng, hãy đề xuất **kế hoạch phân tích số liệu** cho một thử nghiệm lâm sàng ngẫu nhiên có đối chứng.
-
-Yêu cầu:
-- Viết bằng tiếng Việt, văn phong học thuật, súc tích nhưng đủ chi tiết để đưa vào mục "Phân tích số liệu" của đề cương.
-- Trình bày theo ba phần:
-  1) Phân tích kết cục chính
-  2) Phân tích kết cục phụ và an toàn
-  3) Phân tích thăm dò / phân tích thêm
-- Cần nêu rõ:
-  - Biến kết cục chính, loại biến, mô hình thống kê dự kiến
-  - Covariates điều chỉnh, chiến lược xử lý mất mẫu
-  - Cách hiệu chỉnh đa so sánh (nếu dùng), mức ý nghĩa, khoảng tin cậy
-  - Cách phân tích và trình bày biến an toàn
-- Trả về **JSON đúng định dạng** (không thêm khóa khác, không thêm chú thích ngoài JSON):
-
-{
-  "primary": "Nội dung phân tích kết cục chính...",
-  "secondary": "Nội dung phân tích kết cục phụ và an toàn...",
-  "exploratory": "Nội dung phân tích thăm dò..."
+  // ===== GPT: B. SAP =====
+  btnAnaSuggest.addEventListener("click", () =>
+    suggestAnalysisPlan(ctx, anaSuggestEl)
+  );
+  btnAnaEval.addEventListener("click", () =>
+    evalAnalysisPlan(ctx, anaTextEl.value || "", anaEvalEl)
+  );
+  btnAnaCopySuggest.addEventListener("click", () =>
+    copyText(anaSuggestEl.value || "", ctx)
+  );
+  btnAnaCopyEval.addEventListener("click", () =>
+    copyText(anaEvalEl.value || "", ctx)
+  );
 }
 
-Bối cảnh nghiên cứu:
+/* ==================== GPT helpers ==================== */
 
-PICO:
-- P: ${pico.p || ''}
-- I: ${pico.i || ''}
-- C: ${pico.c || ''}
-- O: ${pico.o || ''}
+async function suggestDataHandling(ctx, outEl) {
+  try {
+    toggleBusyButton(ctx, "Đang gợi ý phần xử lý dữ liệu...");
 
-Mục tiêu chính:
-${objective || '[chưa khai báo]'}
-
-Thiết kế:
-${jsonSafe(design)}
-
-Can thiệp:
-${jsonSafe(interventions)}
-
-Cỡ mẫu (nếu có):
-${jsonSafe(sampleSize)}
-
-Danh mục biến theo nhóm:
-${JSON.stringify(vars, null, 2).slice(0, 2500)}
-
-Kế hoạch thu thập dữ liệu (rút gọn):
-${JSON.stringify(dataColl, null, 2).slice(0, 2500)}
-`.trim();
-
-    ctx.toast('Đang gợi ý kế hoạch phân tích từ GPT...');
-    const raw = await ctx.callGPT(prompt);
-    const j = safeParse(raw);
-    if (!j || typeof j.primary !== 'string') {
-      ctx.toast('GPT không trả về JSON hợp lệ. Vui lòng chỉnh prompt hoặc thử lại.');
-      return;
-    }
-
-    plan = normalizePlan(j);
-    primaryEl.value     = plan.primary;
-    secondaryEl.value   = plan.secondary;
-    exploratoryEl.value = plan.exploratory;
-    updateWordCounts();
-    ctx.toast('Đã chèn gợi ý kế hoạch phân tích. Hãy rà soát và chỉnh sửa cho phù hợp.');
-  }
-
-  // ===== GPT evaluate =====
-  async function onEvaluate() {
-    const pico          = ctx.get('pico', {}) || {};
-    const objective     = ctx.get('mainObjective', '') || '';
-    const design        = ctx.get('design', {}) || {};
-    const interventions = ctx.get('interventions', []) || {};
-    const vars          = ctx.get('selectedVariables', {}) || {};
-    const dataColl      = ctx.get('dataCollection', {}) || {};
-    plan = getCurrentPlan();
-
-    const payload = {
-      analysisPlan: plan,
-      pico,
-      objective,
-      design,
-      interventions,
-      variables: vars,
-      dataCollection: dataColl,
-    };
+    const pico = ctx.get("pico", {}) || {};
+    const design = ctx.get("design", {}) || {};
+    const dataCollection = ctx.get("step11Plan", ctx.get("dataCollection", {})) || {};
 
     const prompt = `
-Bạn là phản biện thống kê cho một đề cương RCT. Hãy **đánh giá kế hoạch phân tích số liệu** dưới đây.
+Bạn là biostatistician và data manager tham gia xây dựng SAP cho một RCT.
 
-Nội dung cần đánh giá:
-- Tính rõ ràng và phù hợp của phân tích kết cục chính (mô hình, giả định, covariates, mất mẫu...)
-- Độ đầy đủ của phân tích kết cục phụ và biến an toàn
-- Cách xử lý đa so sánh, phân tích phân nhóm, phân tích thăm dò
-- Sự nhất quán với PICO, mục tiêu nghiên cứu và thiết kế RCT
-- Gợi ý cải thiện cụ thể, ưu tiên gạch đầu dòng, đánh dấu những điểm "bắt buộc nên sửa".
+Hãy viết giúp "Xử lý dữ liệu và đảm bảo chất lượng" (Data handling and quality assurance) cho đề cương/SAP,
+dựa trên bối cảnh dưới đây. Trả lời bằng TIẾNG VIỆT, văn phong học thuật, rõ ràng, mạch lạc.
 
-Ngữ cảnh (JSON):
-${JSON.stringify(payload, null, 2).slice(0, 4000)}
+YÊU CẦU:
+- Trình bày theo các tiểu mục (có thể dùng gạch đầu dòng hoặc đoạn văn), ví dụ:
+  • Nguồn dữ liệu và công cụ thu thập (CRF giấy/điện tử, hệ thống nhập liệu)
+  • Quy trình nhập liệu (double entry, range check, logic check)
+  • Quản lý mã hoá biến, từ điển dữ liệu (data dictionary)
+  • Xử lý dữ liệu thiếu và giá trị ngoại lai (outliers)
+  • Theo dõi, kiểm tra và làm sạch dữ liệu (data cleaning, query management)
+  • Đảm bảo chất lượng, giám sát, audit, bảo mật và phân quyền truy cập
+  • Đóng/mở cơ sở dữ liệu (database lock/unlock) trước khi phân tích
+- Có thể tham khảo cấu trúc trong ICH E6(R2), ICH E9, GCP nhưng KHÔNG được bịa tên văn bản.
+- Nếu trích dẫn tài liệu, ghi dạng [1], [2] trong nội dung (không cần danh mục chi tiết).
 
-Trả lời bằng tiếng Việt, dùng gạch đầu dòng rõ ràng.
+BỐI CẢNH (tóm tắt):
+- P: ${pico.p || "(chưa nhập)"}
+- I: ${pico.i || "(chưa nhập)"}
+- C: ${pico.c || "(chưa nhập)"}
+- O: ${pico.o || "(chưa nhập)"}
+
+Thiết kế nghiên cứu (rút gọn JSON):
+${safeJson(design)}
+
+Thông tin lịch thu thập dữ liệu (nếu có, rút gọn JSON):
+${safeJson(dataCollection)}
 `.trim();
 
-    ctx.toast('Đang đánh giá kế hoạch phân tích...');
-    const fb = await ctx.callGPT(prompt);
-    showFeedbackDialog(fb || 'Không nhận được phản hồi từ GPT.');
+    const raw = await callAI("step12.suggest", prompt, ctx);
+    outEl.value = String(raw || "").trim() || "GPT không trả về nội dung.";
+    toast(ctx, "Đã nhận gợi ý cho phần Xử lý dữ liệu & đảm bảo chất lượng.");
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT gợi ý phần xử lý dữ liệu.");
+  } finally {
+    toggleBusyButton(ctx, null, true);
   }
+}
 
-  // ========= Helpers =========
-  function normalizePlan(x) {
-    return {
-      primary: String(x?.primary || '').trim(),
-      secondary: String(x?.secondary || '').trim(),
-      exploratory: String(x?.exploratory || x?.extra || '').trim(),
-    };
+async function evalDataHandling(ctx, text, outEl) {
+  if (!text.trim()) {
+    toast(ctx, "Chưa có nội dung để đánh giá ở phần xử lý dữ liệu.");
+    return;
   }
+  try {
+    toggleBusyButton(ctx, "Đang đánh giá phần xử lý dữ liệu...");
 
-  function safeParse(s) {
-    try { return JSON.parse(s); } catch { return null; }
+    const prompt = `
+Bạn là chuyên gia GCP và biostatistician. Hãy ĐÁNH GIÁ đoạn "Xử lý dữ liệu & đảm bảo chất lượng"
+ở dưới đây, trả lời bằng TIẾNG VIỆT:
+
+--- BẢN THẢO CẦN ĐÁNH GIÁ ---
+${text}
+--- HẾT BẢN THẢO ---
+
+YÊU CẦU:
+1) Nhận xét tổng quan (3–6 câu) về:
+   - Tính đầy đủ so với chuẩn GCP/SAP
+   - Mức độ rõ ràng, khả thi, logic
+2) Liệt kê các điểm mạnh và điểm cần chỉnh sửa (dạng gạch đầu dòng).
+3) Gợi ý chỉnh sửa cụ thể (có thể đề xuất cấu trúc lại các tiểu mục).
+4) Nếu cần trích dẫn, ghi dạng [1], [2] (không cần liệt kê đầy đủ tài liệu).
+
+Đừng viết lại nguyên văn toàn bộ đoạn; chỉ nhận xét và gợi ý.
+`.trim();
+
+    const raw = await callAI("step12.evaluate", prompt, ctx);
+    outEl.value = String(raw || "").trim() || "GPT không trả về nội dung.";
+    toast(ctx, "Đã nhận đánh giá cho phần Xử lý dữ liệu & đảm bảo chất lượng.");
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT đánh giá phần xử lý dữ liệu.");
+  } finally {
+    toggleBusyButton(ctx, null, true);
   }
+}
 
-  function jsonSafe(obj) {
-    try { return JSON.stringify(obj); } catch { return ''; }
+async function suggestAnalysisPlan(ctx, outEl) {
+  try {
+    toggleBusyButton(ctx, "Đang gợi ý SAP chi tiết...");
+
+    const pico = ctx.get("pico", {}) || {};
+    const mainObj = (ctx.get("mainObjective", "") || "").trim();
+    const subs = Array.isArray(ctx.get("subObjectives", []))
+      ? ctx
+          .get("subObjectives", [])
+          .map((x) => String(x || "").trim())
+          .filter(Boolean)
+      : [];
+    const design = ctx.get("design", {}) || {};
+    const vars = ctx.get("step10Vars", {}) || {};
+    const dataCollection = ctx.get("step11Plan", ctx.get("dataCollection", {})) || {};
+
+    const prompt = `
+Bạn là biostatistician xây dựng Kế hoạch phân tích số liệu chi tiết (Statistical Analysis Plan – SAP)
+cho một RCT. Hãy gợi ý đoạn mô tả chi tiết phần "Phân tích số liệu" cho đề cương/SAP, bằng TIẾNG VIỆT.
+
+BỐI CẢNH:
+- PICO:
+  • P: ${pico.p || "(chưa nhập)"}
+  • I: ${pico.i || "(chưa nhập)"}
+  • C: ${pico.c || "(chưa nhập)"}
+  • O: ${pico.o || "(chưa nhập)"}
+
+- Mục tiêu chính: ${mainObj || "(chưa nhập)"}
+- Mục tiêu phụ:
+${subs.length ? subs.map((s, i) => (i + 1) + ". " + s).join("\n") : "(chưa nhập)"}
+
+- Thiết kế (JSON rút gọn):
+${safeJson(design)}
+
+- Nhóm biến (Step 10 – JSON rút gọn):
+${safeJson(vars)}
+
+- Lịch thu thập dữ liệu (Step 11 – JSON rút gọn):
+${safeJson(dataCollection)}
+
+YÊU CẦU NỘI DUNG:
+- Trình bày theo cấu trúc SAP tiêu chuẩn, ví dụ:
+  1) Quần thể phân tích (ITT, PP, Safety)
+  2) Nguyên tắc mã hoá và xử lý biến (ví dụ: biến nhị phân, biến liên tục, chuyển đổi log, tính điểm)
+  3) Phân tích mô tả cho biến nền và biến kết cục
+  4) Phân tích chính cho kết cục chính (nêu rõ test/mô hình, điều chỉnh biến nhiễu nếu cần)
+  5) Phân tích cho kết cục phụ
+  6) Xử lý số liệu thiếu (missing data) và phân tích độ nhạy
+  7) Phân tích dưới nhóm (nếu có)
+  8) Kiểm soát đa so sánh / điều chỉnh sai số loại I (nếu phù hợp)
+- Văn phong học thuật, rõ ràng, có thể đưa thẳng vào phần SAP của đề cương.
+- Nếu trích dẫn guideline (ICH E9, CONSORT, SPIRIT...), chỉ ghi chung chung, không bịa mã tài liệu.
+- Có thể dùng đánh số hoặc heading nhỏ, không cần bảng.
+
+Trả lời bằng VĂN BẢN THUẦN (có thể có gạch đầu dòng/heading), không dùng JSON.
+`.trim();
+
+    const raw = await callAI("step12.suggest", prompt, ctx);
+    outEl.value = String(raw || "").trim() || "GPT không trả về nội dung.";
+    toast(ctx, "Đã nhận gợi ý Kế hoạch phân tích số liệu chi tiết (SAP).");
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT gợi ý SAP.");
+  } finally {
+    toggleBusyButton(ctx, null, true);
   }
+}
 
-  function showFeedbackDialog(text) {
-    const id = 'analysis-fb-dialog';
-    let dlg = document.getElementById(id);
-    if (!dlg) {
-      dlg = document.createElement('div');
-      dlg.id = id;
-      dlg.style.position = 'fixed';
-      dlg.style.inset = '0';
-      dlg.style.background = 'rgba(0,0,0,.4)';
-      dlg.style.zIndex = '60';
-      dlg.style.display = 'flex';
-      dlg.style.alignItems = 'center';
-      dlg.style.justifyContent = 'center';
-      dlg.innerHTML = `
-        <div style="background:#fff; max-width:760px; width:90vw; padding:18px; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.24)">
-          <div style="font-weight:700; margin-bottom:8px;">Đánh giá kế hoạch phân tích</div>
-          <div id="analysis-fb-text" style="white-space:pre-wrap; line-height:1.5; max-height:60vh; overflow:auto;"></div>
-          <div style="display:flex; justify-content:flex-end; margin-top:12px; gap:8px;">
-            <button id="analysis-fb-close" class="btn btn-primary">Đóng</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(dlg);
-      dlg.querySelector('#analysis-fb-close').addEventListener('click', () => dlg.remove());
+async function evalAnalysisPlan(ctx, text, outEl) {
+  if (!text.trim()) {
+    toast(ctx, "Chưa có nội dung SAP để đánh giá.");
+    return;
+  }
+  try {
+    toggleBusyButton(ctx, "Đang đánh giá SAP...");
+
+    const prompt = `
+Bạn là biostatistician giàu kinh nghiệm trong thiết kế RCT và viết SAP.
+
+Hãy ĐÁNH GIÁ đoạn Kế hoạch phân tích số liệu (SAP) dưới đây, bằng TIẾNG VIỆT:
+
+--- BẢN THẢO SAP CẦN ĐÁNH GIÁ ---
+${text}
+--- HẾT BẢN THẢO ---
+
+YÊU CẦU:
+1) Nhận xét tổng quan (5–10 câu) về:
+   - Tính đầy đủ so với chuẩn SAP (có đủ: quần thể phân tích, phân tích chính/phụ, xử lý missing, under/over-specification?)
+   - Mức độ rõ ràng, khả thi, có nêu rõ test/mô hình và cách trình bày kết quả không.
+2) Liệt kê các điểm mạnh và điểm hạn chế (dạng gạch đầu dòng).
+3) Đề xuất chỉnh sửa chi tiết: những tiểu mục cần thêm/bớt, bổ sung thông tin nào, chỗ nào cần cụ thể hơn.
+4) Nếu cần, gợi ý một cấu trúc/mục lục ngắn cho phần SAP của đề cương.
+
+Không cần viết lại toàn văn SAP; chỉ tập trung đánh giá và gợi ý cải thiện.
+`.trim();
+
+    const raw = await callAI("step12.evaluate", prompt, ctx);
+    outEl.value = String(raw || "").trim() || "GPT không trả về nội dung.";
+    toast(ctx, "Đã nhận đánh giá cho Kế hoạch phân tích số liệu (SAP).");
+  } catch (e) {
+    console.error(e);
+    toast(ctx, "Lỗi khi GPT đánh giá SAP.");
+  } finally {
+    toggleBusyButton(ctx, null, true);
+  }
+}
+
+/* ==================== Common helpers ==================== */
+
+function toast(ctx, msg) {
+  if (ctx && typeof ctx.toast === "function") ctx.toast(msg);
+  else console.log("[toast]", msg);
+}
+
+function copyText(t, ctx) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(t || "");
+      toast(ctx, "Đã sao chép vào clipboard.");
+    } else {
+      throw new Error("Clipboard API không hỗ trợ.");
     }
-    dlg.querySelector('#analysis-fb-text').textContent = text;
+  } catch {
+    toast(ctx, "Không sao chép được nội dung.");
+  }
+}
+
+// Ở đây mình dùng 1 "global" đơn giản để tránh truyền button; nếu anh muốn tinh vi hơn có thể sửa sau
+let busyMessageEl = null;
+function toggleBusyButton(ctx, msg, resetOnly = false) {
+  if (!busyMessageEl) {
+    busyMessageEl = document.getElementById("global-busy-msg");
+  }
+  if (!busyMessageEl) {
+    // không có UI riêng cho busy, ta chỉ dùng toast ngắn
+    if (msg && !resetOnly) toast(ctx, msg);
+    return;
+  }
+  if (resetOnly) {
+    busyMessageEl.textContent = "";
+    busyMessageEl.classList.add("hidden");
+  } else if (msg) {
+    busyMessageEl.textContent = msg;
+    busyMessageEl.classList.remove("hidden");
+  }
+}
+
+async function callAI(bindingKey, prompt, ctx) {
+  if (typeof ctx.callStepGPT === "function") {
+    try {
+      return String((await ctx.callStepGPT(bindingKey, prompt)) ?? "");
+    } catch (e) {
+      if (typeof ctx.callGPT === "function") {
+        return String(await ctx.callGPT(prompt));
+      }
+      throw e;
+    }
+  }
+  if (typeof ctx.callGPT === "function") {
+    return String(await ctx.callGPT(prompt));
+  }
+  throw new Error("Chưa cấu hình GPT cho step12.");
+}
+
+function safeJson(obj) {
+  try {
+    return JSON.stringify(obj ?? {}, null, 2).slice(0, 1200);
+  } catch {
+    return "{}";
   }
 }
