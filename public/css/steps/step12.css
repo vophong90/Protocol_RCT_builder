@@ -5,25 +5,26 @@
   display: none !important;
 }
 
-/* Card con cho từng tiểu mục A/B */
-[data-scope="step12"] .section-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px 16px;
-  background: var(--card);
+/* Bố cục cơ bản */
+[data-scope="step12"] .grid-1 {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-[data-scope="step12"] .section-card + .section-card {
-  margin-top: 16px;
+/* Mỗi phần A / B */
+[data-scope="step12"] .section {
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle, #e5e7eb);
 }
 
-/* Header mỗi tiểu mục */
+/* Header phần A/B */
 [data-scope="step12"] .section-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 [data-scope="step12"] .section-title {
@@ -42,11 +43,14 @@
   gap: 8px;
 }
 
-/* Thân tiểu mục */
+/* Thân phần A/B */
 [data-scope="step12"] .section-body {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
+/* Form field */
 [data-scope="step12"] .form-field {
   display: flex;
   flex-direction: column;
@@ -58,22 +62,49 @@
   color: #111827;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* Textarea chính & feedback */
+/* Textarea chính */
 [data-scope="step12"] textarea {
   min-height: 140px;
 }
 
-[data-scope="step12"] .feedback-area {
-  min-height: 110px;
-  font-size: 0.93rem;
+/* Vùng GPT (suggest/eval) */
+[data-scope="step12"] .gpt-wrap {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--muted-bg, #f3f4f6);
+  border: 1px dashed var(--border-subtle, #e5e7eb);
 }
 
-/* Nút nhỏ */
+[data-scope="step12"] .gpt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+[data-scope="step12"] .gpt-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+[data-scope="step12"] .gpt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+[data-scope="step12"] .gpt-textarea {
+  min-height: 120px;
+  font-size: 0.9rem;
+}
+
+/* Nút nhỏ cho GPT */
 [data-scope="step12"] .btn-xs {
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.6rem;
   font-size: 0.78rem;
   border-radius: 999px;
 }
