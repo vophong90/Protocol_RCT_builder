@@ -1,37 +1,69 @@
 /* public/css/steps/step12.css */
-/* Scope riêng cho Step 12 – không ảnh hưởng step khác */
+/* Scope riêng cho step 12 – Kế hoạch phân tích số liệu */
 
 [data-scope="step12"] .hidden {
   display: none !important;
 }
 
-/* Lưới chính trong body: ưu tiên 2 cột, tự xuống hàng trên màn nhỏ */
-[data-scope="step12"] .analysis-grid {
+[data-scope="step12"] .small {
+  font-size: 0.9rem;
+}
+
+[data-scope="step12"] .tiny {
+  font-size: 0.8rem;
+}
+
+/* Bố cục 2 cột chính: nội dung & GPT side */
+[data-scope="step12"] .an-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 16px 18px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
   align-items: flex-start;
 }
+
+[data-scope="step12"] .an-main,
+[data-scope="step12"] .an-side {
+  min-width: 0;
+}
+
+/* Card lồng trong card chính */
+[data-scope="step12"] .card-nested {
+  margin-top: 12px;
+}
+
+/* Textarea chung */
+[data-scope="step12"] .an-ta {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* Header cột bên phải */
+[data-scope="step12"] .an-side-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Hàng nút nhỏ phía dưới textarea GPT */
+[data-scope="step12"] .an-side-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+/* Nút ghost nhỏ */
+[data-scope="step12"] .an-side-actions .btn.tiny,
+[data-scope="step12"] .btn-ghost.tiny {
+  font-size: 0.8rem;
+  padding: 2px 6px;
+}
+
+/* Responsive – màn nhỏ: xếp dọc */
 @media (max-width: 900px) {
-  [data-scope="step12"] .analysis-grid {
-    grid-template-columns: 1fr;
+  [data-scope="step12"] .an-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
-}
-
-/* Tiêu đề nhỏ cho từng khối */
-[data-scope="step12"] .section-title {
-  margin: 0 0 4px;
-  font-size: 0.98rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-/* Chữ nhỏ cho word-count dưới textarea */
-[data-scope="step12"] .tiny {
-  font-size: 0.78rem;
-}
-
-/* Dòng word-count */
-[data-scope="step12"] .wc-row {
-  margin-top: 4px;
 }
