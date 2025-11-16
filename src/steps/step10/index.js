@@ -52,14 +52,6 @@ export async function mount(rootEl, ctx) {
       </div>
     </div>
 
-    <div class="card-body">
-      <p class="muted">
-        Các nhóm biến được sắp xếp từ trên xuống. Mỗi nhóm có nút <strong>+ Thêm biến</strong> để nhập tay,
-        nút <strong>GPT gợi ý biến</strong> để tham khảo thêm theo mục tiêu nghiên cứu (Step 2),
-        và nút <strong>GPT đánh giá</strong> để kiểm tra tính hợp lý so với chuẩn quốc tế.
-      </p>
-    </div>
-
     <div class="card-body" id="var-groups"></div>
 
     <div class="card-footer">
