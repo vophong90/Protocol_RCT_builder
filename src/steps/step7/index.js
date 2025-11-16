@@ -63,7 +63,7 @@ export async function mount(rootEl, ctx) {
       <!-- CARD 4: 2 nút GPT trên cùng một hàng -->
       <div class="card-body crit-actions">
         <button id="crit-suggest" class="btn btn-primary" type="button">GPT gợi ý tiêu chí</button>
-        <button id="crit-eval"    class="btn btn-primary" type="button">GPT đánh giá tiêu chí hiện có</button>
+        <button id="crit-eval"    class="btn btn-secondary" type="button">GPT đánh giá tiêu chí hiện có</button>
       </div>
 
       <!-- CARD 5: Nút Lưu – luôn ở dưới cùng, bên trái -->
