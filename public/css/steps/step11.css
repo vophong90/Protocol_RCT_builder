@@ -1,180 +1,113 @@
 /* public/css/steps/step11.css */
 /* Scope riêng cho Step 11 – không ảnh hưởng step khác */
 
-[data-scope="step11"] .hidden {
-  display: none !important;
+[data-scope="step11"] .dc-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
-/* Layout 2 cột: trái cố định, phải co giãn */
-[data-scope="step11"] .dc-layout {
-  display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: 16px 20px;
-  align-items: flex-start;
-}
-@media (max-width: 900px) {
-  [data-scope="step11"] .dc-layout {
-    grid-template-columns: 1fr;
-  }
+[data-scope="step11"] .dc-summary-hint {
+  margin-bottom: 10px;
 }
 
-[data-scope="step11"] .dc-left,
-[data-scope="step11"] .dc-right {
-  display: grid;
-  gap: 12px;
-}
-
-/* Card lồng bên trong */
-[data-scope="step11"] .card-nested {
-  margin: 0;
-}
-
-/* Hàng inline cho ô ngày + nút "Thêm" */
-[data-scope="step11"] .dc-inline-row {
-  justify-content: space-between;
-}
-
-[data-scope="step11"] .dc-label-inline {
-  flex: 1;
-}
-
-/* Header của danh sách mốc */
-[data-scope="step11"] .dc-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-/* Vùng danh sách mốc */
-[data-scope="step11"] .dc-tplist {
-  display: grid;
-  gap: 8px;
-}
-
-/* Pill mốc thời gian */
-[data-scope="step11"] .dc-tp-pill {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-[data-scope="step11"] .dc-tp-pill-left {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: baseline;
-}
-
-[data-scope="step11"] .dc-tp-pill-right {
-  display: flex;
-  gap: 6px;
-}
-
-/* Kho biến */
-[data-scope="step11"] .dc-pool {
-  min-height: 140px;
-  display: grid;
-  gap: 8px;
-}
-
-/* Droptarget chung */
-[data-scope="step11"] .droptarget {
-  border: 1px dashed var(--border);
+/* Bảng tóm tắt lịch thu thập */
+[data-scope="step11"] .dc-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+  font-size: 0.92rem;
+  background: #fff;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 8px 10px;
+  overflow: hidden;
+}
+
+[data-scope="step11"] .dc-summary-table thead {
   background: #f9fafb;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
-[data-scope="step11"] .droptarget.dropping {
-  border-color: var(--brand);
-  background: #ecfdf3;
+[data-scope="step11"] .dc-summary-table th,
+[data-scope="step11"] .dc-summary-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
 }
 
-/* Header bảng grid */
-[data-scope="step11"] .dc-grid-header {
+[data-scope="step11"] .dc-summary-table th {
+  text-align: left;
+  font-weight: 600;
+  color: #111827;
+}
+
+[data-scope="step11"] .dc-summary-table tbody tr:nth-child(even) {
+  background: #fcfcfd;
+}
+
+[data-scope="step11"] .dc-summary-label {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+}
+
+[data-scope="step11"] .dc-summary-vars {
+  color: #111827;
+}
+
+/* Nhóm biến bên trong 1 mốc */
+[data-scope="step11"] .dc-summary-group + .dc-summary-group {
+  margin-top: 4px;
+}
+
+[data-scope="step11"] .dc-summary-group-label {
+  font-weight: 600;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+[data-scope="step11"] .dc-summary-group-vars {
+  display: inline;
+}
+
+/* Nút GPT hàng ngang – dùng grid chung nhưng cho thêm khoảng thở */
+[data-scope="step11"] .dc-btn-row {
+  margin-top: 12px;
+}
+
+/* Modal đánh giá GPT */
+[data-scope="step11"] .dc-fb-modal {
+  background: #fff;
+  max-width: 760px;
+  width: 92vw;
+  padding: 16px 18px;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  max-height: 80vh;
 }
 
-[data-scope="step11"] .dc-grid-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-/* Scroll thân bảng */
-[data-scope="step11"] .dc-grid-body {
-  overflow: auto;
-}
-
-/* Hàng header mốc trong grid */
-[data-scope="step11"] .dc-grid-header-row {
-  display: grid;
-  gap: 12px;
+[data-scope="step11"] .dc-fb-header {
   margin-bottom: 8px;
 }
 
-[data-scope="step11"] .dc-grid-header-pill {
+[data-scope="step11"] .dc-fb-title {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+[data-scope="step11"] .dc-fb-body {
+  white-space: pre-wrap;
+  line-height: 1.45;
+  font-size: 0.94rem;
+  color: #111827;
+  overflow: auto;
+  padding: 6px 0;
+  flex: 1 1 auto;
+}
+
+[data-scope="step11"] .dc-fb-footer {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-[data-scope="step11"] .dc-grid-header-label {
-  font-weight: 600;
-}
-
-/* Hàng body (các cột mốc) */
-[data-scope="step11"] .dc-grid-body-row {
-  display: grid;
-  gap: 12px;
-}
-
-/* Card từng cột mốc */
-[data-scope="step11"] .dc-grid-col {
-  min-height: 140px;
-}
-
-/* Bên trong mỗi card mốc */
-[data-scope="step11"] .dc-grid-inner {
-  display: grid;
-  gap: 8px;
-  min-height: 120px;
-}
-
-/* Chip biến */
-[data-scope="step11"] .dc-var-chip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-[data-scope="step11"] .dc-var-chip-left {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-[data-scope="step11"] .dc-var-chip-title {
-  font-weight: 600;
-}
-
-/* Nút xoá chip trong mốc */
-[data-scope="step11"] .dc-var-chip-remove {
-  padding: 0.25rem 0.5rem;
-}
-
-/* Text nhỏ */
-[data-scope="step11"] .small {
-  font-size: 0.9rem;
-}
-
-[data-scope="step11"] .tiny {
-  font-size: 0.78rem;
+  justify-content: flex-end;
+  margin-top: 10px;
 }
