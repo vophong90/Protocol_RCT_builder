@@ -28,9 +28,9 @@ export async function mount(rootEl, ctx) {
     </div>
 
     <div class="card-body">
-      <div class="muted"><strong>Tóm tắt bối cảnh (tự động từ các bước trước):</strong></div>
+      <div class="muted"><strong>Tóm tắt bối cảnh:</strong></div>
       <div class="logic-context-box">
-        <pre id="logic-context"></pre>
+        <div id="logic-context"></div>
       </div>
     </div>
 
