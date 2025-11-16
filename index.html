@@ -62,7 +62,14 @@
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script>
     if (window.mermaid) {
-      window.mermaid.initialize({ startOnLoad: false });
+      window.mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        themeVariables: {
+          fontFamily: '"Times New Roman", Times, serif',
+          fontSize: '14px',
+        }
+      });
     }
   </script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
